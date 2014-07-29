@@ -125,41 +125,13 @@
     <ClInclude Include="bson\bson.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bson\encoding.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="distorm3.2-package\include\distorm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="distorm3.2-package\include\mnemonics.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\decoder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\instructions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\insts.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\operands.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\prefix.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\textdefs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\wstring.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\x86defs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="logtbl.py">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -10,3 +10,7 @@ distorm3.2-package/src/distorm.sdf
 distorm3.2-package/src/distorm.v12.suo
 logtbl.pyc
 cuckoomon.vcxproj.user
+bson/Release
+distorm3.2-package/src/Release
+objects
+Release

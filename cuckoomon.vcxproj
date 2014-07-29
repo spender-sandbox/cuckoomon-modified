@@ -112,19 +112,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bson\bson.h" />
-    <ClInclude Include="bson\encoding.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="distorm3.2-package\include\distorm.h" />
-    <ClInclude Include="distorm3.2-package\include\mnemonics.h" />
-    <ClInclude Include="distorm3.2-package\src\config.h" />
-    <ClInclude Include="distorm3.2-package\src\decoder.h" />
-    <ClInclude Include="distorm3.2-package\src\instructions.h" />
-    <ClInclude Include="distorm3.2-package\src\insts.h" />
-    <ClInclude Include="distorm3.2-package\src\operands.h" />
-    <ClInclude Include="distorm3.2-package\src\prefix.h" />
-    <ClInclude Include="distorm3.2-package\src\textdefs.h" />
-    <ClInclude Include="distorm3.2-package\src\wstring.h" />
-    <ClInclude Include="distorm3.2-package\src\x86defs.h" />
     <ClInclude Include="hooking.h" />
     <ClInclude Include="hooks.h" />
     <ClInclude Include="hook_file.h" />
@@ -136,6 +125,11 @@
     <ClInclude Include="ntapi.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="utf8.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="logtbl.py">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
