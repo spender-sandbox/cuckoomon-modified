@@ -17,14 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
-#include <windows.h>
-#include "hooking.h"
 #include "ntapi.h"
+#include "hooking.h"
 #include "log.h"
 #include "pipe.h"
 #include "hook_sleep.h"
-
-static IS_SUCCESS_NTSTATUS();
 
 void set_hooks_dll(const wchar_t *library, int len);
 
@@ -46,7 +43,7 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
         ModuleHandle);
 
     if (hook_info()->depth_count == 1) {
-        LOQspecial("loP", "Flags", Flags, "FileName", &library,
+        LOQspecial_ntstatus("loP", "Flags", Flags, "FileName", &library,
             "BaseAddress", ModuleHandle);
     }
 
@@ -76,8 +73,6 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     __out       LPPROCESS_INFORMATION lpProcessInformation,
     __in_opt    LPVOID lpUnknown2
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old2_CreateProcessInternalW(lpUnknown1, lpApplicationName,
         lpCommandLine, lpProcessAttributes, lpThreadAttributes,
         bInheritHandles, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment,
@@ -97,7 +92,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     }
 
     if (hook_info()->depth_count == 1) {
-        LOQspecial("uupllpp", "ApplicationName", lpApplicationName,
+        LOQspecial_bool("uupllpp", "ApplicationName", lpApplicationName,
             "CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
             "ProcessId", lpProcessInformation->dwProcessId,
             "ThreadId", lpProcessInformation->dwThreadId,

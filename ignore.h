@@ -20,11 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ntapi.h"
 
-void add_protected_pid(unsigned long pid);
-int is_protected_pid(unsigned long pid);
+void add_protected_pid(DWORD pid);
+int is_protected_pid(DWORD pid);
 
-int is_ignored_file_ascii(const char *fname, int length);
-int is_ignored_file_unicode(const wchar_t *fname, int length);
+int is_ignored_file_ascii(const char *fname, unsigned int length);
+int is_ignored_file_unicode(const wchar_t *fname, unsigned int length);
 int is_ignored_file_objattr(const OBJECT_ATTRIBUTES *obj);
 
 void ignore_file_prepend_stuff(const OBJECT_ATTRIBUTES *obj,
@@ -32,4 +32,4 @@ void ignore_file_prepend_stuff(const OBJECT_ATTRIBUTES *obj,
 
 int is_ignored_process();
 
-int is_ignored_retaddr(unsigned int addr);
+int is_ignored_retaddr(ULONG_PTR addr);

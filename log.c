@@ -19,14 +19,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
-#include <windows.h>
-#include <dirent.h>
-#include <winsock.h>
 #include "ntapi.h"
 #include "misc.h"
 #include "utf8.h"
 #include "log.h"
 #include "bson.h"
+#ifndef _MSC_VER
+#include <dirent.h>
+#endif
 
 // the size of the logging buffer
 #define BUFFERSIZE 1024 * 1024
@@ -87,7 +87,7 @@ static void log_raw(const char *buf, size_t length) {
 */
 
 static void log_raw_direct(const char *buf, size_t length) {
-    int sent = 0;
+    size_t sent = 0;
     int r;
     while (sent < length) {
         r = send(g_sock, buf+sent, length-sent, 0);
@@ -139,7 +139,7 @@ static void log_string(const char *str, int length)
     ret = bson_append_binary( g_bson, g_istr, BSON_BIN_BINARY, utf8s+4, utf8len );
     if (ret == BSON_ERROR) {
         char tmp[64];
-        snprintf(tmp, 64, "dbg bson err string %x utf8len %d", g_bson->err, utf8len);
+        snprintf(tmp, sizeof(tmp), "dbg bson err string %x utf8len %d", g_bson->err, utf8len);
         debug_message(tmp);
     }
     free(utf8s);

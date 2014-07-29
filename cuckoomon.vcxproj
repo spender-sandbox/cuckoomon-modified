@@ -1,0 +1,134 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{15C69A24-71D1-4A1A-B39B-0466181ACD7E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v120</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS_DEBUG;_WINDOWS;_USRDLL;MONGO_HAVE_STDINT;CUCKOOMON_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>E:\git\cuckoomon\distorm3.2-package\include;E:\git\cuckoomon\bson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGSNDEBUG;_WINDOWS;_USRDLL;MONGO_HAVE_STDINT;CUCKOOMON_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>E:\git\cuckoomon\distorm3.2-package\include;E:\git\cuckoomon\bson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <TargetMachine>MachineX86</TargetMachine>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="config.c" />
+    <ClCompile Include="cuckoomon.c" />
+    <ClCompile Include="hooking.c" />
+    <ClCompile Include="hook_file.c" />
+    <ClCompile Include="hook_misc.c" />
+    <ClCompile Include="hook_network.c" />
+    <ClCompile Include="hook_process.c" />
+    <ClCompile Include="hook_reg.c" />
+    <ClCompile Include="hook_reg_native.c" />
+    <ClCompile Include="hook_services.c" />
+    <ClCompile Include="hook_sleep.c" />
+    <ClCompile Include="hook_socket.c" />
+    <ClCompile Include="hook_special.c" />
+    <ClCompile Include="hook_sync.c" />
+    <ClCompile Include="hook_thread.c" />
+    <ClCompile Include="hook_window.c" />
+    <ClCompile Include="ignore.c" />
+    <ClCompile Include="log.c" />
+    <ClCompile Include="lookup.c" />
+    <ClCompile Include="misc.c" />
+    <ClCompile Include="pipe.c" />
+    <ClCompile Include="utf8.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="bson\bson.h" />
+    <ClInclude Include="bson\encoding.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="distorm3.2-package\include\distorm.h" />
+    <ClInclude Include="distorm3.2-package\include\mnemonics.h" />
+    <ClInclude Include="distorm3.2-package\src\config.h" />
+    <ClInclude Include="distorm3.2-package\src\decoder.h" />
+    <ClInclude Include="distorm3.2-package\src\instructions.h" />
+    <ClInclude Include="distorm3.2-package\src\insts.h" />
+    <ClInclude Include="distorm3.2-package\src\operands.h" />
+    <ClInclude Include="distorm3.2-package\src\prefix.h" />
+    <ClInclude Include="distorm3.2-package\src\textdefs.h" />
+    <ClInclude Include="distorm3.2-package\src\wstring.h" />
+    <ClInclude Include="distorm3.2-package\src\x86defs.h" />
+    <ClInclude Include="hooking.h" />
+    <ClInclude Include="hooks.h" />
+    <ClInclude Include="hook_file.h" />
+    <ClInclude Include="hook_sleep.h" />
+    <ClInclude Include="ignore.h" />
+    <ClInclude Include="log.h" />
+    <ClInclude Include="lookup.h" />
+    <ClInclude Include="misc.h" />
+    <ClInclude Include="ntapi.h" />
+    <ClInclude Include="pipe.h" />
+    <ClInclude Include="utf8.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

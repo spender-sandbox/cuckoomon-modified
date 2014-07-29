@@ -18,17 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <ctype.h>
-#include <windows.h>
+#include "ntapi.h"
 #include <shlwapi.h>
 #include "hooking.h"
-#include "ntapi.h"
 #include "log.h"
 #include "pipe.h"
 #include "misc.h"
 #include "ignore.h"
 #include "lookup.h"
-
-static IS_SUCCESS_NTSTATUS();
 
 #define DUMP_FILE_MASK (GENERIC_WRITE | FILE_GENERIC_WRITE | \
     FILE_WRITE_DATA | FILE_APPEND_DATA | STANDARD_RIGHTS_WRITE | \
@@ -145,7 +142,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
     NTSTATUS ret = Old_NtCreateFile(FileHandle, DesiredAccess,
         ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes,
         ShareAccess, CreateDisposition, CreateOptions, EaBuffer, EaLength);
-    LOQ("PpOll", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("PpOll", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "CreateDisposition", CreateDisposition,
         "ShareAccess", ShareAccess);
     if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {
@@ -164,7 +161,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
 ) {
     NTSTATUS ret = Old_NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes,
         IoStatusBlock, ShareAccess, OpenOptions);
-    LOQ("PpOl", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("PpOl", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "ShareAccess", ShareAccess);
     if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {
         handle_new_file(*FileHandle, ObjectAttributes);
@@ -185,7 +182,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 ) {
     NTSTATUS ret = Old_NtReadFile(FileHandle, Event, ApcRoutine, ApcContext,
         IoStatusBlock, Buffer, Length, ByteOffset, Key);
-    LOQ("pb", "FileHandle", FileHandle,
+    LOQ_ntstatus("pb", "FileHandle", FileHandle,
         "Buffer", IoStatusBlock->Information, Buffer);
     return ret;
 }
@@ -203,7 +200,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
 ) {
     NTSTATUS ret = Old_NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext,
         IoStatusBlock, Buffer, Length, ByteOffset, Key);
-    LOQ("pb", "FileHandle", FileHandle,
+    LOQ_ntstatus("pb", "FileHandle", FileHandle,
         "Buffer", IoStatusBlock->Information, Buffer);
     if(NT_SUCCESS(ret)) {
         file_write(FileHandle);
@@ -217,7 +214,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeleteFile,
     pipe("FILE_DEL:%O", ObjectAttributes);
 
     NTSTATUS ret = Old_NtDeleteFile(ObjectAttributes);
-    LOQ("O", "FileName", ObjectAttributes);
+    LOQ_ntstatus("O", "FileName", ObjectAttributes);
     return ret;
 }
 
@@ -237,7 +234,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
         ApcRoutine, ApcContext, IoStatusBlock, IoControlCode,
         InputBuffer, InputBufferLength, OutputBuffer,
         OutputBufferLength);
-    LOQ("pbb", "FileHandle", FileHandle,
+    LOQ_ntstatus("pbb", "FileHandle", FileHandle,
         "InputBuffer", InputBufferLength, InputBuffer,
         "OutputBuffer", IoStatusBlock->Information, OutputBuffer);
     return ret;
@@ -260,7 +257,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryFile,
         ApcRoutine, ApcContext, IoStatusBlock, FileInformation,
         Length, FileInformationClass, ReturnSingleEntry,
         FileName, RestartScan);
-    LOQ("pbo", "FileHandle", FileHandle,
+    LOQ_ntstatus("pbo", "FileHandle", FileHandle,
         "FileInformation", IoStatusBlock->Information, FileInformation,
         "FileName", FileName);
     return ret;
@@ -275,7 +272,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryInformationFile,
 ) {
     NTSTATUS ret = Old_NtQueryInformationFile(FileHandle, IoStatusBlock,
         FileInformation, Length, FileInformationClass);
-    LOQ("pb", "FileHandle", FileHandle,
+    LOQ_ntstatus("pb", "FileHandle", FileHandle,
         "FileInformation", IoStatusBlock->Information, FileInformation);
     return ret;
 }
@@ -298,7 +295,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetInformationFile,
 
     NTSTATUS ret = Old_NtSetInformationFile(FileHandle, IoStatusBlock,
         FileInformation, Length, FileInformationClass);
-    LOQ("pb", "FileHandle", FileHandle,
+    LOQ_ntstatus("pb", "FileHandle", FileHandle,
         "FileInformation", IoStatusBlock->Information, FileInformation);
     return ret;
 }
@@ -310,7 +307,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenDirectoryObject,
 ) {
     NTSTATUS ret = Old_NtOpenDirectoryObject(DirectoryHandle, DesiredAccess,
         ObjectAttributes);
-    LOQ("PlO", "DirectoryHandle", DirectoryHandle,
+    LOQ_ntstatus("PlO", "DirectoryHandle", DirectoryHandle,
         "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes);
     return ret;
 }
@@ -322,7 +319,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateDirectoryObject,
 ) {
     NTSTATUS ret = Old_NtCreateDirectoryObject(DirectoryHandle, DesiredAccess,
         ObjectAttributes);
-    LOQ("PlO", "DirectoryHandle", DirectoryHandle,
+    LOQ_ntstatus("PlO", "DirectoryHandle", DirectoryHandle,
         "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes);
     return ret;
 }
@@ -331,10 +328,8 @@ HOOKDEF(BOOL, WINAPI, CreateDirectoryW,
     __in      LPWSTR lpPathName,
     __in_opt  LPSECURITY_ATTRIBUTES lpSecurityAttributes
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_CreateDirectoryW(lpPathName, lpSecurityAttributes);
-    LOQ("u", "DirectoryName", lpPathName);
+    LOQ_bool("u", "DirectoryName", lpPathName);
     return ret;
 }
 
@@ -343,31 +338,25 @@ HOOKDEF(BOOL, WINAPI, CreateDirectoryExW,
     __in      LPWSTR lpNewDirectory,
     __in_opt  LPSECURITY_ATTRIBUTES lpSecurityAttributes
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_CreateDirectoryExW(lpTemplateDirectory, lpNewDirectory,
         lpSecurityAttributes);
-    LOQ("u", "DirectoryName", lpNewDirectory);
+    LOQ_bool("u", "DirectoryName", lpNewDirectory);
     return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, RemoveDirectoryA,
     __in  LPCTSTR lpPathName
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_RemoveDirectoryA(lpPathName);
-    LOQ("s", "DirectoryName", lpPathName);
+    LOQ_bool("s", "DirectoryName", lpPathName);
     return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, RemoveDirectoryW,
     __in  LPWSTR lpPathName
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_RemoveDirectoryW(lpPathName);
-    LOQ("u", "DirectoryName", lpPathName);
+    LOQ_bool("u", "DirectoryName", lpPathName);
     return ret;
 }
 
@@ -378,11 +367,9 @@ HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
     __in_opt  LPVOID lpData,
     __in      DWORD dwFlags
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_MoveFileWithProgressW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, dwFlags);
-    LOQ("uu", "ExistingFileName", lpExistingFileName,
+    LOQ_bool("uu", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName);
     if(ret != FALSE) {
         pipe("FILE_MOVE:%Z::%Z", lpExistingFileName, lpNewFileName);
@@ -398,11 +385,9 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
     __reserved  LPVOID lpSearchFilter,
     __in        DWORD dwAdditionalFlags
 ) {
-    IS_SUCCESS_HANDLE();
-
     HANDLE ret = Old_FindFirstFileExA(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
-    LOQ("s", "FileName", lpFileName);
+    LOQ_nonnull("s", "FileName", lpFileName);
     return ret;
 }
 
@@ -414,11 +399,9 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
     __reserved  LPVOID lpSearchFilter,
     __in        DWORD dwAdditionalFlags
 ) {
-    IS_SUCCESS_HANDLE();
-
     HANDLE ret = Old_FindFirstFileExW(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
-    LOQ("u", "FileName", lpFileName);
+    LOQ_nonnull("u", "FileName", lpFileName);
     return ret;
 }
 
@@ -427,11 +410,9 @@ HOOKDEF(BOOL, WINAPI, CopyFileA,
     __in  LPCTSTR lpNewFileName,
     __in  BOOL bFailIfExists
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_CopyFileA(lpExistingFileName, lpNewFileName,
         bFailIfExists);
-    LOQ("ss", "ExistingFileName", lpExistingFileName,
+    LOQ_bool("ss", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName);
     return ret;
 }
@@ -441,11 +422,9 @@ HOOKDEF(BOOL, WINAPI, CopyFileW,
     __in  LPWSTR lpNewFileName,
     __in  BOOL bFailIfExists
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_CopyFileW(lpExistingFileName, lpNewFileName,
         bFailIfExists);
-    LOQ("uu", "ExistingFileName", lpExistingFileName,
+    LOQ_bool("uu", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName);
     return ret;
 }
@@ -458,11 +437,9 @@ HOOKDEF(BOOL, WINAPI, CopyFileExW,
     _In_opt_  LPBOOL pbCancel,
     _In_      DWORD dwCopyFlags
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_CopyFileExW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
-    LOQ("uul", "ExistingFileName", lpExistingFileName,
+    LOQ_bool("uul", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName, "CopyFlags", dwCopyFlags);
     return ret;
 }
@@ -470,8 +447,6 @@ HOOKDEF(BOOL, WINAPI, CopyFileExW,
 HOOKDEF(BOOL, WINAPI, DeleteFileA,
     __in  LPCSTR lpFileName
 ) {
-    IS_SUCCESS_BOOL();
-
     wchar_t path[MAX_PATH];
 
     // copy ascii to unicode string
@@ -484,15 +459,13 @@ HOOKDEF(BOOL, WINAPI, DeleteFileA,
     pipe("FILE_DEL:%Z", path);
 
     BOOL ret = Old_DeleteFileA(lpFileName);
-    LOQ("s", "FileName", lpFileName);
+    LOQ_bool("s", "FileName", lpFileName);
     return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, DeleteFileW,
     __in  LPWSTR lpFileName
 ) {
-    IS_SUCCESS_BOOL();
-
     wchar_t path[MAX_PATH];
 
     ensure_absolute_path(path, lpFileName, lstrlenW(lpFileName));
@@ -500,6 +473,6 @@ HOOKDEF(BOOL, WINAPI, DeleteFileW,
     pipe("FILE_DEL:%Z", path);
 
     BOOL ret = Old_DeleteFileW(lpFileName);
-    LOQ("u", "FileName", lpFileName);
+    LOQ_bool("u", "FileName", lpFileName);
     return ret;
 }

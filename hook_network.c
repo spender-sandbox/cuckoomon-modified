@@ -17,15 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
-#include <windows.h>
+#include "ntapi.h"
 #include <windns.h>
 #include <wininet.h>
 #include "hooking.h"
-#include "ntapi.h"
 #include "log.h"
 #include "pipe.h"
-
-static IS_SUCCESS_HINTERNET();
 
 HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
     LPUNKNOWN pCaller,
@@ -34,11 +31,9 @@ HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
     DWORD dwReserved,
     LPVOID lpfnCB
 ) {
-    IS_SUCCESS_HRESULT();
-
     HRESULT ret = Old_URLDownloadToFileW(pCaller, szURL, szFileName,
         dwReserved, lpfnCB);
-    LOQ("uu", "URL", szURL, "FileName", szFileName);
+    LOQ_hresult("uu", "URL", szURL, "FileName", szFileName);
     if(ret == S_OK) {
         pipe("FILE_NEW:%S", szFileName);
     }
@@ -54,7 +49,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenA,
 ) {
     HINTERNET ret = Old_InternetOpenA(lpszAgent, dwAccessType, lpszProxyName,
         lpszProxyBypass, dwFlags);
-    LOQ("spssp", "Agent", lpszAgent, "AccessType", dwAccessType,
+    LOQ_nonnull("spssp", "Agent", lpszAgent, "AccessType", dwAccessType,
         "ProxyName", lpszProxyName, "ProxyBypass", lpszProxyBypass,
         "Flags", dwFlags);
     return ret;
@@ -69,7 +64,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenW,
 ) {
     HINTERNET ret = Old_InternetOpenW(lpszAgent, dwAccessType, lpszProxyName,
         lpszProxyBypass, dwFlags);
-    LOQ("upuup", "Agent", lpszAgent, "AccessType", dwAccessType,
+    LOQ_nonnull("upuup", "Agent", lpszAgent, "AccessType", dwAccessType,
         "ProxyName", lpszProxyName, "ProxyBypass", lpszProxyBypass,
         "Flags", dwFlags);
     return ret;
@@ -88,7 +83,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetConnectA,
     HINTERNET ret = Old_InternetConnectA(hInternet, lpszServerName,
         nServerPort, lpszUsername, lpszPassword, dwService, dwFlags,
         dwContext);
-    LOQ("pslsslp", "InternetHandle", hInternet, "ServerName", lpszServerName,
+    LOQ_nonnull("pslsslp", "InternetHandle", hInternet, "ServerName", lpszServerName,
         "ServerPort", nServerPort, "Username", lpszUsername,
         "Password", lpszPassword, "Service", dwService, "Flags", dwFlags);
     return ret;
@@ -107,7 +102,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetConnectW,
     HINTERNET ret = Old_InternetConnectW(hInternet, lpszServerName,
         nServerPort, lpszUsername, lpszPassword, dwService, dwFlags,
         dwContext);
-    LOQ("puluulp", "InternetHandle", hInternet, "ServerName", lpszServerName,
+    LOQ_nonnull("puluulp", "InternetHandle", hInternet, "ServerName", lpszServerName,
         "ServerPort", nServerPort, "Username", lpszUsername,
         "Password", lpszPassword, "Service", dwService, "Flags", dwFlags);
     return ret;
@@ -123,8 +118,9 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlA,
 ) {
     HINTERNET ret = Old_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders,
         dwHeadersLength, dwFlags, dwContext);
-    if(dwHeadersLength == (DWORD) -1) dwHeadersLength = strlen(lpszHeaders);
-    LOQ("psSp", "ConnectionHandle", hInternet, "URL", lpszUrl,
+    if(dwHeadersLength == (DWORD) -1)
+		dwHeadersLength = strlen(lpszHeaders);
+    LOQ_nonnull("psSp", "ConnectionHandle", hInternet, "URL", lpszUrl,
         "Headers", dwHeadersLength, lpszHeaders, "Flags", dwFlags);
     return ret;
 }
@@ -139,7 +135,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlW,
 ) {
     HINTERNET ret = Old_InternetOpenUrlW(hInternet, lpszUrl, lpszHeaders,
         dwHeadersLength, dwFlags, dwContext);
-    LOQ("puUp", "ConnectionHandle", hInternet, "URL", lpszUrl,
+    LOQ_nonnull("puUp", "ConnectionHandle", hInternet, "URL", lpszUrl,
         "Headers", dwHeadersLength, lpszHeaders, "Flags", dwFlags);
     return ret;
 }
@@ -156,7 +152,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
 ) {
     HINTERNET ret = Old_HttpOpenRequestA(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ("psl", "InternetHandle", hConnect, "Path", lpszObjectName,
+    LOQ_nonnull("psl", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
     return ret;
 }
@@ -173,7 +169,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
 ) {
     HINTERNET ret = Old_HttpOpenRequestW(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ("pul", "InternetHandle", hConnect, "Path", lpszObjectName,
+    LOQ_nonnull("pul", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
     return ret;
 }
@@ -185,12 +181,10 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestA,
     __in  LPVOID lpOptional,
     __in  DWORD dwOptionalLength
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_HttpSendRequestA(hRequest, lpszHeaders, dwHeadersLength,
         lpOptional, dwOptionalLength);
     if(dwHeadersLength == (DWORD) -1) dwHeadersLength = strlen(lpszHeaders);
-    LOQ("pSb", "RequestHandle", hRequest,
+    LOQ_bool("pSb", "RequestHandle", hRequest,
         "Headers", dwHeadersLength, lpszHeaders,
         "PostData", dwOptionalLength, lpOptional);
     return ret;
@@ -203,11 +197,9 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestW,
     __in  LPVOID lpOptional,
     __in  DWORD dwOptionalLength
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_HttpSendRequestW(hRequest, lpszHeaders, dwHeadersLength,
         lpOptional, dwOptionalLength);
-    LOQ("pUb", "RequestHandle", hRequest,
+    LOQ_bool("pUb", "RequestHandle", hRequest,
         "Headers", dwHeadersLength, lpszHeaders,
         "PostData", dwOptionalLength, lpOptional);
     return ret;
@@ -219,11 +211,9 @@ HOOKDEF(BOOL, WINAPI, InternetReadFile,
     _In_   DWORD dwNumberOfBytesToRead,
     _Out_  LPDWORD lpdwNumberOfBytesRead
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead,
         lpdwNumberOfBytesRead);
-    LOQ("pB", "InternetHandle", hFile,
+    LOQ_bool("pB", "InternetHandle", hFile,
         "Buffer", lpdwNumberOfBytesRead, lpBuffer);
     return ret;
 }
@@ -234,11 +224,9 @@ HOOKDEF(BOOL, WINAPI, InternetWriteFile,
     _In_   DWORD dwNumberOfBytesToWrite,
     _Out_  LPDWORD lpdwNumberOfBytesWritten
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_InternetWriteFile(hFile, lpBuffer, dwNumberOfBytesToWrite,
         lpdwNumberOfBytesWritten);
-    LOQ("pB", "InternetHandle", hFile,
+    LOQ_bool("pB", "InternetHandle", hFile,
         "Buffer", lpdwNumberOfBytesWritten, lpBuffer);
     return ret;
 }
@@ -246,10 +234,8 @@ HOOKDEF(BOOL, WINAPI, InternetWriteFile,
 HOOKDEF(BOOL, WINAPI, InternetCloseHandle,
     _In_  HINTERNET hInternet
 ) {
-    IS_SUCCESS_BOOL();
-
     BOOL ret = Old_InternetCloseHandle(hInternet);
-    LOQ("p", "InternetHandle", hInternet);
+    LOQ_bool("p", "InternetHandle", hInternet);
     return ret;
 }
 
@@ -261,11 +247,9 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_A,
     __out_opt    PDNS_RECORD *ppQueryResultsSet,
     __out_opt    PVOID *pReserved
 ) {
-    IS_SUCCESS_ZERO();
-
     DNS_STATUS ret = Old_DnsQuery_A(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ("sil", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("sil", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -277,11 +261,9 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_UTF8,
     __out_opt    PDNS_RECORD *ppQueryResultsSet,
     __out_opt    PVOID *pReserved
 ) {
-    IS_SUCCESS_ZERO();
-
     DNS_STATUS ret = Old_DnsQuery_UTF8(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ("sil", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("sil", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -293,11 +275,9 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_W,
     __out_opt    PDNS_RECORD *ppQueryResultsSet,
     __out_opt    PVOID *pReserved
 ) {
-    IS_SUCCESS_ZERO();
-
     DNS_STATUS ret = Old_DnsQuery_W(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ("uil", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("uil", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -307,10 +287,8 @@ HOOKDEF(int, WSAAPI, getaddrinfo,
     _In_opt_  const ADDRINFOA *pHints,
     _Out_     PADDRINFOA *ppResult
 ) {
-    IS_SUCCESS_ZERO();
-
-    BOOL ret = Old_getaddrinfo(pNodeName, pServiceName, pHints, ppResult);
-    LOQ("ss", "NodeName", pNodeName, "ServiceName", pServiceName);
+    int ret = Old_getaddrinfo(pNodeName, pServiceName, pHints, ppResult);
+    LOQ_zero("ss", "NodeName", pNodeName, "ServiceName", pServiceName);
     return ret;
 }
 
@@ -320,9 +298,7 @@ HOOKDEF(int, WSAAPI, GetAddrInfoW,
     _In_opt_  const ADDRINFOW *pHints,
     _Out_     PADDRINFOW *ppResult
 ) {
-    IS_SUCCESS_ZERO();
-
-    BOOL ret = Old_GetAddrInfoW(pNodeName, pServiceName, pHints, ppResult);
-    LOQ("uu", "NodeName", pNodeName, "ServiceName", pServiceName);
+    int ret = Old_GetAddrInfoW(pNodeName, pServiceName, pHints, ppResult);
+    LOQ_zero("uu", "NodeName", pNodeName, "ServiceName", pServiceName);
     return ret;
 }

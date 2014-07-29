@@ -17,10 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
-#include <windows.h>
 #include <ctype.h>
-#include <shlwapi.h>
 #include "ntapi.h"
+#include <shlwapi.h>
 #include "misc.h"
 
 ULONG_PTR parent_process_id() // By Napalm @ NetCore2K (rohitab.com)
@@ -43,12 +42,15 @@ ULONG_PTR parent_process_id() // By Napalm @ NetCore2K (rohitab.com)
 
 DWORD pid_from_process_handle(HANDLE process_handle)
 {
-    PROCESS_BASIC_INFORMATION pbi = {}; ULONG ulSize;
+	PROCESS_BASIC_INFORMATION pbi;
+	ULONG ulSize;
     LONG (WINAPI *NtQueryInformationProcess)(HANDLE ProcessHandle,
         ULONG ProcessInformationClass, PVOID ProcessInformation,
         ULONG ProcessInformationLength, PULONG ReturnLength);
 
-    *(FARPROC *) &NtQueryInformationProcess = GetProcAddress(
+	memset(&pbi, 0, sizeof(pbi));
+	
+	*(FARPROC *) &NtQueryInformationProcess = GetProcAddress(
         GetModuleHandle("ntdll"), "NtQueryInformationProcess");
 
     if(NtQueryInformationProcess != NULL && NtQueryInformationProcess(
@@ -61,10 +63,13 @@ DWORD pid_from_process_handle(HANDLE process_handle)
 
 DWORD pid_from_thread_handle(HANDLE thread_handle)
 {
-    THREAD_BASIC_INFORMATION tbi = {}; ULONG ulSize;
+	THREAD_BASIC_INFORMATION tbi;
+	ULONG ulSize;
     LONG (WINAPI *NtQueryInformationThread)(HANDLE ThreadHandle,
         ULONG ThreadInformationClass, PVOID ThreadInformation,
         ULONG ThreadInformationLength, PULONG ReturnLength);
+
+	memset(&tbi, 0, sizeof(tbi));
 
     *(FARPROC *) &NtQueryInformationThread = GetProcAddress(
         GetModuleHandle("ntdll"), "NtQueryInformationThread");
@@ -148,7 +153,13 @@ void hide_module_from_peb(HMODULE module_handle)
 uint32_t path_from_handle(HANDLE handle,
     wchar_t *path, uint32_t path_buffer_len)
 {
-    static NTSTATUS (WINAPI *pNtQueryVolumeInformationFile)(
+	IO_STATUS_BLOCK status;
+	FILE_FS_VOLUME_INFORMATION volume_information;
+	unsigned char buf[FILE_NAME_INFORMATION_REQUIRED_SIZE];
+	FILE_NAME_INFORMATION *name_information = (FILE_NAME_INFORMATION *)buf;
+	unsigned long serial_number;
+
+	static NTSTATUS(WINAPI *pNtQueryVolumeInformationFile)(
         _In_   HANDLE FileHandle,
         _Out_  PIO_STATUS_BLOCK IoStatusBlock,
         _Out_  PVOID FsInformation,
@@ -156,29 +167,25 @@ uint32_t path_from_handle(HANDLE handle,
         _In_   FS_INFORMATION_CLASS FsInformationClass
     );
 
-    if(pNtQueryVolumeInformationFile == NULL) {
+	static NTSTATUS(WINAPI *pNtQueryInformationFile)(
+		_In_   HANDLE FileHandle,
+		_Out_  PIO_STATUS_BLOCK IoStatusBlock,
+		_Out_  PVOID FileInformation,
+		_In_   ULONG Length,
+		_In_   FILE_INFORMATION_CLASS FileInformationClass
+		);
+	
+	if (pNtQueryVolumeInformationFile == NULL) {
         *(FARPROC *) &pNtQueryVolumeInformationFile = GetProcAddress(
             GetModuleHandle("ntdll"), "NtQueryVolumeInformationFile");
     }
-
-    static NTSTATUS (WINAPI *pNtQueryInformationFile)(
-        _In_   HANDLE FileHandle,
-        _Out_  PIO_STATUS_BLOCK IoStatusBlock,
-        _Out_  PVOID FileInformation,
-        _In_   ULONG Length,
-        _In_   FILE_INFORMATION_CLASS FileInformationClass
-    );
 
     if(pNtQueryInformationFile == NULL) {
         *(FARPROC *) &pNtQueryInformationFile = GetProcAddress(
             GetModuleHandle("ntdll"), "NtQueryInformationFile");
     }
 
-    IO_STATUS_BLOCK status = {};
-    FILE_FS_VOLUME_INFORMATION volume_information;
-
-    unsigned char buf[FILE_NAME_INFORMATION_REQUIRED_SIZE];
-    FILE_NAME_INFORMATION *name_information = (FILE_NAME_INFORMATION *) buf;
+	memset(&status, 0, sizeof(status));
 
     // get the volume serial number of the directory handle
     if(NT_SUCCESS(pNtQueryVolumeInformationFile(handle, &status,
@@ -186,8 +193,6 @@ uint32_t path_from_handle(HANDLE handle,
             FileFsVolumeInformation)) == 0) {
         return 0;
     }
-
-    unsigned long serial_number;
 
     // enumerate all harddisks in order to find the
     // corresponding serial number

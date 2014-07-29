@@ -16,6 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifdef _MSC_VER
+#include <WinSock2.h>
+#endif
 #include <windows.h>
 #include <stdint.h>
 
@@ -26,6 +29,7 @@ typedef LONG NTSTATUS;
 
 #define NT_SUCCESS(Status) ((NTSTATUS)(Status) >= 0)
 
+#ifndef _MSC_VER
 #define __out
 #define __in
 #define __in_opt
@@ -39,6 +43,14 @@ typedef LONG NTSTATUS;
 #define _Out_opt_
 #define _Inout_opt_
 #define _Reserved_
+#endif
+
+#ifdef _MSC_VER
+#define alloca _alloca
+#define wcsnicmp _wcsnicmp
+#define wcsicmp _wcsicmp
+#define snprintf _snprintf
+#endif
 
 typedef struct _STRING {
     USHORT Length;
@@ -72,6 +84,7 @@ typedef struct _OBJECT_ATTRIBUTES {
 // for now..
 typedef void *PIO_APC_ROUTINE;
 
+#ifndef _MSC_VER
 #define ARRAYSIZE(a) (sizeof(a) / sizeof(*(a)))
 
 typedef void *HINTERNET;
@@ -97,6 +110,7 @@ typedef struct addrinfoW {
   struct sockaddr  *ai_addr;
   struct addrinfoW  *ai_next;
 } ADDRINFOW, *PADDRINFOW;
+#endif
 
 typedef enum _KEY_INFORMATION_CLASS {
   KeyBasicInformation            = 0,
@@ -383,6 +397,7 @@ typedef struct _PEB {
     ULONG   SessionId;
 } PEB, *PPEB;
 
+#ifndef _MSC_VER
 static inline unsigned int __readfsdword(unsigned int index)
 {
     unsigned int ret;
@@ -394,6 +409,7 @@ static inline void __writefsdword(unsigned int index, unsigned int value)
 {
     __asm__("movl %0, %%fs:(%1)" :: "r" (value), "r" (index));
 }
+#endif
 
 typedef struct _SECTION_IMAGE_INFORMATION {
     VOID*               TransferAddress;
@@ -467,7 +483,7 @@ typedef struct _FILE_FS_VOLUME_INFORMATION {
     WCHAR         VolumeLabel[1];
 } FILE_FS_VOLUME_INFORMATION, *PFILE_FS_VOLUME_INFORMATION;
 
-static inline UNICODE_STRING *unistr_from_objattr(OBJECT_ATTRIBUTES *obj)
+static __inline UNICODE_STRING *unistr_from_objattr(OBJECT_ATTRIBUTES *obj)
 {
     return obj != NULL ? obj->ObjectName : NULL;
 }

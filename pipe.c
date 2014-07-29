@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
-#include <windows.h>
 #include "ntapi.h"
 #include "pipe.h"
 #include "utf8.h"
@@ -127,7 +126,7 @@ int pipe(const char *fmt, ...)
     va_start(args, fmt);
     int len = _pipe_sprintf(NULL, fmt, args);
     if(len > 0) {
-        char buf[len + 1];
+        char *buf = alloca(len + 1);
         _pipe_sprintf(buf, fmt, args);
         va_end(args);
 
@@ -143,7 +142,7 @@ int pipe2(void *out, int *outlen, const char *fmt, ...)
     va_start(args, fmt);
     int len = _pipe_sprintf(NULL, fmt, args);
     if(len > 0) {
-        char buf[len + 1];
+        char *buf = alloca(len + 1);
         _pipe_sprintf(buf, fmt, args);
         va_end(args);
 

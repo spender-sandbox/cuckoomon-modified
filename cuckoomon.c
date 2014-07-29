@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
-#include <windows.h>
 #include "ntapi.h"
 #include "misc.h"
 #include "hooking.h"
@@ -366,6 +365,10 @@ void set_hooks()
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
+	unsigned int i;
+	DWORD pids[MAX_PROTECTED_PIDS];
+	unsigned int length = sizeof(pids);
+
     if(dwReason == DLL_PROCESS_ATTACH) {
         // make sure advapi32 is loaded
         LoadLibrary("advapi32");
@@ -379,9 +382,8 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         hide_module_from_peb(hModule);
 
         // obtain all protected pids
-        int pids[MAX_PROTECTED_PIDS], length = sizeof(pids);
         pipe2(pids, &length, "GETPIDS");
-        for (int i = 0; i < length / sizeof(pids[0]); i++) {
+        for (i = 0; i < length / sizeof(pids[0]); i++) {
             add_protected_pid(pids[i]);
         }
 

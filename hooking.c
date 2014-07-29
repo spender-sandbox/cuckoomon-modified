@@ -18,11 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <stddef.h>
-#include <windows.h>
+#include "ntapi.h"
 #include "hooking.h"
 #include "distorm.h"
 #include "mnemonics.h"
-#include "ntapi.h"
 #include "ignore.h"
 
 // this number can be changed if required to do so
@@ -70,7 +69,7 @@ static int is_interesting_backtrace(unsigned int ebp)
     while (ebp >= bottom && ebp < top && count-- != 0) {
 
         // obtain the return address and the next value of ebp
-        unsigned int addr = *(unsigned int *)(ebp + 4);
+        ULONG_PTR addr = *(unsigned int *)(ebp + 4);
         ebp = *(unsigned int *) ebp;
 
         // if this return address is *not* to be ignored, then it's

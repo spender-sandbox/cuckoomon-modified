@@ -17,16 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
-#include <windows.h>
-#include "hooking.h"
 #include "ntapi.h"
+#include "hooking.h"
 #include "log.h"
 #include "pipe.h"
 
 // only skip Sleep()'s the first five seconds
 #define MAX_SLEEP_SKIP_DIFF 5000
-
-static IS_SUCCESS_NTSTATUS();
 
 // skipping sleep calls is done while this variable is set to true
 static int sleep_skip_active = 1;
@@ -53,16 +50,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
             time_skipped.QuadPart += -DelayInterval->QuadPart;
 
             // notify how much we've skipped
-            unsigned long milli = -DelayInterval->QuadPart / 10000;
-            LOQ("ls", "Milliseconds", milli, "Status", "Skipped");
+            unsigned long milli = (unsigned long)(-DelayInterval->QuadPart / 10000);
+            LOQ_ntstatus("ls", "Milliseconds", milli, "Status", "Skipped");
             return ret;
         }
         else {
             sleep_skip_active = 0;
         }
     }
-    unsigned long milli = -DelayInterval->QuadPart / 10000;
-    LOQ2("l", "Milliseconds", milli);
+    unsigned long milli = (unsigned long)(-DelayInterval->QuadPart / 10000);
+    LOQ2_ntstatus("l", "Milliseconds", milli);
     return Old_NtDelayExecution(Alertable, DelayInterval);
 }
 
@@ -102,7 +99,7 @@ HOOKDEF(DWORD, WINAPI, GetTickCount,
     DWORD ret = Old_GetTickCount();
 
     // add the time we've skipped
-    ret += time_skipped.QuadPart / 10000;
+    ret += (DWORD)(time_skipped.QuadPart / 10000);
 
     return ret;
 }

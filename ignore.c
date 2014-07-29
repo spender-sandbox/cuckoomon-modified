@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
-#include <windows.h>
 #include "ntapi.h"
 #include "ignore.h"
 #include "misc.h"
@@ -27,17 +26,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // Protected Processes
 //
 
-static unsigned long g_pids[MAX_PROTECTED_PIDS];
-static unsigned long g_pid_count;
+static DWORD g_pids[MAX_PROTECTED_PIDS];
+static DWORD g_pid_count;
 
-void add_protected_pid(unsigned long pid)
+void add_protected_pid(DWORD pid)
 {
     g_pids[g_pid_count++] = pid;
 }
 
-int is_protected_pid(unsigned long pid)
+int is_protected_pid(DWORD pid)
 {
-    for (unsigned long i = 0; i < g_pid_count; i++) {
+	DWORD i;
+
+    for (i = 0; i < g_pid_count; i++) {
         if(pid == g_pids[i]) {
             return 1;
         }
@@ -67,7 +68,7 @@ static struct _ignored_file_t {
     S("\\Device\\", FLAG_BEGINS_WITH),
 };
 
-int is_ignored_file_unicode(const wchar_t *fname, int length)
+int is_ignored_file_unicode(const wchar_t *fname, unsigned int length)
 {
     struct _ignored_file_t *f = g_ignored_files;
     for (unsigned int i = 0; i < ARRAYSIZE(g_ignored_files); i++, f++) {
@@ -145,7 +146,7 @@ static void ret_set_flags(unsigned int addr, unsigned int ignored)
 }
 */
 
-int is_ignored_retaddr(unsigned int addr)
+int is_ignored_retaddr(ULONG_PTR addr)
 {
     return 0;
 }

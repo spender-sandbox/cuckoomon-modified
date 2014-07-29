@@ -64,22 +64,45 @@ void log_free();
 int log_resolve_index(const char *funcname, int index);
 extern const char *logtbl[][2];
 
-#define LOQ(fmt, ...) { static int _index; if(_index == 0) \
+#define _LOQ(eval, fmt, ...) do { static int _index; if(_index == 0) \
     _index = log_resolve_index(&__FUNCTION__[4], 0); loq(_index, \
-    &__FUNCTION__[4], is_success(ret), (int) ret, fmt, ##__VA_ARGS__); }
+    &__FUNCTION__[4], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)
 
-#define LOQ2(fmt, ...) { static int _index; if(_index == 0) \
+#define LOQ_ntstatus(fmt, ...) _LOQ(NT_SUCCESS(ret), fmt, ##__VA_ARGS__)
+#define LOQ_nonnull(fmt, ...) _LOQ(ret != NULL, fmt, ##__VA_ARGS__)
+#define LOQ_handle(fmt, ...) _LOQ(ret != NULL && ret != INVALID_HANDLE_VALUE, fmt, ##__VA_ARGS__)
+#define LOQ_void(fmt, ...) _LOQ(TRUE, fmt, ##__VA_ARGS__)
+#define LOQ_bool(fmt, ...) _LOQ(ret != FALSE, fmt, ##__VA_ARGS__)
+#define LOQ_hresult(fmt, ...) _LOQ(ret == S_OK, fmt, ##__VA_ARGS__)
+#define LOQ_zero(fmt, ...) _LOQ(ret == 0, fmt, ##__VA_ARGS__)
+#define LOQ_nonzero(fmt, ...) _LOQ(ret != 0, fmt, ##__VA_ARGS__)
+#define LOQ_nonnegone(fmt, ...) _LOQ(ret != -1, fmt, ##__VA_ARGS__)
+#define LOQ_sockerr(fmt, ...) _LOQ(ret != SOCKET_ERROR, fmt, ##__VA_ARGS__)
+#define LOQ_sock(fmt, ...) _LOQ(ret != INVALID_SOCKET, fmt, ##__VA_ARGS__)
+
+#define _LOQ2(eval, fmt, ...) do { static int _index; if(_index == 0) \
     _index = log_resolve_index(&__FUNCTION__[4], 1); loq(_index, \
-    &__FUNCTION__[4], is_success(ret), (int) ret, fmt, ##__VA_ARGS__); }
+    &__FUNCTION__[4], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)
 
+#define LOQ2_ntstatus(fmt, ...) _LOQ2(NT_SUCCESS(ret), fmt, ##__VA_ARGS__)
+#define LOQ2_zero(fmt, ...) _LOQ2(ret == 0, fmt, ##__VA_ARGS__)
+#define LOQ2_nonnull(fmt, ...) _LOQ2(ret != NULL, fmt, ##__VA_ARGS__)
+#define LOQ2_sockerr(fmt, ...) _LOQ2(ret != SOCKET_ERROR, fmt, ##__VA_ARGS__)
+
+/*
 #define LOQ3(fmt, ...) { static int _index; if(_index == 0) \
     _index = log_resolve_index(&__FUNCTION__[4], 2); loq(_index, \
     &__FUNCTION__[4], is_success(ret), (int) ret, fmt, ##__VA_ARGS__); }
+*/
 
-#define LOQspecial(fmt, ...) { static int _index; if(_index == 0) \
+#define _LOQspecial(eval, fmt, ...) do { static int _index; if(_index == 0) \
     _index = log_resolve_index(&__FUNCTION__[5], 0); loq(_index, \
-    &__FUNCTION__[5], is_success(ret), (int) ret, fmt, ##__VA_ARGS__); }
+    &__FUNCTION__[5], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)
 
+#define LOQspecial_ntstatus(fmt, ...) _LOQspecial(NT_SUCCESS(ret), fmt, ##__VA_ARGS__)
+#define LOQspecial_bool(fmt, ...) _LOQspecial(ret != FALSE, fmt, ##__VA_ARGS__)
+
+/*
 #define IS_SUCCESS_NTSTATUS() int is_success(NTSTATUS ret) { \
     return NT_SUCCESS(ret); }
 #define IS_SUCCESS_BOOL() int is_success(BOOL ret) { \
@@ -107,6 +130,7 @@ extern const char *logtbl[][2];
     return ret == 0; }
 #define IS_SUCCESS_INTM1() int is_success(int ret) { \
     return ret != -1; }
+*/
 
 #define ENSURE_DWORD(param) \
     DWORD _##param = 0; if(param == NULL) param = &_##param
@@ -122,4 +146,4 @@ extern const char *logtbl[][2];
     ENSURE_ULONG(param); else *param = 0
 
 #define ENSURE_CLIENT_ID(param) \
-    CLIENT_ID _##param = {}; if(param == NULL) param = &_##param
+    CLIENT_ID _##param; memset(&_##param, 0, sizeof(_##param)); if (param == NULL) param = &_##param
