@@ -24,9 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utf8.h"
 #include "log.h"
 #include "bson.h"
-#ifndef _MSC_VER
-#include <dirent.h>
-#endif
 
 // the size of the logging buffer
 #define BUFFERSIZE 1024 * 1024

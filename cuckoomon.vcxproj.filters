@@ -81,6 +81,9 @@
     <ClCompile Include="utf8.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="logtbl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h">
