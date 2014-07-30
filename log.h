@@ -89,48 +89,12 @@ extern const char *logtbl[][2];
 #define LOQ2_nonnull(fmt, ...) _LOQ2(ret != NULL, fmt, ##__VA_ARGS__)
 #define LOQ2_sockerr(fmt, ...) _LOQ2(ret != SOCKET_ERROR, fmt, ##__VA_ARGS__)
 
-/*
-#define LOQ3(fmt, ...) { static int _index; if(_index == 0) \
-    _index = log_resolve_index(&__FUNCTION__[4], 2); loq(_index, \
-    &__FUNCTION__[4], is_success(ret), (int) ret, fmt, ##__VA_ARGS__); }
-*/
-
 #define _LOQspecial(eval, fmt, ...) do { static int _index; if(_index == 0) \
     _index = log_resolve_index(&__FUNCTION__[5], 0); loq(_index, \
     &__FUNCTION__[5], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)
 
 #define LOQspecial_ntstatus(fmt, ...) _LOQspecial(NT_SUCCESS(ret), fmt, ##__VA_ARGS__)
 #define LOQspecial_bool(fmt, ...) _LOQspecial(ret != FALSE, fmt, ##__VA_ARGS__)
-
-/*
-#define IS_SUCCESS_NTSTATUS() int is_success(NTSTATUS ret) { \
-    return NT_SUCCESS(ret); }
-#define IS_SUCCESS_BOOL() int is_success(BOOL ret) { \
-    return ret != FALSE; }
-#define IS_SUCCESS_HHOOK() int is_success(HHOOK ret) { \
-    return ret != NULL; }
-#define IS_SUCCESS_HINTERNET() int is_success(HINTERNET ret) { \
-    return ret != NULL; }
-#define IS_SUCCESS_HRESULT() int is_success(HRESULT ret) { \
-    return ret == S_OK; }
-#define IS_SUCCESS_HANDLE() int is_success(HANDLE ret) { \
-    return ret != NULL; }
-#define IS_SUCCESS_HANDLE2() int is_success(HANDLE ret) { \
-    return ret != NULL && ret != INVALID_HANDLE_VALUE; }
-#define IS_SUCCESS_VOID() int is_success(int ret) { return TRUE; }
-#define IS_SUCCESS_LONGREG() int is_success(LONG ret) { \
-    return ret == ERROR_SUCCESS; }
-#define IS_SUCCESS_SCHANDLE() int is_success(SC_HANDLE ret) { \
-    return ret != NULL; }
-#define IS_SUCCESS_DWORDTHREAD() int is_success(DWORD ret) { \
-    return ret != (DWORD) -1; }
-#define IS_SUCCESS_HWND() int is_success(HWND ret) { \
-    return ret != NULL; }
-#define IS_SUCCESS_ZERO() int is_success(int ret) { \
-    return ret == 0; }
-#define IS_SUCCESS_INTM1() int is_success(int ret) { \
-    return ret != -1; }
-*/
 
 #define ENSURE_DWORD(param) \
     DWORD _##param = 0; if(param == NULL) param = &_##param
