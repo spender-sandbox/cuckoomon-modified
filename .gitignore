@@ -14,3 +14,4 @@ bson/Release
 distorm3.2-package/src/Release
 objects
 Release
+tests/logging-test.*

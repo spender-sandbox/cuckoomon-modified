@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{26ff71d4-d560-4b3c-8cf4-35a40821d876}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="config.c">
@@ -83,6 +86,81 @@
     </ClCompile>
     <ClCompile Include="logtbl.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\apc-inject.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\apihooks.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\bind-port.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\blacklist.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\child-sleep.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\crash.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\create-file.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\delete-file.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\getcursorpos.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\logging.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\lookup.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\migrate-process.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\mitigate-process.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\mousebutton-count.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\open-protected-pid.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\peb-check.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\sleep.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\sleep2.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\startup-time.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\suspended-process.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\test-dns.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\test-lasterr.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\test-lde.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\wininet.c">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\write-file.c">
+      <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
