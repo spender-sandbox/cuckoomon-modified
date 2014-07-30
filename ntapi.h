@@ -50,6 +50,9 @@ typedef LONG NTSTATUS;
 #define wcsnicmp _wcsnicmp
 #define wcsicmp _wcsicmp
 #define snprintf _snprintf
+
+// Disable warning for deprecated GetVersionEx
+#pragma warning( disable : 4996)
 #endif
 
 typedef struct _STRING {
