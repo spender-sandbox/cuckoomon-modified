@@ -33,8 +33,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateKey,
 ) {
     NTSTATUS ret = Old_NtCreateKey(KeyHandle, DesiredAccess, ObjectAttributes,
         TitleIndex, Class, CreateOptions, Disposition);
-    LOQ_ntstatus("Ploo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
-        "ObjectAttributes", unistr_from_objattr(ObjectAttributes),
+    LOQ_ntstatus("Plpoo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
+		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
         "Class", Class);
     return ret;
 }
@@ -45,8 +46,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenKey,
     __in   POBJECT_ATTRIBUTES ObjectAttributes
 ) {
     NTSTATUS ret = Old_NtOpenKey(KeyHandle, DesiredAccess, ObjectAttributes);
-    LOQ_ntstatus("Plo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
-        "ObjectAttributes", unistr_from_objattr(ObjectAttributes));
+    LOQ_ntstatus("Plpo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
+		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes));
     return ret;
 }
 
@@ -58,8 +60,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenKeyEx,
 ) {
     NTSTATUS ret = Old_NtOpenKeyEx(KeyHandle, DesiredAccess, ObjectAttributes,
         OpenOptions);
-    LOQ_ntstatus("Plo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
-        "ObjectAttributes", unistr_from_objattr(ObjectAttributes));
+    LOQ_ntstatus("Plpo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
+		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes));
     return ret;
 }
 
@@ -214,8 +217,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtLoadKey,
     __in  POBJECT_ATTRIBUTES SourceFile
 ) {
     NTSTATUS ret = Old_NtLoadKey(TargetKey, SourceFile);
-    LOQ_ntstatus("oO", "TargetKey", unistr_from_objattr(TargetKey),
-        "SourceFile", SourceFile);
+    LOQ_ntstatus("poO","TargetKeyHandle", handle_from_objattr(TargetKey),
+		"TargetKeyName", unistr_from_objattr(TargetKey),
+		"SourceFile", SourceFile);
     return ret;
 }
 
@@ -225,8 +229,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtLoadKey2,
     __in  ULONG Flags
 ) {
     NTSTATUS ret = Old_NtLoadKey2(TargetKey, SourceFile, Flags);
-    LOQ_ntstatus("oOl", "TargetKey", unistr_from_objattr(TargetKey),
-        "SourceFile", SourceFile, "Flags", Flags);
+    LOQ_ntstatus("poOl", "TargetKeyHandle", handle_from_objattr(TargetKey),
+		"TargetKeyName", unistr_from_objattr(TargetKey),
+		"SourceFile", SourceFile, "Flags", Flags);
     return ret;
 }
 
@@ -238,9 +243,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtLoadKeyEx,
 ) {
     NTSTATUS ret = Old_NtLoadKeyEx(TargetKey, SourceFile, Flags,
         TrustClassKey);
-    LOQ_ntstatus("poOl", "TrustClassKey", TrustClassKey,
-        "TargetKey", unistr_from_objattr(TargetKey),
-        "SourceFile", SourceFile, "Flags", Flags);
+    LOQ_ntstatus("ppoOl", "TrustClassKey", TrustClassKey,
+        "TargetKeyHandle", handle_from_objattr(TargetKey),
+		"TargetKeyName", unistr_from_objattr(TargetKey),
+		"SourceFile", SourceFile, "Flags", Flags);
     return ret;
 }
 

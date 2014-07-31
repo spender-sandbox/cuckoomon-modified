@@ -491,4 +491,9 @@ static __inline UNICODE_STRING *unistr_from_objattr(OBJECT_ATTRIBUTES *obj)
     return obj != NULL ? obj->ObjectName : NULL;
 }
 
+static __inline HANDLE handle_from_objattr(OBJECT_ATTRIBUTES *obj)
+{
+	return obj != NULL ? obj->RootDirectory : (HANDLE)NULL;
+}
+
 #endif
