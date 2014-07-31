@@ -98,12 +98,13 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
             OBJECT_ATTRIBUTES *obj = va_arg(args, OBJECT_ATTRIBUTES *);
             if(obj == NULL || obj->ObjectName == NULL) return -1;
 
-            wchar_t path[MAX_PATH_PLUS_TOLERANCE]; int length;
-            length = path_from_object_attributes(obj, path, (unsigned int) MAX_PATH_PLUS_TOLERANCE);
+            wchar_t path[MAX_PATH_PLUS_TOLERANCE];
+			wchar_t absolutepath[32768];
+            path_from_object_attributes(obj, path, (unsigned int) MAX_PATH_PLUS_TOLERANCE);
 
-            length = ensure_absolute_path(path, path, length);
+            ensure_absolute_unicode_path(absolutepath, path);
 
-            ret += _pipe_unicode(&out, path, length);
+            ret += _pipe_unicode(&out, absolutepath, lstrlenW(absolutepath));
         }
         else if(*fmt == 'd') {
             char s[32];

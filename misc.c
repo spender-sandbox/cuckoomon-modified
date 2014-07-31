@@ -249,26 +249,30 @@ uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
     return length > buffer_length ? buffer_length : length;
 }
 
-int ensure_absolute_path(wchar_t *out, const wchar_t *in, int length)
+char *ensure_absolute_ascii_path(char *out, const char *in)
 {
-    if(!wcsncmp(in, L"\\??\\", 4)) {
-        length -= 4, in += 4;
-        wcsncpy(out, in, length < MAX_PATH ? length : MAX_PATH);
-        return out[length] = 0, length;
-    }
-    else if(in[1] != ':' || (in[2] != '\\' && in[2] != '/')) {
-        wchar_t cur_dir[MAX_PATH], fname[MAX_PATH];
-        GetCurrentDirectoryW(ARRAYSIZE(cur_dir), cur_dir);
+	char tmpout[MAX_PATH];
 
-        // ensure the filename is zero-terminated
-        wcsncpy(fname, in, length < MAX_PATH ? length : MAX_PATH);
-        fname[length] = 0;
+	GetFullPathNameA(in, MAX_PATH, tmpout, NULL);
+	GetLongPathNameA(tmpout, out, MAX_PATH);
+	return out;
+}
 
-        PathCombineW(out, cur_dir, fname);
-        return lstrlenW(out);
-    }
-    else {
-        wcsncpy(out, in, length < MAX_PATH ? length : MAX_PATH);
-        return out[length] = 0, length;
-    }
+wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
+{
+	wchar_t tmpout[32768];
+
+	if (wcsncmp(in, L"\\\\?\\", 4)) {
+		wchar_t tmpout2[32768];
+
+		wcscpy(tmpout2, L"\\\\?\\");
+		wcsncat(tmpout2, in, 32768 - 4);
+		GetFullPathNameW(tmpout2, 32768, tmpout, NULL);
+		GetLongPathNameW(tmpout, out, 32768);
+	} else {
+		GetFullPathNameW(in, 32768, tmpout, NULL);
+		GetLongPathNameW(tmpout, out, 32768);
+	}
+
+	return out;
 }

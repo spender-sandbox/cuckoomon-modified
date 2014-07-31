@@ -30,7 +30,8 @@ uint32_t path_from_handle(HANDLE handle,
 uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
     wchar_t *path, uint32_t buffer_length);
 
-int ensure_absolute_path(wchar_t *out, const wchar_t *in, int length);
+char *ensure_absolute_ascii_path(char *out, const char *in);
+wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in);
 
 // imported but for some doesn't show up when #including string.h etc
 int wcsnicmp(const wchar_t *a, const wchar_t *b, size_t len);

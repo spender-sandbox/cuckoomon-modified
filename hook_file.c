@@ -73,14 +73,14 @@ static void new_file(const UNICODE_STRING *obj)
 }
 
 static void cache_file(HANDLE file_handle, const wchar_t *path,
-    unsigned int length, unsigned int attributes)
+    unsigned int length_in_chars, unsigned int attributes)
 {
     file_record_t *r = lookup_add(&g_files, (unsigned int) file_handle,
-        sizeof(file_record_t) + length * sizeof(wchar_t) + sizeof(wchar_t));
+        sizeof(file_record_t) + length_in_chars * sizeof(wchar_t) + sizeof(wchar_t));
 
     *r = (file_record_t) {
         .attributes = attributes,
-        .length     = length,
+        .length     = length_in_chars,
     };
 
     wcsncpy(r->filename, path, r->length + 1);
@@ -109,15 +109,16 @@ static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 {
     if(is_directory_objattr(obj) == 0 && is_ignored_file_objattr(obj) == 0) {
 
-        wchar_t fname[MAX_PATH_PLUS_TOLERANCE]; uint32_t length;
+        wchar_t fname[MAX_PATH_PLUS_TOLERANCE];
+		wchar_t absolutename[32768];
 
-        length = path_from_object_attributes(obj,
+        path_from_object_attributes(obj,
             fname, MAX_PATH_PLUS_TOLERANCE);
 
-        length = ensure_absolute_path(fname, fname, length);
+        ensure_absolute_unicode_path(absolutename, fname);
 
         // cache this file
-        cache_file(file_handle, fname, length, obj->Attributes);
+        cache_file(file_handle, absolutename, lstrlenW(absolutename), obj->Attributes);
     }
 }
 
@@ -289,8 +290,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetInformationFile,
             *(BOOLEAN *) FileInformation != FALSE) {
 
         wchar_t path[MAX_PATH_PLUS_TOLERANCE];
+		wchar_t absolutepath[32768];
         path_from_handle(FileHandle, path, (unsigned int) MAX_PATH_PLUS_TOLERANCE);
-        pipe("FILE_DEL:%Z", path);
+		ensure_absolute_unicode_path(absolutepath, path);
+        pipe("FILE_DEL:%Z", absolutepath);
     }
 
     NTSTATUS ret = Old_NtSetInformationFile(FileHandle, IoStatusBlock,
@@ -329,7 +332,7 @@ HOOKDEF(BOOL, WINAPI, CreateDirectoryW,
     __in_opt  LPSECURITY_ATTRIBUTES lpSecurityAttributes
 ) {
     BOOL ret = Old_CreateDirectoryW(lpPathName, lpSecurityAttributes);
-    LOQ_bool("u", "DirectoryName", lpPathName);
+    LOQ_bool("F", "DirectoryName", lpPathName);
     return ret;
 }
 
@@ -340,7 +343,7 @@ HOOKDEF(BOOL, WINAPI, CreateDirectoryExW,
 ) {
     BOOL ret = Old_CreateDirectoryExW(lpTemplateDirectory, lpNewDirectory,
         lpSecurityAttributes);
-    LOQ_bool("u", "DirectoryName", lpNewDirectory);
+    LOQ_bool("F", "DirectoryName", lpNewDirectory);
     return ret;
 }
 
@@ -348,7 +351,7 @@ HOOKDEF(BOOL, WINAPI, RemoveDirectoryA,
     __in  LPCTSTR lpPathName
 ) {
     BOOL ret = Old_RemoveDirectoryA(lpPathName);
-    LOQ_bool("s", "DirectoryName", lpPathName);
+    LOQ_bool("f", "DirectoryName", lpPathName);
     return ret;
 }
 
@@ -356,7 +359,7 @@ HOOKDEF(BOOL, WINAPI, RemoveDirectoryW,
     __in  LPWSTR lpPathName
 ) {
     BOOL ret = Old_RemoveDirectoryW(lpPathName);
-    LOQ_bool("u", "DirectoryName", lpPathName);
+    LOQ_bool("F", "DirectoryName", lpPathName);
     return ret;
 }
 
@@ -369,7 +372,7 @@ HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
 ) {
     BOOL ret = Old_MoveFileWithProgressW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, dwFlags);
-    LOQ_bool("uu", "ExistingFileName", lpExistingFileName,
+    LOQ_bool("FF", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName);
     if(ret != FALSE) {
         pipe("FILE_MOVE:%Z::%Z", lpExistingFileName, lpNewFileName);
@@ -387,7 +390,7 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
 ) {
     HANDLE ret = Old_FindFirstFileExA(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
-    LOQ_nonnull("s", "FileName", lpFileName);
+    LOQ_nonnull("f", "FileName", lpFileName);
     return ret;
 }
 
@@ -401,7 +404,7 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
 ) {
     HANDLE ret = Old_FindFirstFileExW(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
-    LOQ_nonnull("u", "FileName", lpFileName);
+    LOQ_nonnull("F", "FileName", lpFileName);
     return ret;
 }
 
@@ -412,7 +415,7 @@ HOOKDEF(BOOL, WINAPI, CopyFileA,
 ) {
     BOOL ret = Old_CopyFileA(lpExistingFileName, lpNewFileName,
         bFailIfExists);
-    LOQ_bool("ss", "ExistingFileName", lpExistingFileName,
+    LOQ_bool("ff", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName);
     return ret;
 }
@@ -424,7 +427,7 @@ HOOKDEF(BOOL, WINAPI, CopyFileW,
 ) {
     BOOL ret = Old_CopyFileW(lpExistingFileName, lpNewFileName,
         bFailIfExists);
-    LOQ_bool("uu", "ExistingFileName", lpExistingFileName,
+    LOQ_bool("FF", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName);
     return ret;
 }
@@ -439,7 +442,7 @@ HOOKDEF(BOOL, WINAPI, CopyFileExW,
 ) {
     BOOL ret = Old_CopyFileExW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
-    LOQ_bool("uul", "ExistingFileName", lpExistingFileName,
+    LOQ_bool("FFl", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName, "CopyFlags", dwCopyFlags);
     return ret;
 }
@@ -447,32 +450,29 @@ HOOKDEF(BOOL, WINAPI, CopyFileExW,
 HOOKDEF(BOOL, WINAPI, DeleteFileA,
     __in  LPCSTR lpFileName
 ) {
-    wchar_t path[MAX_PATH];
+	char path[MAX_PATH];
 
-    // copy ascii to unicode string
-    for (int i = 0; lpFileName[i] != 0 && i < MAX_PATH; i++) {
-        path[i] = lpFileName[i];
-    }
-
-    ensure_absolute_path(path, path, strlen(lpFileName));
-
-    pipe("FILE_DEL:%Z", path);
+	ensure_absolute_ascii_path(path, lpFileName);
+	
+	pipe("FILE_DEL:%z", path);
 
     BOOL ret = Old_DeleteFileA(lpFileName);
-    LOQ_bool("s", "FileName", lpFileName);
+    LOQ_bool("s", "FileName", path);
+
     return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, DeleteFileW,
     __in  LPWSTR lpFileName
 ) {
-    wchar_t path[MAX_PATH];
+	wchar_t path[32768];
 
-    ensure_absolute_path(path, lpFileName, lstrlenW(lpFileName));
+    ensure_absolute_unicode_path(path, lpFileName);
 
     pipe("FILE_DEL:%Z", path);
 
     BOOL ret = Old_DeleteFileW(lpFileName);
-    LOQ_bool("u", "FileName", lpFileName);
+    LOQ_bool("u", "FileName", path);
+
     return ret;
 }

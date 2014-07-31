@@ -24,6 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // The following Format Specifiers are available:
 // s  -> (char *) -> zero-terminated string
 // S  -> (int, char *) -> string with length
+// f  -> (char *) -> zero-terminated ascii filename string (to be normalized)
+// F  -> (wchar_t *) zero-terminated unicode filename string (to be normalized)
 // u  -> (wchar_t *) -> zero-terminated unicode string
 // U  -> (int, wchar_t *) -> unicode string with length
 // b  -> (int, void *) -> memory with a given size (alias for S)

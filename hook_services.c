@@ -93,7 +93,7 @@ HOOKDEF(SC_HANDLE, WINAPI, CreateServiceW,
         lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType,
         dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId,
         lpDependencies, lpServiceStartName, lpPassword);
-    LOQ_nonnull("puu4l3u", "ServiceControlHandle", hSCManager,
+    LOQ_nonnull("puu4lF2u", "ServiceControlHandle", hSCManager,
         "ServiceName", lpServiceName, "DisplayName", lpDisplayName,
         "DesiredAccess", dwDesiredAccess, "ServiceType", dwServiceType,
         "StartType", dwStartType, "ErrorControl", dwErrorControl,

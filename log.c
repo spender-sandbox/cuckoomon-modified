@@ -245,14 +245,14 @@ void loq(int index, const char *name,
             }
 
             //now ignore the values
-            if(key == 's') {
+            if(key == 's' || key == 'f') {
                 (void) va_arg(args, const char *);
             }
             else if(key == 'S') {
                 (void) va_arg(args, int);
                 (void) va_arg(args, const char *);
             }
-            else if(key == 'u') {
+            else if(key == 'u' || key == 'F') {
                 (void) va_arg(args, const wchar_t *);
             }
             else if(key == 'U') {
@@ -342,6 +342,13 @@ void loq(int index, const char *name,
             if(s == NULL) s = "";
             log_string(s, -1);
         }
+		else if (key == 'f') {
+			const char *s = va_arg(args, const char *);
+			char absolutepath[MAX_PATH];
+			if (s == NULL) s = "";
+			ensure_absolute_ascii_path(absolutepath, s);
+			log_string(absolutepath, -1);
+		}
         else if(key == 'S') {
             int len = va_arg(args, int);
             const char *s = va_arg(args, const char *);
@@ -353,7 +360,14 @@ void loq(int index, const char *name,
             if(s == NULL) s = L"";
             log_wstring(s, -1);
         }
-        else if(key == 'U') {
+		else if (key == 'F') {
+			const wchar_t *s = va_arg(args, const wchar_t *);
+			wchar_t absolutepath[32768];
+			if (s == NULL) s = L"";
+			ensure_absolute_unicode_path(absolutepath, s);
+			log_wstring(absolutepath, -1);
+		}
+		else if (key == 'U') {
             int len = va_arg(args, int);
             const wchar_t *s = va_arg(args, const wchar_t *);
             if(s == NULL) { s = L""; len = 0; }
@@ -396,14 +410,14 @@ void loq(int index, const char *name,
                 log_string("", 0);
             }
             else {
-                wchar_t path[MAX_PATH_PLUS_TOLERANCE]; int length;
-
-                length = path_from_object_attributes(
+                wchar_t path[MAX_PATH_PLUS_TOLERANCE];
+				wchar_t absolutepath[32768];
+                path_from_object_attributes(
                         obj, path, MAX_PATH_PLUS_TOLERANCE);
 
-                length = ensure_absolute_path(path, path, length);
+                ensure_absolute_unicode_path(absolutepath, path);
 
-                log_wstring(path, length);
+				log_wstring(absolutepath, lstrlenW(absolutepath));
             }
         }
         else if(key == 'a') {

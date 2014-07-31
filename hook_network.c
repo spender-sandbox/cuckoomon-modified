@@ -33,7 +33,7 @@ HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
 ) {
     HRESULT ret = Old_URLDownloadToFileW(pCaller, szURL, szFileName,
         dwReserved, lpfnCB);
-    LOQ_hresult("uu", "URL", szURL, "FileName", szFileName);
+    LOQ_hresult("uF", "URL", szURL, "FileName", szFileName);
     if(ret == S_OK) {
         pipe("FILE_NEW:%S", szFileName);
     }
