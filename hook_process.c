@@ -156,15 +156,15 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,
     if(is_protected_pid(pid)) {
         NTSTATUS ret = STATUS_ACCESS_DENIED;
         LOQ_ntstatus("ppp", "ProcessHandle", NULL, "DesiredAccess", DesiredAccess,
-            "ProcessIdentifier", &pid);
+            "ProcessIdentifier", pid);
         return STATUS_ACCESS_DENIED;
     }
 
     NTSTATUS ret = Old_NtOpenProcess(ProcessHandle, DesiredAccess,
         ObjectAttributes, ClientId);
-    LOQ2_ntstatus("PpP", "ProcessHandle", ProcessHandle,
+    LOQ2_ntstatus("Ppp", "ProcessHandle", ProcessHandle,
         "DesiredAccess", DesiredAccess,
-        "ProcessIdentifier", &pid);
+        "ProcessIdentifier", pid);
     /*
     if(NT_SUCCESS(ret)) {
         // let's do an extra check here, because the msdn documentation is
