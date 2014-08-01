@@ -329,7 +329,7 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 
 	if (!wcsncmp(out, L"\\\\?\\", 4))
 		memmove(out, out + 4, (lenchars + 1 - 4) * sizeof(wchar_t));
-
+	out[32767] = L'\0';
 	return out;
 
 normal_copy:
