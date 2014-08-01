@@ -390,7 +390,7 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
 ) {
     HANDLE ret = Old_FindFirstFileExA(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
-    LOQ_nonnull("f", "FileName", lpFileName);
+    LOQ_handle("f", "FileName", lpFileName);
     return ret;
 }
 
@@ -404,7 +404,7 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
 ) {
     HANDLE ret = Old_FindFirstFileExW(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
-    LOQ_nonnull("F", "FileName", lpFileName);
+    LOQ_handle("F", "FileName", lpFileName);
     return ret;
 }
 
