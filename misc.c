@@ -252,27 +252,90 @@ uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
 char *ensure_absolute_ascii_path(char *out, const char *in)
 {
 	char tmpout[MAX_PATH];
+	char nonexistent[MAX_PATH];
+	char *pathcomponent;
+	unsigned int nonexistentidx;
+	unsigned int pathcomponentlen;
+	unsigned int lenchars;
 
-	GetFullPathNameA(in, MAX_PATH, tmpout, NULL);
-	GetLongPathNameA(tmpout, out, MAX_PATH);
+	if (!GetFullPathNameA(in, MAX_PATH, tmpout, NULL))
+		goto normal_copy;
+
+	lenchars = 0;
+	nonexistentidx = MAX_PATH - 1;
+	nonexistent[nonexistentidx] = '\0';
+	while (lenchars == 0) {
+		lenchars = GetLongPathNameA(tmpout, out, MAX_PATH);
+		if (!lenchars) {
+			if (GetLastError() != ERROR_FILE_NOT_FOUND)
+				goto normal_copy;
+			pathcomponent = strrchr(tmpout, '\\');
+			pathcomponentlen = strlen(pathcomponent);
+			nonexistentidx -= pathcomponentlen;
+			memcpy(nonexistent + nonexistentidx, pathcomponent, pathcomponentlen * sizeof(char));
+			*pathcomponent = '\0';
+		}
+	}
+	strncat(out, nonexistent + nonexistentidx, MAX_PATH);
+
+	out[MAX_PATH - 1] = '\0';
+
+	return out;
+
+normal_copy:
+	strncpy(out, in, MAX_PATH);
+	out[MAX_PATH - 1] = '\0';
 	return out;
 }
 
 wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 {
 	wchar_t tmpout[32768];
+	wchar_t nonexistent[32768];
+	unsigned int lenchars;
+	unsigned int nonexistentidx;
+	wchar_t *pathcomponent;
+	unsigned int pathcomponentlen;
 
 	if (wcsncmp(in, L"\\\\?\\", 4)) {
 		wchar_t tmpout2[32768];
 
 		wcscpy(tmpout2, L"\\\\?\\");
 		wcsncat(tmpout2, in, 32768 - 4);
-		GetFullPathNameW(tmpout2, 32768, tmpout, NULL);
-		GetLongPathNameW(tmpout, out, 32768);
-	} else {
-		GetFullPathNameW(in, 32768, tmpout, NULL);
-		GetLongPathNameW(tmpout, out, 32768);
+		if (!GetFullPathNameW(tmpout2, 32768, tmpout, NULL))
+			goto normal_copy;
 	}
+	else {
+		if (!GetFullPathNameW(in, 32768, tmpout, NULL))
+			goto normal_copy;
+	}
+	
+	lenchars = 0;
+	nonexistentidx = 32767;
+	nonexistent[nonexistentidx] = L'\0';
+	while (lenchars == 0) {
+		lenchars = GetLongPathNameW(tmpout, out, 32768);
+		if (!lenchars) {
+			if (GetLastError() != ERROR_FILE_NOT_FOUND)
+				goto normal_copy;
+			pathcomponent = wcsrchr(tmpout, L'\\');
+			pathcomponentlen = lstrlenW(pathcomponent);
+			nonexistentidx -= pathcomponentlen;
+			memcpy(nonexistent + nonexistentidx, pathcomponent, pathcomponentlen * sizeof(wchar_t));
+			*pathcomponent = L'\0';
+		}
+	}
+	wcsncat(out, nonexistent + nonexistentidx, 32768);
 
+	if (!wcsncmp(out, L"\\\\?\\", 4))
+		memmove(out, out + 4, (lenchars + 1 - 4) * sizeof(wchar_t));
+
+	return out;
+
+normal_copy:
+	wcsncpy(out, in, 32768);
+	if (!wcsncmp(out, L"\\\\?\\", 4))
+		memmove(out, out + 4, (lstrlenW(out) + 1 - 4) * sizeof(wchar_t));
+	out[32767] = L'\0';
 	return out;
 }
