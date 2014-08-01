@@ -276,7 +276,7 @@ char *ensure_absolute_ascii_path(char *out, const char *in)
 			*pathcomponent = '\0';
 		}
 	}
-	strncat(out, nonexistent + nonexistentidx, MAX_PATH);
+	strncat(out, nonexistent + nonexistentidx, MAX_PATH - strlen(out));
 
 	out[MAX_PATH - 1] = '\0';
 
@@ -325,7 +325,7 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 			*pathcomponent = L'\0';
 		}
 	}
-	wcsncat(out, nonexistent + nonexistentidx, 32768);
+	wcsncat(out, nonexistent + nonexistentidx, 32768 - lstrlenW(out));
 
 	if (!wcsncmp(out, L"\\\\?\\", 4))
 		memmove(out, out + 4, (lenchars + 1 - 4) * sizeof(wchar_t));
