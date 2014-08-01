@@ -235,7 +235,7 @@ static hook_t g_hooks[] = {
     HOOK(user32, ExitWindowsEx),
     HOOK(kernel32, IsDebuggerPresent),
     HOOK(advapi32, LookupPrivilegeValueW),
-    //HOOK(ntdll, NtClose),
+    HOOK(ntdll, NtClose),
     HOOK(kernel32, WriteConsoleA),
     HOOK(kernel32, WriteConsoleW),
     HOOK(user32, GetSystemMetrics),
