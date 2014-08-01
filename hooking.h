@@ -115,7 +115,7 @@ enum {
 // functions, therefore we have this macro which copies it to the stack.
 // (so we can use the unicode_string after executing the original function)
 #define COPY_UNICODE_STRING(local_name, param_name) \
-    UNICODE_STRING local_name = {0}; wchar_t local_name##_buf[260]; \
+    UNICODE_STRING local_name = {0}; wchar_t local_name##_buf[260] = {0}; \
     local_name.Buffer = local_name##_buf; \
     if(param_name != NULL && param_name->MaximumLength < 520) { \
         local_name.Length = param_name->Length; \
