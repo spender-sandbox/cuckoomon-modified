@@ -347,3 +347,65 @@ normal_copy:
 	out[32767] = L'\0';
 	return out;
 }
+
+wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION keybuf, unsigned int len)
+{
+	static NTSTATUS(WINAPI *pNtQueryKey)(
+		HANDLE  KeyHandle,
+		int KeyInformationClass,
+		PVOID  KeyInformation,
+		ULONG  Length,
+		PULONG  ResultLength);
+	NTSTATUS status;
+	ULONG reslen;
+	unsigned int maxlen = len - sizeof(KEY_NAME_INFORMATION);
+	unsigned int maxlen_chars = maxlen / sizeof(WCHAR);
+	unsigned int remaining;
+	unsigned int curlen;
+
+	if (ObjectAttributes == NULL || ObjectAttributes->ObjectName == NULL)
+		goto error;
+	if (ObjectAttributes->RootDirectory == NULL) {
+		unsigned int copylen = min(maxlen, ObjectAttributes->ObjectName->Length);
+		memcpy(keybuf->KeyName, ObjectAttributes->ObjectName->Buffer, copylen);
+		keybuf->KeyNameLength = copylen;
+		keybuf->KeyName[keybuf->KeyNameLength / sizeof(WCHAR)] = 0;
+		goto normal;
+	}
+
+	if (pNtQueryKey == NULL)
+		*(FARPROC *)&pNtQueryKey = GetProcAddress(GetModuleHandle("ntdll"), "NtQueryKey");
+	if (pNtQueryKey == NULL)
+		goto error;
+
+	status = pNtQueryKey(ObjectAttributes->RootDirectory, KeyNameInformation, keybuf, len, &reslen);
+	if (status < 0)
+		goto error;
+
+	keybuf->KeyName[keybuf->KeyNameLength / sizeof(WCHAR)] = 0;
+
+	curlen = wcslen(keybuf->KeyName);
+	remaining = maxlen_chars - wcslen(keybuf->KeyName) - 1;
+
+	if (ObjectAttributes->ObjectName == NULL) {
+		if (remaining < 10)
+			goto error;
+		wcscat(keybuf->KeyName, L"(Default)");
+		keybuf->KeyNameLength = (curlen + 9) * sizeof(WCHAR);
+	}
+	else {
+		if ((remaining * sizeof(WCHAR)) < ObjectAttributes->ObjectName->Length + (1 * sizeof(WCHAR)))
+			goto error;
+
+		keybuf->KeyName[curlen++] = L'\\';
+		memcpy(keybuf->KeyName + curlen, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
+		keybuf->KeyNameLength = curlen * sizeof(WCHAR) + ObjectAttributes->ObjectName->Length;
+	}
+
+normal:
+	return keybuf->KeyName;
+error:
+	keybuf->KeyName[0] = 0;
+	keybuf->KeyNameLength = 0;
+	return keybuf->KeyName;
+}

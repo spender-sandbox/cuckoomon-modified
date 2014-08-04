@@ -33,9 +33,13 @@ uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
 char *ensure_absolute_ascii_path(char *out, const char *in);
 wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in);
 
+wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION keybuf, unsigned int len);
+
 // imported but for some doesn't show up when #including string.h etc
 int wcsnicmp(const wchar_t *a, const wchar_t *b, size_t len);
 int wcsicmp(const wchar_t *a, const wchar_t *b);
 
 // Define MAX_PATH plus tolerance for windows "tolerance"
 #define MAX_PATH_PLUS_TOLERANCE MAX_PATH + 64
+
+#define MAX_KEY_BUFLEN ((16384 + 256) * sizeof(WCHAR))

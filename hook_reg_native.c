@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "log.h"
 #include "pipe.h"
+#include "misc.h"
 
 HOOKDEF(NTSTATUS, WINAPI, NtCreateKey,
     __out       PHANDLE KeyHandle,
@@ -31,11 +32,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateKey,
     __in        ULONG CreateOptions,
     __out_opt   PULONG Disposition
 ) {
-    NTSTATUS ret = Old_NtCreateKey(KeyHandle, DesiredAccess, ObjectAttributes,
+	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
+	NTSTATUS ret = Old_NtCreateKey(KeyHandle, DesiredAccess, ObjectAttributes,
         TitleIndex, Class, CreateOptions, Disposition);
-    LOQ_ntstatus("Plpoo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("Plpouo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
 		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
+		"ObjectAttributes", get_key_path(ObjectAttributes, keybuf, allocsize),
         "Class", Class);
     return ret;
 }
@@ -45,10 +49,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenKey,
     __in   ACCESS_MASK DesiredAccess,
     __in   POBJECT_ATTRIBUTES ObjectAttributes
 ) {
-    NTSTATUS ret = Old_NtOpenKey(KeyHandle, DesiredAccess, ObjectAttributes);
-    LOQ_ntstatus("Plpo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
+	NTSTATUS ret = Old_NtOpenKey(KeyHandle, DesiredAccess, ObjectAttributes);
+    LOQ_ntstatus("Plpou", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
-		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes));
+		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
+		"ObjectAttributes", get_key_path(ObjectAttributes, keybuf, allocsize));
     return ret;
 }
 
@@ -58,11 +65,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenKeyEx,
     __in   POBJECT_ATTRIBUTES ObjectAttributes,
     __in   ULONG OpenOptions
 ) {
-    NTSTATUS ret = Old_NtOpenKeyEx(KeyHandle, DesiredAccess, ObjectAttributes,
+	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
+	NTSTATUS ret = Old_NtOpenKeyEx(KeyHandle, DesiredAccess, ObjectAttributes,
         OpenOptions);
-    LOQ_ntstatus("Plpo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("Plpou", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
-		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes));
+		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
+		"ObjectAttributes", get_key_path(ObjectAttributes, keybuf, allocsize));
     return ret;
 }
 
@@ -216,9 +226,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtLoadKey,
     __in  POBJECT_ATTRIBUTES TargetKey,
     __in  POBJECT_ATTRIBUTES SourceFile
 ) {
-    NTSTATUS ret = Old_NtLoadKey(TargetKey, SourceFile);
-    LOQ_ntstatus("poO","TargetKeyHandle", handle_from_objattr(TargetKey),
+	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
+	NTSTATUS ret = Old_NtLoadKey(TargetKey, SourceFile);
+    LOQ_ntstatus("pouO","TargetKeyHandle", handle_from_objattr(TargetKey),
 		"TargetKeyName", unistr_from_objattr(TargetKey),
+		"TargetKey", get_key_path(TargetKey, keybuf, allocsize),
 		"SourceFile", SourceFile);
     return ret;
 }
@@ -228,9 +241,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtLoadKey2,
     __in  POBJECT_ATTRIBUTES SourceFile,
     __in  ULONG Flags
 ) {
-    NTSTATUS ret = Old_NtLoadKey2(TargetKey, SourceFile, Flags);
-    LOQ_ntstatus("poOl", "TargetKeyHandle", handle_from_objattr(TargetKey),
+	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
+	NTSTATUS ret = Old_NtLoadKey2(TargetKey, SourceFile, Flags);
+    LOQ_ntstatus("pouOl", "TargetKeyHandle", handle_from_objattr(TargetKey),
 		"TargetKeyName", unistr_from_objattr(TargetKey),
+		"TargetKey", get_key_path(TargetKey, keybuf, allocsize),
 		"SourceFile", SourceFile, "Flags", Flags);
     return ret;
 }
@@ -241,11 +257,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtLoadKeyEx,
     __in      ULONG Flags,
     __in_opt  HANDLE TrustClassKey
 ) {
-    NTSTATUS ret = Old_NtLoadKeyEx(TargetKey, SourceFile, Flags,
+	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
+	NTSTATUS ret = Old_NtLoadKeyEx(TargetKey, SourceFile, Flags,
         TrustClassKey);
-    LOQ_ntstatus("ppoOl", "TrustClassKey", TrustClassKey,
+    LOQ_ntstatus("ppouOl", "TrustClassKey", TrustClassKey,
         "TargetKeyHandle", handle_from_objattr(TargetKey),
 		"TargetKeyName", unistr_from_objattr(TargetKey),
+		"TargetKey", get_key_path(TargetKey, keybuf, allocsize),
 		"SourceFile", SourceFile, "Flags", Flags);
     return ret;
 }

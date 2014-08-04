@@ -464,6 +464,11 @@ typedef struct _FILE_NAME_INFORMATION {
     WCHAR FileName[1];
 } FILE_NAME_INFORMATION, *PFILE_NAME_INFORMATION;
 
+typedef struct _KEY_NAME_INFORMATION {
+	ULONG KeyNameLength;
+	WCHAR KeyName[1];
+} KEY_NAME_INFORMATION, *PKEY_NAME_INFORMATION;
+
 typedef enum  {
     FileFsVolumeInformation       = 1,
     FileFsLabelInformation        = 2,
