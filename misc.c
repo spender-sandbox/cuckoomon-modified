@@ -399,6 +399,7 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 
 		keybuf->KeyName[curlen++] = L'\\';
 		memcpy(keybuf->KeyName + curlen, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
+		keybuf->KeyName[curlen + (ObjectAttributes->ObjectName->Length / sizeof(WCHAR))] = L'\0';
 		keybuf->KeyNameLength = curlen * sizeof(WCHAR) + ObjectAttributes->ObjectName->Length;
 	}
 
