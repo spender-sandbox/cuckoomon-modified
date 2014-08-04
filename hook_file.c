@@ -299,7 +299,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetInformationFile,
     NTSTATUS ret = Old_NtSetInformationFile(FileHandle, IoStatusBlock,
         FileInformation, Length, FileInformationClass);
 	LOQ_ntstatus("pib", "FileHandle", FileHandle, "FileInformationClass", FileInformationClass,
-        "FileInformation", IoStatusBlock->Information, FileInformation);
+        "FileInformation", Length, FileInformation);
     return ret;
 }
 
