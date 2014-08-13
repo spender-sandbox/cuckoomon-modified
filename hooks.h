@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <windns.h>
 #include <wininet.h>
+#include <mswsock.h>
 #include "ntapi.h"
 
 //
@@ -210,6 +211,36 @@ extern HOOKDEF(BOOL, WINAPI, DeleteFileA,
 
 extern HOOKDEF(BOOL, WINAPI, DeleteFileW,
     __in  LPWSTR lpFileName
+);
+
+extern HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceExA,
+    _In_opt_   PCTSTR lpDirectoryName,
+    _Out_opt_  PULARGE_INTEGER lpFreeBytesAvailable,
+    _Out_opt_  PULARGE_INTEGER lpTotalNumberOfBytes,
+    _Out_opt_  PULARGE_INTEGER lpTotalNumberOfFreeBytes
+);
+
+extern HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceExW,
+    _In_opt_   PCWSTR lpDirectoryName,
+    _Out_opt_  PULARGE_INTEGER lpFreeBytesAvailable,
+    _Out_opt_  PULARGE_INTEGER lpTotalNumberOfBytes,
+    _Out_opt_  PULARGE_INTEGER lpTotalNumberOfFreeBytes
+);
+
+extern HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceA,
+    _In_   PCTSTR lpRootPathName,
+    _Out_  LPDWORD lpSectorsPerCluster,
+    _Out_  LPDWORD lpBytesPerSector,
+    _Out_  LPDWORD lpNumberOfFreeClusters,
+    _Out_  LPDWORD lpTotalNumberOfClusters
+);
+
+extern HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceW,
+    _In_   PCWSTR lpRootPathName,
+    _Out_  LPDWORD lpSectorsPerCluster,
+    _Out_  LPDWORD lpBytesPerSector,
+    _Out_  LPDWORD lpNumberOfFreeClusters,
+    _Out_  LPDWORD lpTotalNumberOfClusters
 );
 
 //
@@ -552,6 +583,11 @@ extern HOOKDEF(HWND, WINAPI, FindWindowExW,
     __in_opt  HWND hwndChildAfter,
     __in_opt  LPWSTR lpszClass,
     __in_opt  LPWSTR lpszWindow
+);
+
+extern HOOKDEF(BOOL, WINAPI, EnumWindows,
+    _In_  WNDENUMPROC lpEnumFunc,
+    _In_  LPARAM lParam
 );
 
 //
@@ -920,6 +956,10 @@ extern HOOKDEF(BOOL, WINAPI, UnhookWindowsHookEx,
     __in  HHOOK hhk
 );
 
+extern HOOKDEF(LPTOP_LEVEL_EXCEPTION_FILTER, WINAPI, SetUnhandledExceptionFilter,
+    _In_  LPTOP_LEVEL_EXCEPTION_FILTER lpTopLevelExceptionFilter
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
     __in_opt    ULONG Flags,
@@ -998,6 +1038,26 @@ extern HOOKDEF(int, WINAPI, GetSystemMetrics,
 
 extern HOOKDEF(BOOL, WINAPI, GetCursorPos,
     _Out_ LPPOINT lpPoint
+);
+
+extern HOOKDEF(BOOL, WINAPI, GetComputerNameA,
+    _Out_    PCTSTR lpBuffer,
+    _Inout_  LPDWORD lpnSize
+);
+
+extern HOOKDEF(BOOL, WINAPI, GetComputerNameW,
+    _Out_    PCWSTR lpBuffer,
+    _Inout_  LPDWORD lpnSize
+);
+
+extern HOOKDEF(BOOL, WINAPI, GetUserNameA,
+    _Out_    PCTSTR lpBuffer,
+    _Inout_  LPDWORD lpnSize
+);
+
+extern HOOKDEF(BOOL, WINAPI, GetUserNameW,
+    _Out_    PCWSTR lpBuffer,
+    _Inout_  LPDWORD lpnSize
 );
 
 //
@@ -1377,6 +1437,14 @@ extern HOOKDEF(int, WSAAPI, shutdown,
     __in  int how
 );
 
+extern HOOKDEF(SOCKET, WSAAPI, WSAAccept,
+    __in    SOCKET s,
+    __out   struct sockaddr *addr,
+    __inout LPINT addrlen,
+    __in    LPCONDITIONPROC lpfnCondition,
+    __in    DWORD_PTR dwCallbackData
+);
+
 extern HOOKDEF(int, WSAAPI, WSARecv,
     __in     SOCKET s,
     __inout  LPWSABUF lpBuffers,
@@ -1439,7 +1507,6 @@ extern HOOKDEF(SOCKET, WSAAPI, WSASocketW,
     __in  DWORD dwFlags
 );
 
-
 extern HOOKDEF(BOOL, PASCAL, ConnectEx,
     _In_      SOCKET s,
     _In_      const struct sockaddr *name,
@@ -1458,6 +1525,115 @@ extern HOOKDEF(BOOL, PASCAL, TransmitFile,
     LPOVERLAPPED lpOverlapped,
     LPTRANSMIT_FILE_BUFFERS lpTransmitBuffers,
     DWORD dwFlags
+);
+
+//
+// Crypto Hooks
+//
+
+extern HOOKDEF(BOOL, WINAPI, CryptProtectData,
+    _In_      DATA_BLOB *pDataIn,
+    _In_      LPCWSTR szDataDescr,
+    _In_      DATA_BLOB *pOptionalEntropy,
+    _In_      PVOID pvReserved,
+    _In_opt_  CRYPTPROTECT_PROMPTSTRUCT *pPromptStruct,
+    _In_      DWORD dwFlags,
+    _Out_     DATA_BLOB *pDataOut
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptUnprotectData,
+    _In_        DATA_BLOB *pDataIn,
+    _Out_opt_   LPWSTR *ppszDataDescr,
+    _In_opt_    DATA_BLOB *pOptionalEntropy,
+    _Reserved_  PVOID pvReserved,
+    _In_opt_    CRYPTPROTECT_PROMPTSTRUCT *pPromptStruct,
+    _In_        DWORD dwFlags,
+    _Out_       DATA_BLOB *pDataOut
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptProtectMemory,
+    _Inout_  LPVOID pData,
+    _In_     DWORD cbData,
+    _In_     DWORD dwFlags
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptUnprotectMemory,
+    _Inout_  LPVOID pData,
+    _In_     DWORD cbData,
+    _In_     DWORD dwFlags
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptDecrypt,
+    _In_     HCRYPTKEY hKey,
+    _In_     HCRYPTHASH hHash,
+    _In_     BOOL Final,
+    _In_     DWORD dwFlags,
+    _Inout_  BYTE *pbData,
+    _Inout_  DWORD *pdwDataLen
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptEncrypt,
+    _In_     HCRYPTKEY hKey,
+    _In_     HCRYPTHASH hHash,
+    _In_     BOOL Final,
+    _In_     DWORD dwFlags,
+    _Inout_  BYTE *pbData,
+    _Inout_  DWORD *pdwDataLen,
+    _In_     DWORD dwBufLen
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptHashData,
+    _In_  HCRYPTHASH hHash,
+    _In_  BYTE *pbData,
+    _In_  DWORD dwDataLen,
+    _In_  DWORD dwFlags
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptDecodeMessage,
+    _In_         DWORD dwMsgTypeFlags,
+    _In_         PCRYPT_DECRYPT_MESSAGE_PARA pDecryptPara,
+    _In_         PCRYPT_VERIFY_MESSAGE_PARA pVerifyPara,
+    _In_         DWORD dwSignerIndex,
+    _In_         const BYTE *pbEncodedBlob,
+    _In_         DWORD cbEncodedBlob,
+    _In_         DWORD dwPrevInnerContentType,
+    _Out_opt_    DWORD *pdwMsgType,
+    _Out_opt_    DWORD *pdwInnerContentType,
+    _Out_opt_    BYTE *pbDecoded,
+    _Inout_opt_  DWORD *pcbDecoded,
+    _Out_opt_    PCCERT_CONTEXT *ppXchgCert,
+    _Out_opt_    PCCERT_CONTEXT *ppSignerCert
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptDecryptMessage,
+    _In_         PCRYPT_DECRYPT_MESSAGE_PARA pDecryptPara,
+    _In_         const BYTE *pbEncryptedBlob,
+    _In_         DWORD cbEncryptedBlob,
+    _Out_opt_    BYTE *pbDecrypted,
+    _Inout_opt_  DWORD *pcbDecrypted,
+    _Out_opt_    PCCERT_CONTEXT *ppXchgCert
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptEncryptMessage,
+    _In_     PCRYPT_ENCRYPT_MESSAGE_PARA pEncryptPara,
+    _In_     DWORD cRecipientCert,
+    _In_     PCCERT_CONTEXT rgpRecipientCert[],
+    _In_     const BYTE *pbToBeEncrypted,
+    _In_     DWORD cbToBeEncrypted,
+    _Out_    BYTE *pbEncryptedBlob,
+    _Inout_  DWORD *pcbEncryptedBlob
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptHashMessage,
+    _In_         PCRYPT_HASH_MESSAGE_PARA pHashPara,
+    _In_         BOOL fDetachedHash,
+    _In_         DWORD cToBeHashed,
+    _In_         const BYTE *rgpbToBeHashed[],
+    _In_         DWORD rgcbToBeHashed[],
+    _Out_        BYTE *pbHashedBlob,
+    _Inout_      DWORD *pcbHashedBlob,
+    _Out_opt_    BYTE *pbComputedHash,
+    _Inout_opt_  DWORD *pcbComputedHash
 );
 
 //

@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ntapi.h"
 #include <shlwapi.h>
 #include "misc.h"
+#include "config.h"
 
 ULONG_PTR parent_process_id() // By Napalm @ NetCore2K (rohitab.com)
 {
@@ -409,4 +410,15 @@ error:
 	keybuf->KeyName[0] = 0;
 	keybuf->KeyNameLength = 0;
 	return keybuf->KeyName;
+}
+
+int is_shutting_down()
+{
+    HANDLE mutex_handle =
+        OpenMutex(SYNCHRONIZE, FALSE, g_config.shutdown_mutex);
+    if(mutex_handle != NULL) {
+        CloseHandle(mutex_handle);
+        return 1;
+    }
+    return 0;
 }

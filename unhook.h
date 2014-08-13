@@ -1,10 +1,6 @@
 /*
-decoder.h
-
-diStorm3 - Powerful disassembler for X86/AMD64
-http://ragestorm.net/distorm/
-distorm at gmail dot com
-Copyright (C) 2011  Gil Dabah
+Cuckoo Sandbox - Automated Malware Analysis
+Copyright (C) 2010-2014 Cuckoo Sandbox Developers
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,17 +13,10 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+void unhook_detect_add_region(const char *funcname, const uint8_t *addr,
+    const uint8_t *orig, const uint8_t *our, uint32_t length);
 
-#ifndef DECODER_H
-#define DECODER_H
-
-#include "config.h"
-
-typedef unsigned int _iflags;
-
-_DecodeResult decode_internal(_CodeInfo* ci, int supportOldIntr, _DInst result[], unsigned int maxResultCount, unsigned int* usedInstructionsCount);
-
-#endif /* DECODER_H */
+int unhook_init_detection();

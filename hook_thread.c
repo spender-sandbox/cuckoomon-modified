@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "misc.h"
 #include "hook_sleep.h"
 
+
 HOOKDEF(NTSTATUS, WINAPI, NtCreateThread,
     __out     PHANDLE ThreadHandle,
     __in      ACCESS_MASK DesiredAccess,
@@ -39,7 +40,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThread,
     NTSTATUS ret = Old_NtCreateThread(ThreadHandle, DesiredAccess,
         ObjectAttributes, ProcessHandle, ClientId, ThreadContext,
         InitialTeb, CreateSuspended);
-    LOQ_ntstatus("PpO", "ThreadHandle", ThreadHandle, "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("threading", "PpO", "ThreadHandle", ThreadHandle, "ProcessHandle", ProcessHandle,
         "ObjectAttributes", ObjectAttributes);
 
 	if (NT_SUCCESS(ret))
@@ -64,13 +65,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
         ObjectAttributes, ProcessHandle, lpStartAddress, lpParameter,
         CreateSuspended, StackZeroBits, SizeOfStackCommit, SizeOfStackReserve,
         lpBytesBuffer);
-    LOQ_ntstatus("Pppl", "ThreadHandle", hThread, "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("threading", "Pppl", "ThreadHandle", hThread, "ProcessHandle", ProcessHandle,
         "StartAddress", lpStartAddress, "CreateSuspended", CreateSuspended);
 
-	if (NT_SUCCESS(ret))
-		disable_sleep_skip();
-
-	return ret;
+    return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtOpenThread,
@@ -81,7 +79,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenThread,
 ) {
     NTSTATUS ret = Old_NtOpenThread(ThreadHandle, DesiredAccess,
         ObjectAttributes, ClientId);
-    LOQ_ntstatus("PlO", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("threading", "PlO", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
         "ObjectAttributes", ObjectAttributes);
 
     if (NT_SUCCESS(ret)) {
@@ -96,7 +94,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtGetContextThread,
     __inout  LPCONTEXT Context
 ) {
     NTSTATUS ret = Old_NtGetContextThread(ThreadHandle, Context);
-    LOQ_ntstatus("p", "ThreadHandle", ThreadHandle);
+    LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
     return ret;
 }
 
@@ -105,11 +103,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetContextThread,
     __in  const CONTEXT *Context
 ) {
     NTSTATUS ret = Old_NtSetContextThread(ThreadHandle, Context);
-    LOQ_ntstatus("p", "ThreadHandle", ThreadHandle);
+    LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
 
-	pipe("PROCESS:%d", pid_from_thread_handle(ThreadHandle));
+    pipe("PROCESS:%d", pid_from_thread_handle(ThreadHandle));
 
-	return ret;
+    return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtSuspendThread,
@@ -119,7 +117,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtSuspendThread,
     ENSURE_ULONG(PreviousSuspendCount);
 
     NTSTATUS ret = Old_NtSuspendThread(ThreadHandle, PreviousSuspendCount);
-    LOQ_ntstatus("pL", "ThreadHandle", ThreadHandle,
+    LOQ_ntstatus("threading", "pL", "ThreadHandle", ThreadHandle,
         "SuspendCount", PreviousSuspendCount);
     return ret;
 }
@@ -131,7 +129,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtResumeThread,
     ENSURE_ULONG(SuspendCount);
 
     NTSTATUS ret = Old_NtResumeThread(ThreadHandle, SuspendCount);
-    LOQ_ntstatus("pL", "ThreadHandle", ThreadHandle, "SuspendCount", SuspendCount);
+    LOQ_ntstatus("threading", "pL", "ThreadHandle", ThreadHandle, "SuspendCount", SuspendCount);
     return ret;
 }
 
@@ -140,8 +138,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateThread,
     __in  NTSTATUS ExitStatus
 ) {
     // Thread will terminate. Default logging will not work. Be aware: return value not valid
-	NTSTATUS ret = 0;
-    LOQ_ntstatus("pl", "ThreadHandle", ThreadHandle, "ExitStatus", ExitStatus);
+    NTSTATUS ret = 0;
+    LOQ_ntstatus("threading", "pl", "ThreadHandle", ThreadHandle, "ExitStatus", ExitStatus);
     ret = Old_NtTerminateThread(ThreadHandle, ExitStatus);    
     return ret;
 }
@@ -156,7 +154,7 @@ HOOKDEF(HANDLE, WINAPI, CreateThread,
 ) {
     HANDLE ret = Old_CreateThread(lpThreadAttributes, dwStackSize,
         lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
-    LOQ_nonnull("pplL", "StartRoutine", lpStartAddress, "Parameter", lpParameter,
+    LOQ_nonnull("threading", "pplL", "StartRoutine", lpStartAddress, "Parameter", lpParameter,
         "CreationFlags", dwCreationFlags, "ThreadId", lpThreadId);
     if (ret != NULL)
         disable_sleep_skip();
@@ -177,7 +175,7 @@ HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
     HANDLE ret = Old_CreateRemoteThread(hProcess, lpThreadAttributes,
         dwStackSize, lpStartAddress, lpParameter, dwCreationFlags,
         lpThreadId);
-    LOQ_nonnull("3plL", "ProcessHandle", hProcess, "StartRoutine", lpStartAddress,
+    LOQ_nonnull("threading", "3plL", "ProcessHandle", hProcess, "StartRoutine", lpStartAddress,
         "Parameter", lpParameter, "CreationFlags", dwCreationFlags,
         "ThreadId", lpThreadId);
     if (ret != NULL)
@@ -189,7 +187,7 @@ HOOKDEF(VOID, WINAPI, ExitThread,
     __in  DWORD dwExitCode
 ) {
     int ret = 0;
-    LOQ_void("l", "ExitCode", dwExitCode);
+    LOQ_void("threading", "l", "ExitCode", dwExitCode);
     Old_ExitThread(dwExitCode);
 }
 
@@ -210,7 +208,7 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
     NTSTATUS ret = Old_RtlCreateUserThread(ProcessHandle, SecurityDescriptor,
         CreateSuspended, StackZeroBits, StackReserved, StackCommit,
         StartAddress, StartParameter, ThreadHandle, ClientId);
-    LOQ_ntstatus("plppPl", "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("threading", "plppPl", "ProcessHandle", ProcessHandle,
         "CreateSuspended", CreateSuspended, "StartAddress", StartAddress,
         "StartParameter", StartParameter, "ThreadHandle", ThreadHandle,
         "ThreadIdentifier", ClientId->UniqueThread);

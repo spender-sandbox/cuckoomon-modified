@@ -24,7 +24,7 @@ void read_config()
 {
     // TODO unicode support
     char buf[512], config_fname[MAX_PATH];
-    sprintf(config_fname, "%s\\%d.ini",
+    sprintf(config_fname, "%s\\%ld.ini",
         getenv("TEMP"), GetCurrentProcessId());
 
     FILE *fp = fopen(config_fname, "r");
@@ -55,6 +55,10 @@ void read_config()
                     strncpy(g_config.analyzer, value,
                         ARRAYSIZE(g_config.analyzer));
                 }
+                else if(!strcmp(key, "shutdown-mutex")) {
+                    strncpy(g_config.shutdown_mutex, value,
+                        ARRAYSIZE(g_config.shutdown_mutex));
+                }
                 else if(!strcmp(key, "first-process")) {
                     g_config.first_process = value[0] == '1';
                 }
@@ -69,6 +73,9 @@ void read_config()
                 }
                 else if(!strcmp(key, "host-port")) {
                     g_config.host_port = atoi(value);
+                }
+                else if(!strcmp(key, "force-sleepskip")) {
+                    g_config.force_sleepskip = value[0] == '1';
                 }
             }
         }

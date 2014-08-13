@@ -5,32 +5,42 @@ VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cuckoomon", "cuckoomon.vcxproj", "{15C69A24-71D1-4A1A-B39B-0466181ACD7E}"
 	ProjectSection(ProjectDependencies) = postProject
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7} = {5B01D900-2359-44CA-9914-6B0C6AFB7BE7}
 		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8} = {0DA99545-93E9-4C1B-861B-C4DAB5360AA8}
-		{C98103D8-31DB-4A8E-999D-EC431DD2322C} = {C98103D8-31DB-4A8E-999D-EC431DD2322C}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bson", "bson\bson.vcxproj", "{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "distorm", "distorm3.2-package\src\distorm.vcxproj", "{C98103D8-31DB-4A8E-999D-EC431DD2322C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "capstone_static", "capstone\msvc\capstone_static\capstone_static.vcxproj", "{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
 		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{15C69A24-71D1-4A1A-B39B-0466181ACD7E}.Debug|Win32.ActiveCfg = Debug|Win32
 		{15C69A24-71D1-4A1A-B39B-0466181ACD7E}.Debug|Win32.Build.0 = Debug|Win32
+		{15C69A24-71D1-4A1A-B39B-0466181ACD7E}.Debug|x64.ActiveCfg = Debug|Win32
 		{15C69A24-71D1-4A1A-B39B-0466181ACD7E}.Release|Win32.ActiveCfg = Release|Win32
 		{15C69A24-71D1-4A1A-B39B-0466181ACD7E}.Release|Win32.Build.0 = Release|Win32
+		{15C69A24-71D1-4A1A-B39B-0466181ACD7E}.Release|x64.ActiveCfg = Release|Win32
 		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}.Debug|Win32.ActiveCfg = Debug|Win32
 		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}.Debug|Win32.Build.0 = Debug|Win32
+		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}.Debug|x64.ActiveCfg = Debug|Win32
 		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}.Release|Win32.ActiveCfg = Release|Win32
 		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}.Release|Win32.Build.0 = Release|Win32
-		{C98103D8-31DB-4A8E-999D-EC431DD2322C}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C98103D8-31DB-4A8E-999D-EC431DD2322C}.Debug|Win32.Build.0 = Debug|Win32
-		{C98103D8-31DB-4A8E-999D-EC431DD2322C}.Release|Win32.ActiveCfg = Release|Win32
-		{C98103D8-31DB-4A8E-999D-EC431DD2322C}.Release|Win32.Build.0 = Release|Win32
+		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}.Release|x64.ActiveCfg = Release|Win32
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|Win32.Build.0 = Debug|Win32
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|x64.ActiveCfg = Debug|x64
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|x64.Build.0 = Debug|x64
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|Win32.ActiveCfg = Release|Win32
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|Win32.Build.0 = Release|Win32
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|x64.ActiveCfg = Release|x64
+		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

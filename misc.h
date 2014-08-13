@@ -39,6 +39,8 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 int wcsnicmp(const wchar_t *a, const wchar_t *b, size_t len);
 int wcsicmp(const wchar_t *a, const wchar_t *b);
 
+int is_shutting_down();
+
 // Define MAX_PATH plus tolerance for windows "tolerance"
 #define MAX_PATH_PLUS_TOLERANCE MAX_PATH + 64
 

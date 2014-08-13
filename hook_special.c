@@ -31,6 +31,7 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     __in        PUNICODE_STRING ModuleFileName,
     __out       PHANDLE ModuleHandle
 ) {
+
     //
     // In the event that loading this dll results in loading another dll as
     // well, then the unicode string (which is located in the TEB) will be
@@ -43,7 +44,7 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
         ModuleHandle);
 
     if (hook_info()->depth_count == 1) {
-        LOQspecial_ntstatus("lFP", "Flags", Flags, "FileName", library.Buffer,
+        LOQspecial_ntstatus("system", "lFP", "Flags", Flags, "FileName", library.Buffer,
             "BaseAddress", ModuleHandle);
     }
 
@@ -73,6 +74,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     __out       LPPROCESS_INFORMATION lpProcessInformation,
     __in_opt    LPVOID lpUnknown2
 ) {
+
     BOOL ret = Old2_CreateProcessInternalW(lpUnknown1, lpApplicationName,
         lpCommandLine, lpProcessAttributes, lpThreadAttributes,
         bInheritHandles, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment,
@@ -92,7 +94,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     }
 
     if (hook_info()->depth_count == 1) {
-        LOQspecial_bool("uupllpp", "ApplicationName", lpApplicationName,
+        LOQspecial_bool("process", "uupllpp", "ApplicationName", lpApplicationName,
             "CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
             "ProcessId", lpProcessInformation->dwProcessId,
             "ThreadId", lpProcessInformation->dwThreadId,

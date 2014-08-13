@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdio.h>
+
 #include "ntapi.h"
 #include "misc.h"
 #include "hooking.h"
@@ -27,6 +28,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hook_file.h"
 #include "hook_sleep.h"
 #include "config.h"
+#include "unhook.h"
+
+// Allow debug mode to be turned on at compilation time.
+#ifdef CUCKOODBG
+#undef CUCKOODBG
+#define CUCKOODBG 1
+#else
+#define CUCKOODBG 0
+#endif
 
 #define HOOK(library, funcname) {L###library, #funcname, NULL, \
     &New_##funcname, (void **) &Old_##funcname}
@@ -89,6 +99,11 @@ static hook_t g_hooks[] = {
     // Covered by NtSetInformationFile() but still grap this information
     HOOK(kernel32, DeleteFileA),
     HOOK(kernel32, DeleteFileW),
+
+    HOOK(kernel32, GetDiskFreeSpaceExA),
+    HOOK(kernel32, GetDiskFreeSpaceExW),
+    HOOK(kernel32, GetDiskFreeSpaceA),
+    HOOK(kernel32, GetDiskFreeSpaceW),
 
     //
     // Registry Hooks
@@ -162,6 +177,7 @@ static hook_t g_hooks[] = {
     HOOK(user32, FindWindowW),
     HOOK(user32, FindWindowExA),
     HOOK(user32, FindWindowExW),
+    HOOK(user32, EnumWindows),
 
     //
     // Sync Hooks
@@ -228,6 +244,7 @@ static hook_t g_hooks[] = {
     HOOK(user32, SetWindowsHookExA),
     HOOK(user32, SetWindowsHookExW),
     HOOK(user32, UnhookWindowsHookEx),
+    HOOK(kernel32, SetUnhandledExceptionFilter),
     //HOOK(ntdll, LdrLoadDll),
     HOOK(ntdll, LdrGetDllHandle),
     HOOK(ntdll, LdrGetProcedureAddress),
@@ -240,6 +257,10 @@ static hook_t g_hooks[] = {
     HOOK(kernel32, WriteConsoleW),
     HOOK(user32, GetSystemMetrics),
     HOOK(user32, GetCursorPos),
+    HOOK(kernel32, GetComputerNameA),
+    HOOK(kernel32, GetComputerNameW),
+    HOOK(advapi32, GetUserNameA),
+    HOOK(advapi32, GetUserNameW),
 
     //
     // Network Hooks
@@ -312,6 +333,7 @@ static hook_t g_hooks[] = {
     HOOK(ws2_32, closesocket),
     HOOK(ws2_32, shutdown),
 
+    HOOK(ws2_32, WSAAccept),
     HOOK(ws2_32, WSARecv),
     HOOK(ws2_32, WSARecvFrom),
     HOOK(ws2_32, WSASend),
@@ -325,6 +347,22 @@ static hook_t g_hooks[] = {
 
     HOOK(mswsock, ConnectEx),
     HOOK(mswsock, TransmitFile),
+
+    //
+    // Crypto Functions
+    //
+
+    HOOK(advapi32, CryptProtectData),
+    HOOK(advapi32, CryptUnprotectData),
+    HOOK(advapi32, CryptProtectMemory),
+    HOOK(advapi32, CryptUnprotectMemory),
+    HOOK(advapi32, CryptDecrypt),
+    HOOK(advapi32, CryptEncrypt),
+    HOOK(advapi32, CryptHashData),
+    HOOK(advapi32, CryptDecodeMessage),
+    HOOK(advapi32, CryptDecryptMessage),
+    HOOK(advapi32, CryptEncryptMessage),
+    HOOK(advapi32, CryptHashMessage),
 };
 
 // get a random hooking method, except for hook_jmp_direct
@@ -381,12 +419,6 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         // hide our module from peb
         hide_module_from_peb(hModule);
 
-        // obtain all protected pids
-        pipe2(pids, &length, "GETPIDS");
-        for (i = 0; i < length / sizeof(pids[0]); i++) {
-            add_protected_pid(pids[i]);
-        }
-
         // initialize file stuff
         file_init();
 
@@ -394,8 +426,14 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         read_config();
         g_pipe_name = g_config.pipe_name;
 
+        // obtain all protected pids
+        pipe2(pids, &length, "GETPIDS");
+        for (i = 0; i < length / sizeof(pids[0]); i++) {
+            add_protected_pid(pids[i]);
+        }
+
         // initialize the log file
-        log_init(g_config.host_ip, g_config.host_port, 0);
+        log_init(g_config.host_ip, g_config.host_port, CUCKOODBG);
 
         // initialize the Sleep() skipping stuff
         init_sleep_skip(g_config.first_process);
@@ -408,12 +446,15 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
             hook_disable_retaddr_check();
         }
 
+        // initialize our unhook detection
+        unhook_init_detection();
+
         // initialize all hooks
         set_hooks();
 
         // notify analyzer.py that we've loaded
         char name[64];
-        sprintf(name, "CuckooEvent%d", GetCurrentProcessId());
+        sprintf(name, "CuckooEvent%ld", GetCurrentProcessId());
         HANDLE event_handle = OpenEvent(EVENT_ALL_ACCESS, FALSE, name);
         if(event_handle != NULL) {
             SetEvent(event_handle);

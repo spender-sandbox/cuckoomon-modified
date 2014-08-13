@@ -26,6 +26,9 @@ struct {
     // analyzer directory, has to be hidden
     char analyzer[MAX_PATH];
 
+    // if this mutex exists then we're shutting down
+    char shutdown_mutex[MAX_PATH];
+
     // is this the first process or not?
     int first_process;
 
@@ -34,6 +37,9 @@ struct {
 
     // do we want to enable the retaddr check?
     int retaddr_check;
+
+    // do we force sleep-skipping despite threads?
+    int force_sleepskip;
 
     // server ip and port
     unsigned int host_ip;

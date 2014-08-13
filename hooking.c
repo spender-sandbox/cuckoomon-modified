@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stddef.h>
 #include "ntapi.h"
+#include "capstone/include/capstone.h"
+#include "capstone/include/x86.h"
 #include "hooking.h"
-#include "distorm.h"
-#include "mnemonics.h"
 #include "ignore.h"
+#include "unhook.h"
 
 // this number can be changed if required to do so
 #define TLS_HOOK_INFO 0x44
@@ -41,15 +42,22 @@ static int g_enable_retaddr_check = 1;
 // length disassembler engine
 int lde(void *addr)
 {
-    // the length of an instruction is 16 bytes max, but there can also be
-    // 16 instructions of length one, so.. we support "decomposing" 16
-    // instructions at once, max
-    unsigned int used_instruction_count; _DInst instructions[16];
-    _CodeInfo code_info = {0, 0, addr, 16, Decode32Bits};
-    _DecodeResult ret = distorm_decompose(&code_info, instructions, 16,
-        &used_instruction_count);
+    static int capstone_init = 0; static csh capstone;
 
-    return ret == DECRES_SUCCESS ? instructions[0].size : 0;
+    if(capstone_init == 0) {
+        cs_open(CS_ARCH_X86, CS_MODE_32, &capstone);
+        capstone_init = 1;
+    }
+
+    cs_insn *insn;
+
+    size_t ret = cs_disasm_ex(capstone, addr, 16, (uintptr_t) addr, 1, &insn);
+    if(ret == 0) return 0;
+
+    ret = insn->size;
+
+    cs_free(insn, 1);
+    return ret;
 }
 
 static int is_interesting_backtrace(unsigned int ebp)
@@ -195,9 +203,9 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 
             // copy the jmp or call instruction (conditional jumps are two
             // bytes, the rest is one byte)
-            *tramp++ += *addr++;
+            *tramp++ = *addr++;
             if(addr[-1] != 0xe9 && addr[-1] != 0xe8) {
-                *tramp++ += *addr++;
+                *tramp++ = *addr++;
             }
 
             // when a jmp/call is performed, then the relative offset +
@@ -700,7 +708,21 @@ int hook_api(hook_t *h, int type)
             // two jumps.
             if(!memcmp(addr, "\xeb\x05", 2) &&
                     !memcmp(addr + 7, "\xff\x25", 2)) {
+
+                // Add unhook detection for this region.
+                unhook_detect_add_region(h->funcname,
+                    addr, addr, addr, 7 + 6);
+
                 addr = **(unsigned char ***)(addr + 9);
+            }
+
+            // Some functions don't just have the short jump and indirect
+            // jump, but also an empty function prolog
+            // ("mov edi, edi ; push ebp ; mov ebp, esp ; pop ebp"). Other
+            // than that, this edge case is equivalent to the case above.
+            else if(!memcmp(addr, "\x8b\xff\x55\x8b\xec\x5d\xeb\x05", 8) &&
+                    !memcmp(addr + 13, "\xff\x25", 2)) {
+                addr = **(unsigned char ***)(addr + 15);
             }
 
             // the following applies for "inlined" functions on windows 7,
@@ -710,6 +732,11 @@ int hook_api(hook_t *h, int type)
             // inlined function.
             if(!memcmp(addr, "\xeb\x02", 2) &&
                     !memcmp(addr - 5, "\xcc\xcc\xcc\xcc\xcc", 5)) {
+
+                // Add unhook detection for this region.
+                unhook_detect_add_region(h->funcname,
+                    addr - 5, addr - 5, addr - 5, 5 + 2);
+
                 // step over the short jump and the relative offset
                 addr += 4;
             }
@@ -731,11 +758,19 @@ int hook_api(hook_t *h, int type)
                     special = 1;
                 }
 
+                uint8_t orig[16];
+                memcpy(orig, addr, 16);
+
                 hook_create_pre_tramp(h, special);
 
                 // insert the hook (jump from the api to the
                 // pre-trampoline)
                 ret = hook_types[type].hook(h, addr, h->pre_tramp);
+
+                // Add unhook detection for our newly created hook.
+                // Ensure any changes behind our hook are also catched by
+                // making the buffersize 16.
+                unhook_detect_add_region(h->funcname, addr, orig, addr, 16);
 
                 // if successful, assign the trampoline address to *old_func
                 if(ret == 0) {

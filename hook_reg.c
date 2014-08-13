@@ -30,7 +30,7 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExA,
 ) {
     LONG ret = Old_RegOpenKeyExA(hKey, lpSubKey, ulOptions, samDesired,
         phkResult);
-    LOQ_zero("psP", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult);
+    LOQ_zero("registry", "psP", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult);
     return ret;
 }
 
@@ -43,7 +43,7 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExW,
 ) {
     LONG ret = Old_RegOpenKeyExW(hKey, lpSubKey, ulOptions, samDesired,
         phkResult);
-    LOQ_zero("puP", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult);
+    LOQ_zero("registry", "puP", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult);
     return ret;
 }
 
@@ -61,7 +61,7 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExA,
     LONG ret = Old_RegCreateKeyExA(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
-    LOQ_zero("psslP", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
+    LOQ_zero("registry", "psslP", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
         "Access", samDesired, "Handle", phkResult);
     return ret;
 }
@@ -80,7 +80,7 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExW,
     LONG ret = Old_RegCreateKeyExW(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
-    LOQ_zero("puulP", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
+    LOQ_zero("registry", "puulP", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
         "Access", samDesired, "Handle", phkResult);
     return ret;
 }
@@ -90,7 +90,7 @@ HOOKDEF(LONG, WINAPI, RegDeleteKeyA,
     __in  LPCTSTR lpSubKey
 ) {
     LONG ret = Old_RegDeleteKeyA(hKey, lpSubKey);
-    LOQ_zero("ps", "Handle", hKey, "SubKey", lpSubKey);
+    LOQ_zero("registry", "ps", "Handle", hKey, "SubKey", lpSubKey);
     return ret;
 }
 
@@ -99,7 +99,7 @@ HOOKDEF(LONG, WINAPI, RegDeleteKeyW,
     __in  LPWSTR lpSubKey
 ) {
     LONG ret = Old_RegDeleteKeyW(hKey, lpSubKey);
-    LOQ_zero("pu", "Handle", hKey, "SubKey", lpSubKey);
+    LOQ_zero("registry", "pu", "Handle", hKey, "SubKey", lpSubKey);
     return ret;
 }
 
@@ -110,7 +110,7 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyW,
     __in   DWORD cchName
 ) {
     LONG ret = Old_RegEnumKeyW(hKey, dwIndex, lpName, cchName);
-    LOQ_zero("plu", "Handle", hKey, "Index", dwIndex, "Name", lpName);
+    LOQ_zero("registry", "plu", "Handle", hKey, "Index", dwIndex, "Name", lpName);
     return ret;
 }
 
@@ -126,7 +126,7 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExA,
 ) {
     LONG ret = Old_RegEnumKeyExA(hKey, dwIndex, lpName, lpcName, lpReserved,
         lpClass, lpcClass, lpftLastWriteTime);
-    LOQ_zero("plss", "Handle", hKey, "Index", dwIndex, "Name", lpName,
+    LOQ_zero("registry", "plss", "Handle", hKey, "Index", dwIndex, "Name", lpName,
         "Class", lpClass);
     return ret;
 }
@@ -143,7 +143,7 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExW,
 ) {
     LONG ret = Old_RegEnumKeyExW(hKey, dwIndex, lpName, lpcName, lpReserved,
         lpClass, lpcClass, lpftLastWriteTime);
-    LOQ_zero("pluu", "Handle", hKey, "Index", dwIndex, "Name", lpName,
+    LOQ_zero("registry", "pluu", "Handle", hKey, "Index", dwIndex, "Name", lpName,
         "Class", lpClass);
     return ret;
 }
@@ -163,11 +163,11 @@ HOOKDEF(LONG, WINAPI, RegEnumValueA,
         lpReserved, lpType, lpData, lpcbData);
     if(ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {
-        LOQ_zero("plsr", "Handle", hKey, "Index", dwIndex,
+        LOQ_zero("registry", "plsr", "Handle", hKey, "Index", dwIndex,
             "ValueName", lpValueName, "Data", *lpType, *lpcbData, lpData);
     }
     else {
-        LOQ2_zero("plsLL", "Handle", hKey, "Index", dwIndex,
+        LOQ_zero("registry", "plsLL", "Handle", hKey, "Index", dwIndex,
             "ValueName", lpValueName, "Type", lpType, "DataLength", lpcbData);
     }
     return ret;
@@ -188,11 +188,11 @@ HOOKDEF(LONG, WINAPI, RegEnumValueW,
         lpReserved, lpType, lpData, lpcbData);
     if(ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {
-        LOQ_zero("pluR", "Handle", hKey, "Index", dwIndex,
+        LOQ_zero("registry", "pluR", "Handle", hKey, "Index", dwIndex,
             "ValueName", lpValueName, "Data", *lpType, *lpcbData, lpData);
     }
     else {
-        LOQ2_zero("pluLL", "Handle", hKey, "Index", dwIndex,
+        LOQ_zero("registry", "pluLL", "Handle", hKey, "Index", dwIndex,
             "ValueName", lpValueName, "Type", lpType, "DataLength", lpcbData);
     }
     return ret;
@@ -209,11 +209,11 @@ HOOKDEF(LONG, WINAPI, RegSetValueExA,
     LONG ret = Old_RegSetValueExA(hKey, lpValueName, Reserved, dwType, lpData,
         cbData);
     if(ret == ERROR_SUCCESS) {
-        LOQ_zero("pslr", "Handle", hKey, "ValueName", lpValueName, "Type", dwType,
+        LOQ_zero("registry", "pslr", "Handle", hKey, "ValueName", lpValueName, "Type", dwType,
             "Buffer", dwType, cbData, lpData);
     }
     else {
-        LOQ2_zero("psl", "Handle", hKey, "ValueName", lpValueName, "Type", dwType);
+        LOQ_zero("registry", "psl", "Handle", hKey, "ValueName", lpValueName, "Type", dwType);
     }
     return ret;
 }
@@ -229,11 +229,11 @@ HOOKDEF(LONG, WINAPI, RegSetValueExW,
     LONG ret = Old_RegSetValueExW(hKey, lpValueName, Reserved, dwType, lpData,
         cbData);
     if(ret == ERROR_SUCCESS) {
-        LOQ_zero("pulR", "Handle", hKey, "ValueName", lpValueName, "Type", dwType,
+        LOQ_zero("registry", "pulR", "Handle", hKey, "ValueName", lpValueName, "Type", dwType,
             "Buffer", dwType, cbData, lpData);
     }
     else {
-        LOQ2_zero("pul", "Handle", hKey, "ValueName", lpValueName, "Type", dwType);
+        LOQ_zero("registry", "pul", "Handle", hKey, "ValueName", lpValueName, "Type", dwType);
     }
     return ret;
 }
@@ -251,11 +251,11 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExA,
         lpData, lpcbData);
     if(ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {
-        LOQ_zero("psr", "Handle", hKey, "ValueName", lpValueName,
+        LOQ_zero("registry", "psr", "Handle", hKey, "ValueName", lpValueName,
             "Data", *lpType, *lpcbData, lpData);
     }
     else {
-        LOQ2_zero("psLL", "Handle", hKey, "ValueName", lpValueName,
+        LOQ_zero("registry", "psLL", "Handle", hKey, "ValueName", lpValueName,
             "Type", lpType, "DataLength", lpcbData);
     }
     return ret;
@@ -274,11 +274,11 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExW,
         lpData, lpcbData);
     if(ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {
-        LOQ_zero("puR", "Handle", hKey, "ValueName", lpValueName,
+        LOQ_zero("registry", "puR", "Handle", hKey, "ValueName", lpValueName,
             "Data", *lpType, *lpcbData, lpData);
     }
     else {
-        LOQ2_zero("puLL", "Handle", hKey, "ValueName", lpValueName,
+        LOQ_zero("registry", "puLL", "Handle", hKey, "ValueName", lpValueName,
             "Type", lpType, "DataLength", lpcbData);
     }
     return ret;
@@ -289,7 +289,7 @@ HOOKDEF(LONG, WINAPI, RegDeleteValueA,
     __in_opt  LPCTSTR lpValueName
 ) {
     LONG ret = Old_RegDeleteValueA(hKey, lpValueName);
-    LOQ_zero("ps", "Handle", hKey, "ValueName", lpValueName);
+    LOQ_zero("registry", "ps", "Handle", hKey, "ValueName", lpValueName);
     return ret;
 }
 
@@ -298,7 +298,7 @@ HOOKDEF(LONG, WINAPI, RegDeleteValueW,
     __in_opt  LPWSTR lpValueName
 ) {
     LONG ret = Old_RegDeleteValueW(hKey, lpValueName);
-    LOQ_zero("pu", "Handle", hKey, "ValueName", lpValueName);
+    LOQ_zero("registry", "pu", "Handle", hKey, "ValueName", lpValueName);
     return ret;
 }
 
@@ -320,7 +320,7 @@ HOOKDEF(LONG, WINAPI, RegQueryInfoKeyA,
         lpcSubKeys, lpcMaxSubKeyLen, lpcMaxClassLen, lpcValues,
         lpcMaxValueNameLen, lpcMaxValueLen, lpcbSecurityDescriptor,
         lpftLastWriteTime);
-    LOQ_zero("pS6L", "KeyHandle", hKey, "Class", lpcClass ? *lpcClass : 0, lpClass,
+    LOQ_zero("registry", "pS6L", "KeyHandle", hKey, "Class", lpcClass ? *lpcClass : 0, lpClass,
         "SubKeyCount", lpcSubKeys, "MaxSubKeyLength", lpcMaxSubKeyLen,
         "MaxClassLength", lpcMaxClassLen, "ValueCount", lpcValues,
         "MaxValueNameLength", lpcMaxValueNameLen,
@@ -346,7 +346,7 @@ HOOKDEF(LONG, WINAPI, RegQueryInfoKeyW,
         lpcSubKeys, lpcMaxSubKeyLen, lpcMaxClassLen, lpcValues,
         lpcMaxValueNameLen, lpcMaxValueLen, lpcbSecurityDescriptor,
         lpftLastWriteTime);
-    LOQ_zero("pU6L", "KeyHandle", hKey, "Class", lpcClass ? *lpcClass : 0, lpClass,
+    LOQ_zero("registry", "pU6L", "KeyHandle", hKey, "Class", lpcClass ? *lpcClass : 0, lpClass,
         "SubKeyCount", lpcSubKeys, "MaxSubKeyLength", lpcMaxSubKeyLen,
         "MaxClassLength", lpcMaxClassLen, "ValueCount", lpcValues,
         "MaxValueNameLength", lpcMaxValueNameLen,
@@ -358,6 +358,6 @@ HOOKDEF(LONG, WINAPI, RegCloseKey,
     __in    HKEY hKey
 ) {
     LONG ret = Old_RegCloseKey(hKey);
-    LOQ_zero("p", "Handle", hKey);
+    LOQ_zero("registry", "p", "Handle", hKey);
     return ret;
 }

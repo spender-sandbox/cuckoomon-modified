@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "log.h"
 
+
 HOOKDEF(HWND, WINAPI, FindWindowA,
     __in_opt  LPCTSTR lpClassName,
     __in_opt  LPCTSTR lpWindowName
@@ -29,10 +30,10 @@ HOOKDEF(HWND, WINAPI, FindWindowA,
     // the high-order word must be zero (from MSDN documentation.)
     HWND ret = Old_FindWindowA(lpClassName, lpWindowName);
     if(((DWORD_PTR) lpClassName & 0xffff) == (DWORD_PTR) lpClassName) {
-        LOQ_nonnull("ls", "ClassName", lpClassName, "WindowName", lpWindowName);
+        LOQ_nonnull("windows", "ls", "ClassName", lpClassName, "WindowName", lpWindowName);
     }
     else {
-        LOQ_nonnull("ss", "ClassName", lpClassName, "WindowName", lpWindowName);
+        LOQ_nonnull("windows", "ss", "ClassName", lpClassName, "WindowName", lpWindowName);
     }
     return ret;
 }
@@ -43,10 +44,10 @@ HOOKDEF(HWND, WINAPI, FindWindowW,
 ) {
     HWND ret = Old_FindWindowW(lpClassName, lpWindowName);
     if(((DWORD_PTR) lpClassName & 0xffff) == (DWORD_PTR) lpClassName) {
-        LOQ_nonnull("lu", "ClassName", lpClassName, "WindowName", lpWindowName);
+        LOQ_nonnull("windows", "lu", "ClassName", lpClassName, "WindowName", lpWindowName);
     }
     else {
-        LOQ_nonnull("uu", "ClassName", lpClassName, "WindowName", lpWindowName);
+        LOQ_nonnull("windows", "uu", "ClassName", lpClassName, "WindowName", lpWindowName);
     }
     return ret;
 }
@@ -63,10 +64,10 @@ HOOKDEF(HWND, WINAPI, FindWindowExA,
     // lpszClass can be one of the predefined window controls.. which lay in
     // the 0..ffff range
     if(((DWORD_PTR) lpszClass & 0xffff) == (DWORD_PTR) lpszClass) {
-        LOQ_nonnull("ls", "ClassName", lpszClass, "WindowName", lpszWindow);
+        LOQ_nonnull("windows", "ls", "ClassName", lpszClass, "WindowName", lpszWindow);
     }
     else {
-        LOQ2_nonnull("ss", "ClassName", lpszClass, "WindowName", lpszWindow);
+        LOQ_nonnull("windows", "ss", "ClassName", lpszClass, "WindowName", lpszWindow);
     }
     return ret;
 }
@@ -82,10 +83,20 @@ HOOKDEF(HWND, WINAPI, FindWindowExW,
     // lpszClass can be one of the predefined window controls.. which lay in
     // the 0..ffff range
     if(((DWORD_PTR) lpszClass & 0xffff) == (DWORD_PTR) lpszClass) {
-        LOQ_nonnull("lu", "ClassName", lpszClass, "WindowName", lpszWindow);
+        LOQ_nonnull("windows", "lu", "ClassName", lpszClass, "WindowName", lpszWindow);
     }
     else {
-        LOQ2_nonnull("uu", "ClassName", lpszClass, "WindowName", lpszWindow);
+        LOQ_nonnull("windows", "uu", "ClassName", lpszClass, "WindowName", lpszWindow);
     }
+    return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, EnumWindows,
+    _In_  WNDENUMPROC lpEnumFunc,
+    _In_  LPARAM lParam
+) {
+
+    BOOL ret = Old_EnumWindows(lpEnumFunc, lParam);
+    LOQ_bool("windows", "");
     return ret;
 }

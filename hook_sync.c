@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "log.h"
 
+
 HOOKDEF(NTSTATUS, WINAPI, NtCreateMutant,
     __out       PHANDLE MutantHandle,
     __in        ACCESS_MASK DesiredAccess,
@@ -29,7 +30,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateMutant,
 ) {
     NTSTATUS ret = Old_NtCreateMutant(MutantHandle, DesiredAccess,
         ObjectAttributes, InitialOwner);
-    LOQ_ntstatus("Pol", "Handle", MutantHandle,
+    LOQ_ntstatus("synchronization", "Pol", "Handle", MutantHandle,
         "MutexName", unistr_from_objattr(ObjectAttributes),
         "InitialOwner", InitialOwner);
     return ret;
@@ -42,7 +43,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenMutant,
 ) {
     NTSTATUS ret = Old_NtOpenMutant(MutantHandle, DesiredAccess,
         ObjectAttributes);
-    LOQ_ntstatus("Po", "Handle", MutantHandle,
+    LOQ_ntstatus("synchronization", "Po", "Handle", MutantHandle,
         "MutexName", unistr_from_objattr(ObjectAttributes));
     return ret;
 }
@@ -68,7 +69,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateNamedPipeFile,
         CreateDisposition, CreateOptions, WriteModeMessage, ReadModeMessage,
         NonBlocking, MaxInstances, InBufferSize, OutBufferSize,
         DefaultTimeOut);
-    LOQ_ntstatus("PpOl", "NamedPipeHandle", NamedPipeFileHandle,
+    LOQ_ntstatus("synchronization", "PpOl", "NamedPipeHandle", NamedPipeFileHandle,
         "DesiredAccess", DesiredAccess, "PipeName", ObjectAttributes,
         "ShareAccess", ShareAccess);
     return ret;

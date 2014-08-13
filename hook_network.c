@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "pipe.h"
 
+
 HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
     LPUNKNOWN pCaller,
     LPWSTR szURL,
@@ -33,7 +34,7 @@ HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
 ) {
     HRESULT ret = Old_URLDownloadToFileW(pCaller, szURL, szFileName,
         dwReserved, lpfnCB);
-    LOQ_hresult("uF", "URL", szURL, "FileName", szFileName);
+    LOQ_hresult("network", "uF", "URL", szURL, "FileName", szFileName);
     if(ret == S_OK) {
         pipe("FILE_NEW:%S", szFileName);
     }
@@ -49,7 +50,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenA,
 ) {
     HINTERNET ret = Old_InternetOpenA(lpszAgent, dwAccessType, lpszProxyName,
         lpszProxyBypass, dwFlags);
-    LOQ_nonnull("spssp", "Agent", lpszAgent, "AccessType", dwAccessType,
+    LOQ_nonnull("network", "spssp", "Agent", lpszAgent, "AccessType", dwAccessType,
         "ProxyName", lpszProxyName, "ProxyBypass", lpszProxyBypass,
         "Flags", dwFlags);
     return ret;
@@ -64,7 +65,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenW,
 ) {
     HINTERNET ret = Old_InternetOpenW(lpszAgent, dwAccessType, lpszProxyName,
         lpszProxyBypass, dwFlags);
-    LOQ_nonnull("upuup", "Agent", lpszAgent, "AccessType", dwAccessType,
+    LOQ_nonnull("network", "upuup", "Agent", lpszAgent, "AccessType", dwAccessType,
         "ProxyName", lpszProxyName, "ProxyBypass", lpszProxyBypass,
         "Flags", dwFlags);
     return ret;
@@ -83,7 +84,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetConnectA,
     HINTERNET ret = Old_InternetConnectA(hInternet, lpszServerName,
         nServerPort, lpszUsername, lpszPassword, dwService, dwFlags,
         dwContext);
-    LOQ_nonnull("pslsslp", "InternetHandle", hInternet, "ServerName", lpszServerName,
+    LOQ_nonnull("network", "pslsslp", "InternetHandle", hInternet, "ServerName", lpszServerName,
         "ServerPort", nServerPort, "Username", lpszUsername,
         "Password", lpszPassword, "Service", dwService, "Flags", dwFlags);
     return ret;
@@ -102,7 +103,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetConnectW,
     HINTERNET ret = Old_InternetConnectW(hInternet, lpszServerName,
         nServerPort, lpszUsername, lpszPassword, dwService, dwFlags,
         dwContext);
-    LOQ_nonnull("puluulp", "InternetHandle", hInternet, "ServerName", lpszServerName,
+    LOQ_nonnull("network", "puluulp", "InternetHandle", hInternet, "ServerName", lpszServerName,
         "ServerPort", nServerPort, "Username", lpszUsername,
         "Password", lpszPassword, "Service", dwService, "Flags", dwFlags);
     return ret;
@@ -120,7 +121,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlA,
         dwHeadersLength, dwFlags, dwContext);
     if(dwHeadersLength == (DWORD) -1)
 		dwHeadersLength = strlen(lpszHeaders);
-    LOQ_nonnull("psSp", "ConnectionHandle", hInternet, "URL", lpszUrl,
+    LOQ_nonnull("network", "psSp", "ConnectionHandle", hInternet, "URL", lpszUrl,
         "Headers", dwHeadersLength, lpszHeaders, "Flags", dwFlags);
     return ret;
 }
@@ -135,7 +136,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlW,
 ) {
     HINTERNET ret = Old_InternetOpenUrlW(hInternet, lpszUrl, lpszHeaders,
         dwHeadersLength, dwFlags, dwContext);
-    LOQ_nonnull("puUp", "ConnectionHandle", hInternet, "URL", lpszUrl,
+    LOQ_nonnull("network", "puUp", "ConnectionHandle", hInternet, "URL", lpszUrl,
         "Headers", dwHeadersLength, lpszHeaders, "Flags", dwFlags);
     return ret;
 }
@@ -152,7 +153,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
 ) {
     HINTERNET ret = Old_HttpOpenRequestA(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ_nonnull("psl", "InternetHandle", hConnect, "Path", lpszObjectName,
+    LOQ_nonnull("network", "psl", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
     return ret;
 }
@@ -169,7 +170,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
 ) {
     HINTERNET ret = Old_HttpOpenRequestW(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ_nonnull("pul", "InternetHandle", hConnect, "Path", lpszObjectName,
+    LOQ_nonnull("network", "pul", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
     return ret;
 }
@@ -184,7 +185,7 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestA,
     BOOL ret = Old_HttpSendRequestA(hRequest, lpszHeaders, dwHeadersLength,
         lpOptional, dwOptionalLength);
     if(dwHeadersLength == (DWORD) -1) dwHeadersLength = strlen(lpszHeaders);
-    LOQ_bool("pSb", "RequestHandle", hRequest,
+    LOQ_bool("network", "pSb", "RequestHandle", hRequest,
         "Headers", dwHeadersLength, lpszHeaders,
         "PostData", dwOptionalLength, lpOptional);
     return ret;
@@ -199,7 +200,7 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestW,
 ) {
     BOOL ret = Old_HttpSendRequestW(hRequest, lpszHeaders, dwHeadersLength,
         lpOptional, dwOptionalLength);
-    LOQ_bool("pUb", "RequestHandle", hRequest,
+    LOQ_bool("network", "pUb", "RequestHandle", hRequest,
         "Headers", dwHeadersLength, lpszHeaders,
         "PostData", dwOptionalLength, lpOptional);
     return ret;
@@ -213,7 +214,7 @@ HOOKDEF(BOOL, WINAPI, InternetReadFile,
 ) {
     BOOL ret = Old_InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead,
         lpdwNumberOfBytesRead);
-    LOQ_bool("pB", "InternetHandle", hFile,
+    LOQ_bool("network", "pB", "InternetHandle", hFile,
         "Buffer", lpdwNumberOfBytesRead, lpBuffer);
     return ret;
 }
@@ -226,7 +227,7 @@ HOOKDEF(BOOL, WINAPI, InternetWriteFile,
 ) {
     BOOL ret = Old_InternetWriteFile(hFile, lpBuffer, dwNumberOfBytesToWrite,
         lpdwNumberOfBytesWritten);
-    LOQ_bool("pB", "InternetHandle", hFile,
+    LOQ_bool("network", "pB", "InternetHandle", hFile,
         "Buffer", lpdwNumberOfBytesWritten, lpBuffer);
     return ret;
 }
@@ -235,7 +236,7 @@ HOOKDEF(BOOL, WINAPI, InternetCloseHandle,
     _In_  HINTERNET hInternet
 ) {
     BOOL ret = Old_InternetCloseHandle(hInternet);
-    LOQ_bool("p", "InternetHandle", hInternet);
+    LOQ_bool("network", "p", "InternetHandle", hInternet);
     return ret;
 }
 
@@ -249,7 +250,7 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_A,
 ) {
     DNS_STATUS ret = Old_DnsQuery_A(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("sil", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("network", "sil", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -263,7 +264,7 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_UTF8,
 ) {
     DNS_STATUS ret = Old_DnsQuery_UTF8(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("sil", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("network", "sil", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -277,28 +278,28 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_W,
 ) {
     DNS_STATUS ret = Old_DnsQuery_W(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("uil", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("network", "uil", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
-HOOKDEF(int, WSAAPI, getaddrinfo,
+HOOKDEF(int, WINAPI, getaddrinfo,
     _In_opt_  PCSTR pNodeName,
     _In_opt_  PCSTR pServiceName,
     _In_opt_  const ADDRINFOA *pHints,
     _Out_     PADDRINFOA *ppResult
 ) {
     int ret = Old_getaddrinfo(pNodeName, pServiceName, pHints, ppResult);
-    LOQ_zero("ss", "NodeName", pNodeName, "ServiceName", pServiceName);
+    LOQ_zero("network", "ss", "NodeName", pNodeName, "ServiceName", pServiceName);
     return ret;
 }
 
-HOOKDEF(int, WSAAPI, GetAddrInfoW,
+HOOKDEF(int, WINAPI, GetAddrInfoW,
     _In_opt_  PCWSTR pNodeName,
     _In_opt_  PCWSTR pServiceName,
     _In_opt_  const ADDRINFOW *pHints,
     _Out_     PADDRINFOW *ppResult
 ) {
     int ret = Old_GetAddrInfoW(pNodeName, pServiceName, pHints, ppResult);
-    LOQ_zero("uu", "NodeName", pNodeName, "ServiceName", pServiceName);
+    LOQ_zero("network", "uu", "NodeName", pNodeName, "ServiceName", pServiceName);
     return ret;
 }

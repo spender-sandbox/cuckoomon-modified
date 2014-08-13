@@ -84,9 +84,6 @@
     <ClCompile Include="utf8.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="logtbl.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="tests\apc-inject.c">
       <Filter>Tests</Filter>
     </ClCompile>
@@ -162,6 +159,12 @@
     <ClCompile Include="tests\write-file.c">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="hook_crypto.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="unhook.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h">
@@ -203,13 +206,8 @@
     <ClInclude Include="bson\bson.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="distorm3.2-package\include\distorm.h">
+    <ClInclude Include="unhook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="logtbl.py">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
 </Project>

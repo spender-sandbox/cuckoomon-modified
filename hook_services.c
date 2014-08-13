@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "log.h"
 
+
 HOOKDEF(SC_HANDLE, WINAPI, OpenSCManagerA,
     __in_opt  LPCTSTR lpMachineName,
     __in_opt  LPCTSTR lpDatabaseName,
@@ -28,7 +29,7 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenSCManagerA,
 ) {
     SC_HANDLE ret = Old_OpenSCManagerA(lpMachineName, lpDatabaseName,
         dwDesiredAccess);
-    LOQ_nonnull("ssl", "MachineName", lpMachineName, "DatabaseName", lpDatabaseName,
+    LOQ_nonnull("services", "ssl", "MachineName", lpMachineName, "DatabaseName", lpDatabaseName,
         "DesiredAccess", dwDesiredAccess);
     return ret;
 }
@@ -40,7 +41,7 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenSCManagerW,
 ) {
     SC_HANDLE ret = Old_OpenSCManagerW(lpMachineName, lpDatabaseName,
         dwDesiredAccess);
-    LOQ_nonnull("uul", "MachineName", lpMachineName, "DatabaseName", lpDatabaseName,
+    LOQ_nonnull("services", "uul", "MachineName", lpMachineName, "DatabaseName", lpDatabaseName,
         "DesiredAccess", dwDesiredAccess);
     return ret;
 }
@@ -64,7 +65,7 @@ HOOKDEF(SC_HANDLE, WINAPI, CreateServiceA,
         lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType,
         dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId,
         lpDependencies, lpServiceStartName, lpPassword);
-    LOQ_nonnull("pss4l3s", "ServiceControlHandle", hSCManager,
+    LOQ_nonnull("services", "pss4l3s", "ServiceControlHandle", hSCManager,
         "ServiceName", lpServiceName, "DisplayName", lpDisplayName,
         "DesiredAccess", dwDesiredAccess, "ServiceType", dwServiceType,
         "StartType", dwStartType, "ErrorControl", dwErrorControl,
@@ -93,7 +94,7 @@ HOOKDEF(SC_HANDLE, WINAPI, CreateServiceW,
         lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType,
         dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId,
         lpDependencies, lpServiceStartName, lpPassword);
-    LOQ_nonnull("puu4lF2u", "ServiceControlHandle", hSCManager,
+    LOQ_nonnull("services", "puu4lF2u", "ServiceControlHandle", hSCManager,
         "ServiceName", lpServiceName, "DisplayName", lpDisplayName,
         "DesiredAccess", dwDesiredAccess, "ServiceType", dwServiceType,
         "StartType", dwStartType, "ErrorControl", dwErrorControl,
@@ -110,7 +111,7 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenServiceA,
 ) {
     SC_HANDLE ret = Old_OpenServiceA(hSCManager, lpServiceName,
         dwDesiredAccess);
-    LOQ_nonnull("psl", "ServiceControlManager", hSCManager,
+    LOQ_nonnull("services", "psl", "ServiceControlManager", hSCManager,
         "ServiceName", lpServiceName, "DesiredAccess", dwDesiredAccess);
     return ret;
 }
@@ -122,7 +123,7 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenServiceW,
 ) {
     SC_HANDLE ret = Old_OpenServiceW(hSCManager, lpServiceName,
         dwDesiredAccess);
-    LOQ_nonnull("pul", "ServiceControlManager", hSCManager,
+    LOQ_nonnull("services", "pul", "ServiceControlManager", hSCManager,
         "ServiceName", lpServiceName, "DesiredAccess", dwDesiredAccess);
     return ret;
 }
@@ -134,7 +135,7 @@ HOOKDEF(BOOL, WINAPI, StartServiceA,
 ) {
     BOOL ret = Old_StartServiceA(hService, dwNumServiceArgs,
         lpServiceArgVectors);
-    LOQ_bool("pa", "ServiceHandle", hService, "Arguments", dwNumServiceArgs,
+    LOQ_bool("services", "pa", "ServiceHandle", hService, "Arguments", dwNumServiceArgs,
         lpServiceArgVectors);
     return ret;
 }
@@ -146,7 +147,7 @@ HOOKDEF(BOOL, WINAPI, StartServiceW,
 ) {
     BOOL ret = Old_StartServiceW(hService, dwNumServiceArgs,
         lpServiceArgVectors);
-    LOQ_bool("pA", "ServiceHandle", hService, "Arguments", dwNumServiceArgs,
+    LOQ_bool("services", "pA", "ServiceHandle", hService, "Arguments", dwNumServiceArgs,
         lpServiceArgVectors);
     return ret;
 }
@@ -157,7 +158,7 @@ HOOKDEF(BOOL, WINAPI, ControlService,
     __out  LPSERVICE_STATUS lpServiceStatus
 ) {
     BOOL ret = Old_ControlService(hService, dwControl, lpServiceStatus);
-    LOQ_bool("pl", "ServiceHandle", hService, "ControlCode", dwControl);
+    LOQ_bool("services", "pl", "ServiceHandle", hService, "ControlCode", dwControl);
     return ret;
 }
 
@@ -165,6 +166,6 @@ HOOKDEF(BOOL, WINAPI, DeleteService,
     __in  SC_HANDLE hService
 ) {
     BOOL ret = Old_DeleteService(hService);
-    LOQ_bool("p", "ServiceHandle", hService);
+    LOQ_bool("services", "p", "ServiceHandle", hService);
     return ret;
 }

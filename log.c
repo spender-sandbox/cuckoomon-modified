@@ -42,6 +42,11 @@ static char g_istr[4];
 
 static char logtbl_explained[256] = {0};
 
+#define LOG_ID_PROCESS 0
+#define LOG_ID_THREAD 1
+#define LOG_ID_ANOMALY 2
+int g_log_index = 10;  // index must start after the special IDs (see defines)
+
 //
 // Log API
 //
@@ -84,6 +89,7 @@ static void log_raw(const char *buf, size_t length) {
 */
 
 static void log_raw_direct(const char *buf, size_t length) {
+    if(g_sock == INVALID_SOCKET) return;
     size_t sent = 0;
     int r;
     while (sent < length) {
@@ -191,7 +197,7 @@ static void log_buffer(const char *buf, size_t length) {
     bson_append_binary( g_bson, g_istr, BSON_BIN_BINARY, buf, trunclength );
 }
 
-void loq(int index, const char *name,
+void loq(int index, const char *category, const char *name,
     int is_success, int return_value, const char *fmt, ...)
 {
     va_list args;
@@ -211,7 +217,7 @@ void loq(int index, const char *name,
         bson_append_int( b, "I", index );
         bson_append_string( b, "name", name );
         bson_append_string( b, "type", "info" );
-        bson_append_string( b, "category", logtbl[index][1] );
+        bson_append_string( b, "category", category );
 
         bson_append_start_array( b, "args" );
         bson_append_string( b, "0", "is_success" );
@@ -342,13 +348,13 @@ void loq(int index, const char *name,
             if(s == NULL) s = "";
             log_string(s, -1);
         }
-		else if (key == 'f') {
-			const char *s = va_arg(args, const char *);
-			char absolutepath[MAX_PATH];
-			if (s == NULL) s = "";
-			ensure_absolute_ascii_path(absolutepath, s);
-			log_string(absolutepath, -1);
-		}
+	else if (key == 'f') {
+		const char *s = va_arg(args, const char *);
+		char absolutepath[MAX_PATH];
+		if (s == NULL) s = "";
+		ensure_absolute_ascii_path(absolutepath, s);
+		log_string(absolutepath, -1);
+	}
         else if(key == 'S') {
             int len = va_arg(args, int);
             const char *s = va_arg(args, const char *);
@@ -360,14 +366,14 @@ void loq(int index, const char *name,
             if(s == NULL) s = L"";
             log_wstring(s, -1);
         }
-		else if (key == 'F') {
-			const wchar_t *s = va_arg(args, const wchar_t *);
-			wchar_t absolutepath[32768];
-			if (s == NULL) s = L"";
-			ensure_absolute_unicode_path(absolutepath, s);
-			log_wstring(absolutepath, -1);
-		}
-		else if (key == 'U') {
+	else if (key == 'F') {
+		const wchar_t *s = va_arg(args, const wchar_t *);
+		wchar_t absolutepath[32768];
+		if (s == NULL) s = L"";
+		ensure_absolute_unicode_path(absolutepath, s);
+		log_wstring(absolutepath, -1);
+	}
+	else if (key == 'U') {
             int len = va_arg(args, int);
             const wchar_t *s = va_arg(args, const wchar_t *);
             if(s == NULL) { s = L""; len = 0; }
@@ -381,7 +387,7 @@ void loq(int index, const char *name,
         else if(key == 'B') {
             size_t *len = va_arg(args, size_t *);
             const char *s = va_arg(args, const char *);
-            log_buffer(s, *len);
+            log_buffer(s, len == NULL ? 0 : *len);
         }
         else if(key == 'i') {
             int value = va_arg(args, int);
@@ -417,7 +423,7 @@ void loq(int index, const char *name,
 
                 ensure_absolute_unicode_path(absolutepath, path);
 
-				log_wstring(absolutepath, lstrlenW(absolutepath));
+		log_wstring(absolutepath, lstrlenW(absolutepath));
             }
         }
         else if(key == 'a') {
@@ -508,7 +514,8 @@ void log_new_process()
     FILETIME st;
     GetSystemTimeAsFileTime(&st);
 
-    loq(0, "__process__", 1, 0, "llllu", "TimeLow", st.dwLowDateTime,
+    loq(LOG_ID_PROCESS, "__notification__", "__process__", 1, 0, "llllu",
+        "TimeLow", st.dwLowDateTime,
         "TimeHigh", st.dwHighDateTime,
         "ProcessIdentifier", GetCurrentProcessId(),
         "ParentProcessIdentifier", parent_process_id(),
@@ -517,7 +524,18 @@ void log_new_process()
 
 void log_new_thread()
 {
-    loq(1, "__thread__", 1, 0, "l", "ProcessIdentifier", GetCurrentProcessId());
+    loq(LOG_ID_THREAD, "__notification__", "__thread__", 1, 0, "l",
+        "ProcessIdentifier", GetCurrentProcessId());
+}
+
+void log_anomaly(const char *subcategory, int success,
+    const char *funcname, const char *msg)
+{
+    loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", success, 0, "lsss",
+        "ThreadIdentifier", GetCurrentThreadId(),
+        "Subcategory", subcategory,
+        "FunctionName", funcname,
+        "Message", msg);
 }
 
 void log_init(unsigned int ip, unsigned short port, int debug)
@@ -556,19 +574,4 @@ void log_free()
     if(g_sock != INVALID_SOCKET) {
         closesocket(g_sock);
     }
-}
-
-int log_resolve_index(const char *funcname, int index)
-{
-    for (int i = 0; logtbl[i][0] != NULL; i++) {
-        if(!strcmp(funcname, logtbl[i][0])) {
-            if(index != 0) {
-                index--;
-            }
-            else {
-                return i;
-            }
-        }
-    }
-    return -1;
 }

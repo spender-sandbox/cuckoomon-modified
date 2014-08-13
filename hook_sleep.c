@@ -21,9 +21,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "log.h"
 #include "pipe.h"
+#include "config.h"
 
 // only skip Sleep()'s the first five seconds
 #define MAX_SLEEP_SKIP_DIFF 5000
+
 
 // skipping sleep calls is done while this variable is set to true
 static int sleep_skip_active = 1;
@@ -51,7 +53,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 
             // notify how much we've skipped
             unsigned long milli = (unsigned long)(-DelayInterval->QuadPart / 10000);
-            LOQ_ntstatus("ls", "Milliseconds", milli, "Status", "Skipped");
+            LOQ_ntstatus("system", "ls", "Milliseconds", milli, "Status", "Skipped");
             return ret;
         }
         else {
@@ -59,7 +61,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
         }
     }
     unsigned long milli = (unsigned long)(-DelayInterval->QuadPart / 10000);
-    LOQ2_ntstatus("l", "Milliseconds", milli);
+    LOQ_ntstatus("system", "l", "Milliseconds", milli);
     return Old_NtDelayExecution(Alertable, DelayInterval);
 }
 
@@ -116,7 +118,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemTime,
 
 void disable_sleep_skip()
 {
-    sleep_skip_active = 0;
+    if (sleep_skip_active && !g_config.force_sleepskip) {
+        pipe("INFO:Disabling sleep skipping.");
+        sleep_skip_active = 0;
+    }
 }
 
 void init_sleep_skip(int first_process)

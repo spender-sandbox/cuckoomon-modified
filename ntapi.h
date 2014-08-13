@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <WinSock2.h>
 #endif
 #include <windows.h>
+#include <wincrypt.h>
 #include <stdint.h>
 
 #ifndef __NTAPI_H__
@@ -28,6 +29,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 typedef LONG NTSTATUS;
 
 #define NT_SUCCESS(Status) ((NTSTATUS)(Status) >= 0)
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 #ifndef _MSC_VER
 #define __out
@@ -41,6 +44,7 @@ typedef LONG NTSTATUS;
 #define _In_opt_
 #define _Out_
 #define _Out_opt_
+#define _Inout_
 #define _Inout_opt_
 #define _Reserved_
 #endif
@@ -88,7 +92,9 @@ typedef struct _OBJECT_ATTRIBUTES {
 typedef void *PIO_APC_ROUTINE;
 
 #ifndef _MSC_VER
+#ifndef ARRAYSIZE
 #define ARRAYSIZE(a) (sizeof(a) / sizeof(*(a)))
+#endif
 
 typedef void *HINTERNET;
 
@@ -309,13 +315,6 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS {
 
 typedef void *PPS_CREATE_INFO, *PPS_ATTRIBUTE_LIST;
 
-typedef struct _TRANSMIT_FILE_BUFFERS {
-    PVOID Head;
-    DWORD HeadLength;
-    PVOID Tail;
-    DWORD TailLength;
-} TRANSMIT_FILE_BUFFERS, *LPTRANSMIT_FILE_BUFFERS;
-
 typedef void *PVOID, **PPVOID;
 
 typedef struct _PEB_LDR_DATA {
@@ -425,9 +424,9 @@ typedef struct _SECTION_IMAGE_INFORMATION {
         struct {
             uint16_t    SubSystemMinorVersion;
             uint16_t    SubSystemMajorVersion;
-        };
+        } _;
         uint32_t        SubSystemVersion;
-    };
+    } _;
     uint32_t            GpValue;
     uint16_t            ImageCharacteristics;
     uint16_t            DllCharacteristics;
@@ -441,8 +440,8 @@ typedef struct _SECTION_IMAGE_INFORMATION {
             uint8_t     ImageDynamicallyRelocated : 1;
             uint8_t     ImageMappedFlat : 1;
             uint8_t     Reserved : 4;
-        };
-    };
+        } _;
+    } __;
     uint32_t            LoaderFlags;
     uint32_t            ImageFileSize;
     uint32_t            CheckSum;

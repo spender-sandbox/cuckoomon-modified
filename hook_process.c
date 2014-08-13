@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ignore.h"
 #include "hook_sleep.h"
 
+
 HOOKDEF(NTSTATUS, WINAPI, NtCreateProcess,
     __out       PHANDLE ProcessHandle,
     __in        ACCESS_MASK DesiredAccess,
@@ -38,7 +39,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateProcess,
     NTSTATUS ret = Old_NtCreateProcess(ProcessHandle, DesiredAccess,
         ObjectAttributes, ParentProcess, InheritObjectTable, SectionHandle,
         DebugPort, ExceptionPort);
-    LOQ_ntstatus("PpO", "ProcessHandle", ProcessHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("process", "PpO", "ProcessHandle", ProcessHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes);
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d", pid_from_process_handle(*ProcessHandle));
@@ -61,7 +62,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateProcessEx,
     NTSTATUS ret = Old_NtCreateProcessEx(ProcessHandle, DesiredAccess,
         ObjectAttributes, ParentProcess, Flags, SectionHandle, DebugPort,
         ExceptionPort, InJob);
-    LOQ_ntstatus("PpO", "ProcessHandle", ProcessHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("process", "PpO", "ProcessHandle", ProcessHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes);
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d", pid_from_process_handle(*ProcessHandle));
@@ -96,7 +97,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateUserProcess,
         ProcessObjectAttributes, ThreadObjectAttributes,
         ProcessFlags, ThreadFlags, ProcessParameters,
         CreateInfo, AttributeList);
-    LOQ_ntstatus("PPppOOoo", "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("process", "PPppOOoo", "ProcessHandle", ProcessHandle,
         "ThreadHandle", ThreadHandle,
         "ProcessDesiredAccess", ProcessDesiredAccess,
         "ThreadDesiredAccess", ThreadDesiredAccess,
@@ -128,7 +129,7 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserProcess,
         ProcessParameters, ProcessSecurityDescriptor,
         ThreadSecurityDescriptor, ParentProcess, InheritHandles, DebugPort,
         ExceptionPort, ProcessInformation);
-    LOQ_ntstatus("opp", "ImagePath", ImagePath, "ObjectAttributes", ObjectAttributes,
+    LOQ_ntstatus("process", "opp", "ImagePath", ImagePath, "ObjectAttributes", ObjectAttributes,
         "ParentProcess", ParentProcess);
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d,%d",
@@ -155,14 +156,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,
 
     if(is_protected_pid(pid)) {
         NTSTATUS ret = STATUS_ACCESS_DENIED;
-        LOQ_ntstatus("ppp", "ProcessHandle", NULL, "DesiredAccess", DesiredAccess,
+        LOQ_ntstatus("process", "ppp", "ProcessHandle", NULL, "DesiredAccess", DesiredAccess,
             "ProcessIdentifier", pid);
         return STATUS_ACCESS_DENIED;
     }
 
     NTSTATUS ret = Old_NtOpenProcess(ProcessHandle, DesiredAccess,
         ObjectAttributes, ClientId);
-    LOQ2_ntstatus("Ppp", "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("process", "Ppp", "ProcessHandle", ProcessHandle,
         "DesiredAccess", DesiredAccess,
         "ProcessIdentifier", pid);
     /*
@@ -187,7 +188,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
 ) {
     // Process will terminate. Default logging will not work. Be aware: return value not valid
     NTSTATUS ret = 0;
-    LOQ_ntstatus("pl", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
+    LOQ_ntstatus("process", "pl", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
     log_flush();
 
     ret = Old_NtTerminateProcess(ProcessHandle, ExitStatus);    
@@ -206,7 +207,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateSection,
     NTSTATUS ret = Old_NtCreateSection(SectionHandle, DesiredAccess,
         ObjectAttributes, MaximumSize, SectionPageProtection,
         AllocationAttributes, FileHandle);
-    LOQ_ntstatus("PpOp", "SectionHandle", SectionHandle,
+    LOQ_ntstatus("process", "PpOp", "SectionHandle", SectionHandle,
         "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes,
         "FileHandle", FileHandle);
     return ret;
@@ -216,7 +217,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtMakeTemporaryObject,
     __in     HANDLE ObjectHandle
 ) {
     NTSTATUS ret = Old_NtMakeTemporaryObject(ObjectHandle);
-    LOQ_ntstatus("p", "ObjectHandle", ObjectHandle);
+    LOQ_ntstatus("process", "p", "ObjectHandle", ObjectHandle);
     return ret;
 }
 
@@ -224,7 +225,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtMakePermanentObject,
     __in     HANDLE ObjectHandle
 ) {
     NTSTATUS ret = Old_NtMakePermanentObject(ObjectHandle);
-    LOQ_ntstatus("p", "ObjectHandle", ObjectHandle);
+    LOQ_ntstatus("process", "p", "ObjectHandle", ObjectHandle);
     return ret;
 }
 
@@ -235,7 +236,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenSection,
 ) {
     NTSTATUS ret = Old_NtOpenSection(SectionHandle, DesiredAccess,
         ObjectAttributes);
-    LOQ_ntstatus("PpO", "SectionHandle", SectionHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("process", "PpO", "SectionHandle", SectionHandle, "DesiredAccess", DesiredAccess,
         "ObjectAttributes", ObjectAttributes);
     return ret;
 }
@@ -258,7 +259,7 @@ HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
         lpCommandLine, lpProcessAttributes, lpThreadAttributes,
         bInheritHandles, dwCreationFlags, lpEnvironment,
         lpCurrentDirectory, lpStartupInfo, lpProcessInformation, lpUnknown2);
-    LOQ_bool("uupllpp", "ApplicationName", lpApplicationName,
+    LOQ_bool("process", "uupllpp", "ApplicationName", lpApplicationName,
         "CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
         "ProcessId", lpProcessInformation->dwProcessId,
         "ThreadId", lpProcessInformation->dwThreadId,
@@ -271,7 +272,7 @@ HOOKDEF(VOID, WINAPI, ExitProcess,
     __in  UINT uExitCode
 ) {
     int ret = 0;
-    LOQ_void("l", "ExitCode", uExitCode);
+    LOQ_void("process", "l", "ExitCode", uExitCode);
     log_free();
     Old_ExitProcess(uExitCode);
 }
@@ -280,7 +281,7 @@ HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     __inout  SHELLEXECUTEINFOW *pExecInfo
 ) {
     BOOL ret = Old_ShellExecuteExW(pExecInfo);
-    LOQ_bool("2ul", "FilePath", pExecInfo->lpFile,
+    LOQ_bool("process", "2ul", "FilePath", pExecInfo->lpFile,
         "Parameters", pExecInfo->lpParameters, "Show", pExecInfo->nShow);
     return ret;
 }
@@ -312,7 +313,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
 ) {
     NTSTATUS ret = Old_NtAllocateVirtualMemory(ProcessHandle, BaseAddress,
         ZeroBits, RegionSize, AllocationType, Protect);
-    LOQ_ntstatus("pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+    LOQ_ntstatus("process", "pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "RegionSize", RegionSize, "Protection", Protect);
     return ret;
 }
@@ -329,7 +330,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadVirtualMemory,
     NTSTATUS ret = Old_NtReadVirtualMemory(ProcessHandle, BaseAddress, Buffer,
         NumberOfBytesToRead, NumberOfBytesReaded);
 
-    LOQ_ntstatus("2pB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+    LOQ_ntstatus("process", "2pB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "Buffer", NumberOfBytesReaded, Buffer);
     return ret;
 }
@@ -346,7 +347,7 @@ HOOKDEF(BOOL, WINAPI, ReadProcessMemory,
     BOOL ret = Old_ReadProcessMemory(hProcess, lpBaseAddress, lpBuffer,
         nSize, lpNumberOfBytesRead);
 
-    LOQ_bool("ppB", "ProcessHandle", hProcess, "BaseAddress", lpBaseAddress,
+    LOQ_bool("process", "ppB", "ProcessHandle", hProcess, "BaseAddress", lpBaseAddress,
         "Buffer", lpNumberOfBytesRead, lpBuffer);
     return ret;
 }
@@ -363,7 +364,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteVirtualMemory,
     NTSTATUS ret = Old_NtWriteVirtualMemory(ProcessHandle, BaseAddress, Buffer,
         NumberOfBytesToWrite, NumberOfBytesWritten);
 
-    LOQ_ntstatus("2pB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+    LOQ_ntstatus("process", "2pB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "Buffer", NumberOfBytesWritten, Buffer);
     return ret;
 }
@@ -380,7 +381,7 @@ HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
     BOOL ret = Old_WriteProcessMemory(hProcess, lpBaseAddress, lpBuffer,
         nSize, lpNumberOfBytesWritten);
 
-    LOQ_bool("ppB", "ProcessHandle", hProcess, "BaseAddress", lpBaseAddress,
+    LOQ_bool("process", "ppB", "ProcessHandle", hProcess, "BaseAddress", lpBaseAddress,
         "Buffer", lpNumberOfBytesWritten, lpBuffer);
     return ret;
 }
@@ -394,7 +395,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
 ) {
     NTSTATUS ret = Old_NtProtectVirtualMemory(ProcessHandle, BaseAddress,
         NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
-    LOQ_ntstatus("pPPpP", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+    LOQ_ntstatus("process", "pPPpP", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "NumberOfBytesProtected", NumberOfBytesToProtect,
         "NewAccessProtection", NewAccessProtection,
         "OldAccessProtection", OldAccessProtection);
@@ -410,7 +411,7 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
 ) {
     BOOL ret = Old_VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect,
         lpflOldProtect);
-    LOQ_bool("pppp", "ProcessHandle", hProcess, "Address", lpAddress,
+    LOQ_bool("process", "pppp", "ProcessHandle", hProcess, "Address", lpAddress,
         "Size", dwSize, "Protection", flNewProtect);
     return ret;
 }
@@ -423,7 +424,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtFreeVirtualMemory,
 ) {
     NTSTATUS ret = Old_NtFreeVirtualMemory(ProcessHandle, BaseAddress,
         RegionSize, FreeType);
-    LOQ_ntstatus("pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+    LOQ_ntstatus("process", "pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "RegionSize", RegionSize, "FreeType", FreeType);
     return ret;
 }
@@ -435,7 +436,7 @@ HOOKDEF(BOOL, WINAPI, VirtualFreeEx,
     __in  DWORD dwFreeType
 ) {
     BOOL ret = Old_VirtualFreeEx(hProcess, lpAddress, dwSize, dwFreeType);
-    LOQ_bool("pppl", "ProcessHandle", hProcess, "Address", lpAddress,
+    LOQ_bool("process", "pppl", "ProcessHandle", hProcess, "Address", lpAddress,
         "Size", dwSize, "FreeType", dwFreeType);
     return ret;
 }
@@ -444,6 +445,6 @@ HOOKDEF(int, CDECL, system,
     const char *command
 ) {
     int ret = Old_system(command);
-    LOQ_nonnegone("s", "Command", command);
+    LOQ_nonnegone("process", "s", "Command", command);
     return ret;
 }

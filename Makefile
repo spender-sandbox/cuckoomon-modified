@@ -1,38 +1,33 @@
 MAKEFLAGS = -j8
-CFLAGS = -Wall -std=c99 -s -O2
+CFLAGS = -Wall -std=c99 -s -O2 -Wno-strict-aliasing -static
 DLL = -shared
-DIRS = -Idistorm3.2-package/include -Ibson
+DIRS = -Ibson -Icapstone
 LIBS = -lws2_32 -lshlwapi
 OBJDIR = objects
 
+# Passes DBG=1 on as -DCUCKOODBG=1
+ifdef DBG
+	CFLAGS += -DCUCKOODBG=$(DBG)
+endif
+
 ifneq ($(OS),Windows_NT)
-	CC = i586-mingw32msvc-cc
+	CC = i686-w64-mingw32-gcc
 else
 	CC = gcc
 endif
 
-DISTORM3 = $(wildcard distorm3.2-package/src/*.c)
-DISTORM3OBJ = $(DISTORM3:distorm3.2-package/src/%.c=$(OBJDIR)/distorm3.2/%.o)
-
 CUCKOOSRC = $(wildcard *.c)
 CUCKOOOBJ = $(CUCKOOSRC:%.c=$(OBJDIR)/%.o)
 
-LOGTBLSRC = logtbl.c
-LOGTBLOBJ = $(LOGTBLSRC:%.c=$(OBJDIR)/%.o)
+CAPSTONELIB = capstone/capstone.lib
 
 BSONSRC = bson/bson.c bson/encoding.c bson/numbers.c
 BSONOBJ = $(OBJDIR)/bson/bson.o $(OBJDIR)/bson/encoding.o $(OBJDIR)/bson/numbers.o
 
-default: $(OBJDIR) $(LOGTBLSRC) cuckoomon.dll
+default: $(CAPSTONELIB) $(OBJDIR) cuckoomon.dll
 
 $(OBJDIR):
-	mkdir $@ $@/bson $@/distorm3.2
-
-$(LOGTBLSRC): netlog.py
-	python netlog.py c-header $@
-
-$(OBJDIR)/distorm3.2/%.o: distorm3.2-package/src/%.c
-	$(CC) $(CFLAGS) $(DIRS) -c $^ -o $@
+	mkdir $@ $@/bson $@/capstone
 
 $(OBJDIR)/bson/%.o: bson/%.c
 	$(CC) $(CFLAGS) $(DIRS) -c $^ -o $@
@@ -40,8 +35,13 @@ $(OBJDIR)/bson/%.o: bson/%.c
 $(OBJDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(DIRS) -c $^ -o $@
 
-cuckoomon.dll: $(CUCKOOOBJ) $(DISTORM3OBJ) $(LOGTBLOBJ) $(BSONOBJ)
+$(CAPSTONELIB):
+	git submodule update --init && \
+	cp capstone-config.mk capstone/config.mk && \
+	cd capstone && ./make.sh cross-win32
+
+cuckoomon.dll: $(CUCKOOOBJ) $(BSONOBJ) $(CAPSTONELIB)
 	$(CC) $(CFLAGS) $(DLL) $(DIRS) -o $@ $^ $(LIBS)
 
 clean:
-	rm -rf $(OBJDIR) $(LOGTBLSRC) cuckoomon.dll
+	rm -rf $(OBJDIR) cuckoomon.dll

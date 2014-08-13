@@ -55,9 +55,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // loq("3s", "key1", "value", "key2", "value2", "key3", "value3");
 //
 
-void loq(int index, const char *name, int is_success, int return_value, const char *fmt, ...);
+void loq(int index, const char *category, const char *name,
+    int is_success, int return_value, const char *fmt, ...);
 void log_new_process();
 void log_new_thread();
+void log_anomaly(const char *subcategory, int success,
+    const char *funcname, const char *msg);
 
 void log_init(unsigned int ip, unsigned short port, int debug);
 void log_flush();
@@ -65,38 +68,33 @@ void log_free();
 
 int log_resolve_index(const char *funcname, int index);
 extern const char *logtbl[][2];
+extern int g_log_index;
 
-#define _LOQ(eval, fmt, ...) do { static int _index; if(_index == 0) \
-    _index = log_resolve_index(&__FUNCTION__[4], 0); loq(_index, \
+#define _LOQ(eval, cat, fmt, ...) do { static int _index; if(_index == 0) \
+    _index = ++g_log_index; loq(_index, cat, \
     &__FUNCTION__[4], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)
 
-#define LOQ_ntstatus(fmt, ...) _LOQ(NT_SUCCESS(ret), fmt, ##__VA_ARGS__)
-#define LOQ_nonnull(fmt, ...) _LOQ(ret != NULL, fmt, ##__VA_ARGS__)
-#define LOQ_handle(fmt, ...) _LOQ(ret != NULL && ret != INVALID_HANDLE_VALUE, fmt, ##__VA_ARGS__)
-#define LOQ_void(fmt, ...) _LOQ(TRUE, fmt, ##__VA_ARGS__)
-#define LOQ_bool(fmt, ...) _LOQ(ret != FALSE, fmt, ##__VA_ARGS__)
-#define LOQ_hresult(fmt, ...) _LOQ(ret == S_OK, fmt, ##__VA_ARGS__)
-#define LOQ_zero(fmt, ...) _LOQ(ret == 0, fmt, ##__VA_ARGS__)
-#define LOQ_nonzero(fmt, ...) _LOQ(ret != 0, fmt, ##__VA_ARGS__)
-#define LOQ_nonnegone(fmt, ...) _LOQ(ret != -1, fmt, ##__VA_ARGS__)
-#define LOQ_sockerr(fmt, ...) _LOQ(ret != SOCKET_ERROR, fmt, ##__VA_ARGS__)
-#define LOQ_sock(fmt, ...) _LOQ(ret != INVALID_SOCKET, fmt, ##__VA_ARGS__)
+#define LOQ_ntstatus(cat, fmt, ...) _LOQ(NT_SUCCESS(ret), cat, fmt, ##__VA_ARGS__)
+#define LOQ_nonnull(cat, fmt, ...) _LOQ(ret != NULL, cat, fmt, ##__VA_ARGS__)
+#define LOQ_handle(cat, fmt, ...) _LOQ(ret != NULL && ret != INVALID_HANDLE_VALUE, cat, fmt, ##__VA_ARGS__)
+#define LOQ_void(cat, fmt, ...) _LOQ(TRUE, cat, fmt, ##__VA_ARGS__)
+#define LOQ_bool(cat, fmt, ...) _LOQ(ret != FALSE, cat, fmt, ##__VA_ARGS__)
+#define LOQ_hresult(cat, fmt, ...) _LOQ(ret == S_OK, cat, fmt, ##__VA_ARGS__)
+#define LOQ_zero(cat, fmt, ...) _LOQ(ret == 0, cat, fmt, ##__VA_ARGS__)
+#define LOQ_nonzero(cat, fmt, ...) _LOQ(ret != 0, cat, fmt, ##__VA_ARGS__)
+#define LOQ_nonnegone(cat, fmt, ...) _LOQ(ret != -1, cat, fmt, ##__VA_ARGS__)
+#define LOQ_sockerr(cat, fmt, ...) _LOQ(ret != SOCKET_ERROR, cat, fmt, ##__VA_ARGS__)
+#define LOQ_sock(cat, fmt, ...) _LOQ(ret != INVALID_SOCKET, cat, fmt, ##__VA_ARGS__)
 
-#define _LOQ2(eval, fmt, ...) do { static int _index; if(_index == 0) \
-    _index = log_resolve_index(&__FUNCTION__[4], 1); loq(_index, \
-    &__FUNCTION__[4], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)
 
-#define LOQ2_ntstatus(fmt, ...) _LOQ2(NT_SUCCESS(ret), fmt, ##__VA_ARGS__)
-#define LOQ2_zero(fmt, ...) _LOQ2(ret == 0, fmt, ##__VA_ARGS__)
-#define LOQ2_nonnull(fmt, ...) _LOQ2(ret != NULL, fmt, ##__VA_ARGS__)
-#define LOQ2_sockerr(fmt, ...) _LOQ2(ret != SOCKET_ERROR, fmt, ##__VA_ARGS__)
 
-#define _LOQspecial(eval, fmt, ...) do { static int _index; if(_index == 0) \
-    _index = log_resolve_index(&__FUNCTION__[5], 0); loq(_index, \
+
+#define _LOQspecial(eval, cat, fmt, ...) do { static int _index; if(_index == 0) \
+    _index = ++g_log_index; loq(_index, cat, \
     &__FUNCTION__[5], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)
 
-#define LOQspecial_ntstatus(fmt, ...) _LOQspecial(NT_SUCCESS(ret), fmt, ##__VA_ARGS__)
-#define LOQspecial_bool(fmt, ...) _LOQspecial(ret != FALSE, fmt, ##__VA_ARGS__)
+#define LOQspecial_ntstatus(cat, fmt, ...) _LOQspecial(NT_SUCCESS(ret), cat, fmt, ##__VA_ARGS__)
+#define LOQspecial_bool(cat, fmt, ...) _LOQspecial(ret != FALSE, cat, fmt, ##__VA_ARGS__)
 
 #define ENSURE_DWORD(param) \
     DWORD _##param = 0; if(param == NULL) param = &_##param
@@ -113,3 +111,6 @@ extern const char *logtbl[][2];
 
 #define ENSURE_CLIENT_ID(param) \
     CLIENT_ID _##param; memset(&_##param, 0, sizeof(_##param)); if (param == NULL) param = &_##param
+
+#define ENSURE_STRUCT(param, type) \
+    type _##param; memset(&_##param, 0, sizeof(_##param)); if(param == NULL) param = &_##param
