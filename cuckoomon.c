@@ -201,7 +201,7 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtMakeTemporaryObject),
     HOOK(ntdll, NtMakePermanentObject),
     HOOK(ntdll, NtOpenSection),
-    HOOK(kernel32, CreateProcessInternalW),
+    //HOOK(kernel32, CreateProcessInternalW),
     HOOK(ntdll, ZwMapViewOfSection),
     HOOK(kernel32, ExitProcess),
 
