@@ -403,7 +403,7 @@ void set_hooks()
     hook_enable();
 }
 
-#ifdef REPORT_EXCEPTIONS
+#if REPORT_EXCEPTIONS
 LONG WINAPI cuckoomon_exception_handler(
 	__in struct _EXCEPTION_POINTERS *ExceptionInfo
 	) {
@@ -433,7 +433,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
             return TRUE;
         }
 
-#ifdef REPORT_EXCEPTIONS
+#if REPORT_EXCEPTIONS
 		AddVectoredExceptionHandler(1, cuckoomon_exception_handler);
 		SetUnhandledExceptionFilter(cuckoomon_exception_handler);
 		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOALIGNMENTFAULTEXCEPT | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
