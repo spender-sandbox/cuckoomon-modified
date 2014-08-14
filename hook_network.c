@@ -184,7 +184,7 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestA,
 ) {
     BOOL ret = Old_HttpSendRequestA(hRequest, lpszHeaders, dwHeadersLength,
         lpOptional, dwOptionalLength);
-    if(dwHeadersLength == (DWORD) -1) dwHeadersLength = strlen(lpszHeaders);
+    if(dwHeadersLength == (DWORD) -1 && lpszHeaders != NULL) dwHeadersLength = strlen(lpszHeaders);
     LOQ_bool("network", "pSb", "RequestHandle", hRequest,
         "Headers", dwHeadersLength, lpszHeaders,
         "PostData", dwOptionalLength, lpOptional);

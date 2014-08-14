@@ -228,26 +228,34 @@ uint32_t path_from_handle(HANDLE handle,
 uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
     wchar_t *path, uint32_t buffer_length)
 {
-    if(obj->ObjectName == NULL || obj->ObjectName->Buffer == NULL) {
+	uint32_t copylen;
+
+    if (obj->ObjectName == NULL || obj->ObjectName->Buffer == NULL) {
         return 0;
     }
 
     // ObjectName->Length is actually the size in bytes.
     uint32_t obj_length = obj->ObjectName->Length / sizeof(wchar_t);
 
+	copylen = min(obj_length, buffer_length - 1);
+
     if(obj->RootDirectory == NULL) {
-        wcsncpy(path, obj->ObjectName->Buffer, buffer_length);
-        return obj_length > buffer_length ? buffer_length : obj_length;
+        memcpy(path, obj->ObjectName->Buffer, copylen * sizeof(wchar_t));
+		path[copylen] = L'\0';
+        return copylen;
     }
 
     uint32_t length = path_from_handle(obj->RootDirectory,
         path, buffer_length);
 
-    path[length++] = L'\\';
-    wcsncpy(&path[length], obj->ObjectName->Buffer, buffer_length - length);
+	
+	path[length++] = L'\\';
 
-    length += obj_length;
-    return length > buffer_length ? buffer_length : length;
+	copylen = min(0, buffer_length - 1 - length);
+	copylen = min(copylen, obj_length);
+	memcpy(&path[length], obj->ObjectName->Buffer, copylen * sizeof(wchar_t));
+	path[length + copylen] = L'\0';
+    return length + copylen;
 }
 
 char *ensure_absolute_ascii_path(char *out, const char *in)
@@ -291,8 +299,8 @@ normal_copy:
 
 wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 {
-	wchar_t tmpout[32768];
-	wchar_t nonexistent[32768];
+	wchar_t *tmpout;
+	wchar_t *nonexistent;
 	unsigned int lenchars;
 	unsigned int nonexistentidx;
 	wchar_t *pathcomponent;
@@ -304,13 +312,26 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	else
 		inadj = in;
 
+	tmpout = malloc(32768 * sizeof(wchar_t));
+	nonexistent = malloc(32768 * sizeof(wchar_t));
+
+	if (tmpout == NULL || nonexistent == NULL)
+		goto normal_copy;
+
 	if (wcsncmp(inadj, L"\\\\?\\", 4)) {
-		wchar_t tmpout2[32768];
+		wchar_t *tmpout2;
+
+		tmpout2 = malloc(32768 * sizeof(wchar_t));
+		if (tmpout2 == NULL)
+			goto normal_copy;
 
 		wcscpy(tmpout2, L"\\\\?\\");
 		wcsncat(tmpout2, inadj, 32768 - 4);
-		if (!GetFullPathNameW(tmpout2, 32768, tmpout, NULL))
+		if (!GetFullPathNameW(tmpout2, 32768, tmpout, NULL)) {
+			free(tmpout2);
 			goto normal_copy;
+		}
+		free(tmpout2);
 	}
 	else {
 		if (!GetFullPathNameW(inadj, 32768, tmpout, NULL))
@@ -339,6 +360,10 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	if (!wcsncmp(out, L"\\\\?\\", 4))
 		memmove(out, out + 4, (lstrlenW(out) + 1 - 4) * sizeof(wchar_t));
 	out[32767] = L'\0';
+	if (tmpout)
+		free(tmpout);
+	if (nonexistent)
+		free(nonexistent);
 	return out;
 
 normal_copy:
@@ -346,6 +371,10 @@ normal_copy:
 	if (!wcsncmp(out, L"\\\\?\\", 4))
 		memmove(out, out + 4, (lstrlenW(out) + 1 - 4) * sizeof(wchar_t));
 	out[32767] = L'\0';
+	if (tmpout)
+		free(tmpout);
+	if (nonexistent)
+		free(nonexistent);
 	return out;
 }
 

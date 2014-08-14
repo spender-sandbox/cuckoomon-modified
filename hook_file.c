@@ -110,15 +110,19 @@ static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
     if(is_directory_objattr(obj) == 0 && is_ignored_file_objattr(obj) == 0) {
 
         wchar_t fname[MAX_PATH_PLUS_TOLERANCE];
-		wchar_t absolutename[32768];
+		wchar_t *absolutename = malloc(32768 * sizeof(wchar_t));
 
-        path_from_object_attributes(obj,
-            fname, MAX_PATH_PLUS_TOLERANCE);
+		path_from_object_attributes(obj, fname, MAX_PATH_PLUS_TOLERANCE);
 
-        ensure_absolute_unicode_path(absolutename, fname);
-
-        // cache this file
-        cache_file(file_handle, absolutename, lstrlenW(absolutename), obj->Attributes);
+		if (absolutename != NULL) {
+			ensure_absolute_unicode_path(absolutename, fname);
+			// cache this file
+			cache_file(file_handle, absolutename, lstrlenW(absolutename), obj->Attributes);
+			free(absolutename);
+		}
+		else {
+			cache_file(file_handle, fname, lstrlenW(fname), obj->Attributes);
+		}
     }
 }
 
@@ -290,10 +294,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetInformationFile,
             *(BOOLEAN *) FileInformation != FALSE) {
 
         wchar_t path[MAX_PATH_PLUS_TOLERANCE];
-		wchar_t absolutepath[32768];
-        path_from_handle(FileHandle, path, (unsigned int) MAX_PATH_PLUS_TOLERANCE);
-		ensure_absolute_unicode_path(absolutepath, path);
-        pipe("FILE_DEL:%Z", absolutepath);
+		wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
+		if (absolutepath) {
+			path_from_handle(FileHandle, path, (unsigned int)MAX_PATH_PLUS_TOLERANCE);
+			ensure_absolute_unicode_path(absolutepath, path);
+			pipe("FILE_DEL:%Z", absolutepath);
+			free(absolutepath);
+		}
     }
 
     NTSTATUS ret = Old_NtSetInformationFile(FileHandle, IoStatusBlock,
@@ -465,14 +472,22 @@ HOOKDEF(BOOL, WINAPI, DeleteFileA,
 HOOKDEF(BOOL, WINAPI, DeleteFileW,
     __in  LPWSTR lpFileName
 ) {
-	wchar_t path[32768];
+	wchar_t *path = malloc(32768 * sizeof(wchar_t));
 
-    ensure_absolute_unicode_path(path, lpFileName);
+	if (path) {
+		ensure_absolute_unicode_path(path, lpFileName);
 
-    pipe("FILE_DEL:%Z", path);
+		pipe("FILE_DEL:%Z", path);
+	}
 
     BOOL ret = Old_DeleteFileW(lpFileName);
-	LOQ_bool("filesystem", "u", "FileName", path);
+	if (path) {
+		LOQ_bool("filesystem", "u", "FileName", path);
+		free(path);
+	}
+	else {
+		LOQ_bool("filesystem", "u", "FileName", lpFileName);
+	}
     return ret;
 }
 

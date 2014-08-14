@@ -99,12 +99,18 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
             if(obj == NULL || obj->ObjectName == NULL) return -1;
 
             wchar_t path[MAX_PATH_PLUS_TOLERANCE];
-			wchar_t absolutepath[32768];
-            path_from_object_attributes(obj, path, (unsigned int) MAX_PATH_PLUS_TOLERANCE);
+			wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
+			if (absolutepath) {
+				path_from_object_attributes(obj, path, (unsigned int)MAX_PATH_PLUS_TOLERANCE);
 
-            ensure_absolute_unicode_path(absolutepath, path);
+				ensure_absolute_unicode_path(absolutepath, path);
 
-            ret += _pipe_unicode(&out, absolutepath, lstrlenW(absolutepath));
+				ret += _pipe_unicode(&out, absolutepath, lstrlenW(absolutepath));
+				free(absolutepath);
+			}
+			else {
+				ret += _pipe_unicode(&out, L"", 0);
+			}
         }
         else if(*fmt == 'd') {
             char s[32];

@@ -152,7 +152,7 @@ HOOKDEF(HANDLE, WINAPI, CreateThread,
     __in   DWORD dwCreationFlags,
     __out  LPDWORD lpThreadId
 ) {
-    HANDLE ret = Old_CreateThread(lpThreadAttributes, dwStackSize,
+	HANDLE ret = Old_CreateThread(lpThreadAttributes, dwStackSize,
         lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
     LOQ_nonnull("threading", "pplL", "StartRoutine", lpStartAddress, "Parameter", lpParameter,
         "CreationFlags", dwCreationFlags, "ThreadId", lpThreadId);
@@ -170,9 +170,9 @@ HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
     __in   DWORD dwCreationFlags,
     __out  LPDWORD lpThreadId
 ) {
-    pipe("PROCESS:%d", pid_from_process_handle(hProcess));
+	pipe("PROCESS:%d", pid_from_process_handle(hProcess));
 
-    HANDLE ret = Old_CreateRemoteThread(hProcess, lpThreadAttributes,
+	HANDLE ret = Old_CreateRemoteThread(hProcess, lpThreadAttributes,
         dwStackSize, lpStartAddress, lpParameter, dwCreationFlags,
         lpThreadId);
     LOQ_nonnull("threading", "3plL", "ProcessHandle", hProcess, "StartRoutine", lpStartAddress,

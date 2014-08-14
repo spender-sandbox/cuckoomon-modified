@@ -30,6 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "unhook.h"
 
+#define REPORT_EXCEPTIONS 0
+
 // Allow debug mode to be turned on at compilation time.
 #ifdef CUCKOODBG
 #undef CUCKOODBG
@@ -401,6 +403,21 @@ void set_hooks()
     hook_enable();
 }
 
+#ifdef REPORT_EXCEPTIONS
+LONG WINAPI cuckoomon_exception_handler(
+	__in struct _EXCEPTION_POINTERS *ExceptionInfo
+	) {
+	char msg[1024];
+	DWORD *teb = (DWORD *)__readfsdword(0x18);
+	DWORD *stack = ExceptionInfo->ContextRecord->Esp;
+	sprintf(msg, "Exception Caught! EIP: %08x, Fault Address: %08x, Exception Code: %08x, Stack Range: %08x->%08x, Stack Dump: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n",
+		ExceptionInfo->ExceptionRecord->ExceptionAddress, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], ExceptionInfo->ExceptionRecord->ExceptionCode,
+		teb[2], teb[1], stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
+	debug_message(msg);
+	return 0;
+}
+#endif
+
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	unsigned int i;
@@ -415,6 +432,13 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         if(is_ignored_process()) {
             return TRUE;
         }
+
+#ifdef REPORT_EXCEPTIONS
+		AddVectoredExceptionHandler(1, cuckoomon_exception_handler);
+		SetUnhandledExceptionFilter(cuckoomon_exception_handler);
+		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOALIGNMENTFAULTEXCEPT | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+		_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+#endif
 
         // hide our module from peb
         hide_module_from_peb(hModule);

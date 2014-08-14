@@ -102,7 +102,7 @@ static void log_raw_direct(const char *buf, size_t length) {
     }
 }
 
-static void debug_message(const char *msg) {
+void debug_message(const char *msg) {
     bson b[1];
     bson_init( b );
     bson_append_string( b, "type", "debug" );
@@ -110,7 +110,7 @@ static void debug_message(const char *msg) {
     bson_finish( b );
     log_raw_direct(bson_data( b ), bson_size( b ));
     bson_destroy( b );
-    // log_flush();
+    log_flush();
 }
 
 /*
@@ -348,13 +348,14 @@ void loq(int index, const char *category, const char *name,
             if(s == NULL) s = "";
             log_string(s, -1);
         }
-	else if (key == 'f') {
-		const char *s = va_arg(args, const char *);
-		char absolutepath[MAX_PATH];
-		if (s == NULL) s = "";
-		ensure_absolute_ascii_path(absolutepath, s);
-		log_string(absolutepath, -1);
-	}
+		else if (key == 'f') {
+			const char *s = va_arg(args, const char *);
+			char absolutepath[MAX_PATH];
+			if (s == NULL) s = "";
+			ensure_absolute_ascii_path(absolutepath, s);
+
+			log_string(absolutepath, -1);
+		}
         else if(key == 'S') {
             int len = va_arg(args, int);
             const char *s = va_arg(args, const char *);
@@ -366,14 +367,20 @@ void loq(int index, const char *category, const char *name,
             if(s == NULL) s = L"";
             log_wstring(s, -1);
         }
-	else if (key == 'F') {
-		const wchar_t *s = va_arg(args, const wchar_t *);
-		wchar_t absolutepath[32768];
-		if (s == NULL) s = L"";
-		ensure_absolute_unicode_path(absolutepath, s);
-		log_wstring(absolutepath, -1);
-	}
-	else if (key == 'U') {
+		else if (key == 'F') {
+			const wchar_t *s = va_arg(args, const wchar_t *);
+			wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
+			if (s == NULL) s = L"";
+			if (absolutepath) {
+				ensure_absolute_unicode_path(absolutepath, s);
+				log_wstring(absolutepath, -1);
+				free(absolutepath);
+			}
+			else {
+				log_wstring(L"", -1);
+			}
+		}
+		else if (key == 'U') {
             int len = va_arg(args, int);
             const wchar_t *s = va_arg(args, const wchar_t *);
             if(s == NULL) { s = L""; len = 0; }
@@ -415,15 +422,19 @@ void loq(int index, const char *category, const char *name,
             if(obj == NULL || obj->ObjectName == NULL) {
                 log_string("", 0);
             }
-            else {
-                wchar_t path[MAX_PATH_PLUS_TOLERANCE];
-				wchar_t absolutepath[32768];
-                path_from_object_attributes(
-                        obj, path, MAX_PATH_PLUS_TOLERANCE);
+			else {
+				wchar_t path[MAX_PATH_PLUS_TOLERANCE];
+				wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
+				if (absolutepath) {
+					path_from_object_attributes(obj, path, MAX_PATH_PLUS_TOLERANCE);
 
-                ensure_absolute_unicode_path(absolutepath, path);
-
-		log_wstring(absolutepath, lstrlenW(absolutepath));
+					ensure_absolute_unicode_path(absolutepath, path);
+					log_wstring(absolutepath, -1);
+					free(absolutepath);
+				}
+				else {
+					log_wstring(L"", -1);
+				}
             }
         }
         else if(key == 'a') {

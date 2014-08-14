@@ -66,6 +66,8 @@ void log_init(unsigned int ip, unsigned short port, int debug);
 void log_flush();
 void log_free();
 
+void debug_message(const char *msg);
+
 int log_resolve_index(const char *funcname, int index);
 extern const char *logtbl[][2];
 extern int g_log_index;
