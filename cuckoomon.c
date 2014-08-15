@@ -456,6 +456,8 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
             add_protected_pid(pids[i]);
         }
 
+		hkcu_init();
+
         // initialize the log file
         log_init(g_config.host_ip, g_config.host_port, CUCKOODBG);
 

@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <ctype.h>
 #include "ntapi.h"
 #include <shlwapi.h>
+#include <Sddl.h>
 #include "misc.h"
 #include "config.h"
 
@@ -378,6 +379,8 @@ normal_copy:
 	return out;
 }
 
+
+
 wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {
 	static NTSTATUS(WINAPI *pNtQueryKey)(
@@ -434,11 +437,55 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 	}
 
 normal:
+	if (!wcsncmp(keybuf->KeyName, g_hkcu.hkcu_string, g_hkcu.len) && (keybuf->KeyName[g_hkcu.len] == L'\\' || keybuf->KeyName[g_hkcu.len] == L'\0')) {
+		unsigned int ourlen = lstrlenW(L"HKEY_CURRENT_USER");
+		memcpy(keybuf->KeyName, L"HKEY_CURRENT_USER", ourlen * sizeof(WCHAR));
+		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + g_hkcu.len, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - ((g_hkcu.len) * sizeof(WCHAR)));
+		keybuf->KeyNameLength -= (g_hkcu.len - ourlen) * sizeof(WCHAR);
+	}
 	return keybuf->KeyName;
 error:
 	keybuf->KeyName[0] = 0;
 	keybuf->KeyNameLength = 0;
 	return keybuf->KeyName;
+}
+
+static PSID GetSID(void)
+{
+	HANDLE token;
+	DWORD retlen;
+	PTOKEN_USER userinfo = NULL;
+
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_QUERY_SOURCE, &token))
+		return NULL;
+	if (GetTokenInformation(token, TokenUser, 0, 0, &retlen) || GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+		CloseHandle(token);
+		return NULL;
+	}
+	userinfo = malloc(retlen);
+	if (userinfo) {
+		if (!GetTokenInformation(token, TokenUser, userinfo, retlen, &retlen)) {
+			free(userinfo);
+			CloseHandle(token);
+			return NULL;
+		}
+	}
+	CloseHandle(token);
+	return userinfo->User.Sid;
+}
+
+void hkcu_init(void)
+{
+	PSID sid = GetSID();
+	LPWSTR sidstr;
+
+	ConvertSidToStringSidW(sid, &sidstr);
+
+	g_hkcu.len = lstrlenW(sidstr) + lstrlenW(L"\\REGISTRY\\USER\\");
+	g_hkcu.hkcu_string = malloc((g_hkcu.len + 1) * sizeof(wchar_t));
+	wcscpy(g_hkcu.hkcu_string, L"\\REGISTRY\\USER\\");
+	wcscat(g_hkcu.hkcu_string, sidstr);
+	LocalFree(sidstr);
 }
 
 int is_shutting_down()

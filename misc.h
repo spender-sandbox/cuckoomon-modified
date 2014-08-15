@@ -30,6 +30,13 @@ uint32_t path_from_handle(HANDLE handle,
 uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
     wchar_t *path, uint32_t buffer_length);
 
+struct {
+	wchar_t *hkcu_string;
+	unsigned int len;
+} g_hkcu;
+
+void hkcu_init(void);
+
 char *ensure_absolute_ascii_path(char *out, const char *in);
 wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in);
 
