@@ -213,6 +213,24 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateSection,
     return ret;
 }
 
+HOOKDEF(NTSTATUS, WINAPI, NtDuplicateObject,
+	__in       HANDLE SourceProcessHandle,
+	__in       HANDLE SourceHandle,
+	__in_opt   HANDLE TargetProcessHandle,
+	__out_opt  PHANDLE TargetHandle,
+	__in       ACCESS_MASK DesiredAccess,
+	__in       ULONG HandleAttributes,
+	__in       ULONG Options
+) {
+	NTSTATUS ret = Old_NtDuplicateObject(SourceProcessHandle, SourceHandle, TargetProcessHandle,
+		TargetHandle, DesiredAccess, HandleAttributes, Options);
+	if (TargetHandle)
+		LOQ_ntstatus("process", "pP", "SourceHandle", SourceHandle, "TargetHandle", TargetHandle);
+	else
+		LOQ_ntstatus("process", "p", "SourceHandle", SourceHandle);
+	return ret;
+}
+
 HOOKDEF(NTSTATUS, WINAPI, NtMakeTemporaryObject,
     __in     HANDLE ObjectHandle
 ) {

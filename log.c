@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdarg.h>
 #include "ntapi.h"
+#include "hooking.h"
 #include "misc.h"
 #include "utf8.h"
 #include "log.h"
@@ -317,6 +318,8 @@ void loq(int index, const char *category, const char *name,
 
     bson_init( g_bson );
     bson_append_int( g_bson, "I", index );
+	if (hook_info())
+		bson_append_int(g_bson, "C", *(DWORD *)(hook_info()->retaddr_esp));
     bson_append_int( g_bson, "T", GetCurrentThreadId() );
     bson_append_int( g_bson, "t", GetTickCount() - g_starttick );
     bson_append_start_array( g_bson, "args" );

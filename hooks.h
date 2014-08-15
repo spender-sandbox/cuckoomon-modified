@@ -700,6 +700,16 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtCreateSection,
     __in_opt  HANDLE FileHandle
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtDuplicateObject,
+	__in       HANDLE SourceProcessHandle,
+	__in       HANDLE SourceHandle,
+	__in_opt   HANDLE TargetProcessHandle,
+	__out_opt  PHANDLE TargetHandle,
+	__in       ACCESS_MASK DesiredAccess,
+	__in       ULONG HandleAttributes,
+	__in       ULONG Options
+);
+	
 extern HOOKDEF(NTSTATUS, WINAPI, NtMakeTemporaryObject,
     __in     HANDLE ObjectHandle
 );

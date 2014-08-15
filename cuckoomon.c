@@ -200,6 +200,7 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtOpenProcess),
     HOOK(ntdll, NtTerminateProcess),
     HOOK(ntdll, NtCreateSection),
+	HOOK(ntdll, NtDuplicateObject),
     HOOK(ntdll, NtMakeTemporaryObject),
     HOOK(ntdll, NtMakePermanentObject),
     HOOK(ntdll, NtOpenSection),
