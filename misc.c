@@ -379,6 +379,36 @@ normal_copy:
 	return out;
 }
 
+wchar_t *get_full_keyvalue_pathA(HKEY registry, const char *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
+{
+	if (in)
+		return get_full_key_pathA(registry, in, keybuf, len);
+	else
+		return get_full_key_pathA(registry, "(Default)", keybuf, len);
+}
+wchar_t *get_full_keyvalue_pathW(HKEY registry, const wchar_t *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
+{
+	if (in)
+		return get_full_key_pathW(registry, in, keybuf, len);
+	else
+		return get_full_key_pathW(registry, L"(Default)", keybuf, len);
+}
+wchar_t *get_full_keyvalue_pathUS(HKEY registry, const PUNICODE_STRING in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
+{
+	wchar_t *ret;
+	if (in && in->Length) {
+		wchar_t *incpy = malloc(in->Length + (1 * sizeof(wchar_t)));
+		memcpy(incpy, in->Buffer, in->Length);
+		incpy[in->Length / sizeof(wchar_t)] = L'\0';
+		ret = get_full_key_pathW(registry, incpy, keybuf, len);
+		free(incpy);
+	}
+	else {
+		ret = get_full_key_pathW(registry, L"(Default)", keybuf, len);
+	}
+	return ret;
+}
+
 wchar_t *get_full_key_pathA(HKEY registry, const char *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {
 	OBJECT_ATTRIBUTES objattr;

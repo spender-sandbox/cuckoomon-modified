@@ -266,13 +266,17 @@ void loq(int index, const char *category, const char *name,
                 (void) va_arg(args, int);
                 (void) va_arg(args, const wchar_t *);
             }
-			else if (key == 'e') {
+			else if (key == 'e' || key == 'v') {
 				(void)va_arg(args, HKEY);
 				(void)va_arg(args, const char *);
 			}
-			else if (key == 'E') {
+			else if (key == 'E' || key == 'V') {
 				(void)va_arg(args, HKEY);
 				(void)va_arg(args, const wchar_t *);
+			}
+			else if (key == 'k') {
+				(void)va_arg(args, HKEY);
+				(void)va_arg(args, const PUNICODE_STRING);
 			}
 			else if (key == 'b') {
                 (void) va_arg(args, size_t);
@@ -443,6 +447,33 @@ void loq(int index, const char *category, const char *name,
 			PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
 
 			log_wstring(get_key_path(obj, keybuf, allocsize), -1);
+			free(keybuf);
+		}
+		else if (key == 'k') {
+			HKEY reg = va_arg(args, HKEY);
+			const PUNICODE_STRING s = va_arg(args, const PUNICODE_STRING);
+			unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+			PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+
+			log_wstring(get_full_keyvalue_pathUS(reg, s, keybuf, allocsize), -1);
+			free(keybuf);
+		}
+		else if (key == 'v') {
+			HKEY reg = va_arg(args, HKEY);
+			const char *s = va_arg(args, const char *);
+			unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+			PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+
+			log_wstring(get_full_keyvalue_pathA(reg, s, keybuf, allocsize), -1);
+			free(keybuf);
+		}
+		else if (key == 'V') {
+			HKEY reg = va_arg(args, HKEY);
+			const wchar_t *s = va_arg(args, const wchar_t *);
+			unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+			PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+
+			log_wstring(get_full_keyvalue_pathW(reg, s, keybuf, allocsize), -1);
 			free(keybuf);
 		}
 		else if (key == 'o') {

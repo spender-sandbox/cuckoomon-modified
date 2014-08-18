@@ -132,12 +132,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetValueKey,
     NTSTATUS ret = Old_NtSetValueKey(KeyHandle, ValueName, TitleIndex,
         Type, Data, DataSize);
     if(NT_SUCCESS(ret)) {
-        LOQ_ntstatus("registry", "polR", "KeyHandle", KeyHandle, "ValueName", ValueName,
-            "Type", Type, "Buffer", Type, DataSize, Data);
+        LOQ_ntstatus("registry", "polRk", "KeyHandle", KeyHandle, "ValueName", ValueName,
+            "Type", Type, "Buffer", Type, DataSize, Data,
+			"FullName", KeyHandle, ValueName);
     }
     else {
-        LOQ_ntstatus("registry", "pol", "KeyHandle", KeyHandle, "ValueName", ValueName,
-            "Type", Type);
+        LOQ_ntstatus("registry", "polk", "KeyHandle", KeyHandle, "ValueName", ValueName,
+            "Type", Type, "FullName", KeyHandle, ValueName);
     }
     return ret;
 }
@@ -174,11 +175,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryValueKey,
             Data = p->Data;
         }
 
-        LOQ_ntstatus("registry", "polR", "KeyHandle", KeyHandle, "ValueName", ValueName,
-            "Type", Type, "Information", Type, DataLength, Data);
-    }
+        LOQ_ntstatus("registry", "polRk", "KeyHandle", KeyHandle, "ValueName", ValueName,
+            "Type", Type, "Information", Type, DataLength, Data,
+			"FullName", KeyHandle, ValueName);
+	}
     else {
-        LOQ_ntstatus("registry", "po", "KeyHandle", KeyHandle, "ValueName", ValueName);
+        LOQ_ntstatus("registry", "pok", "KeyHandle", KeyHandle, "ValueName", ValueName,
+			"FullName", KeyHandle, ValueName);
     }
 
     return ret;
@@ -212,8 +215,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeleteValueKey,
     __in  PUNICODE_STRING ValueName
 ) {
     NTSTATUS ret = Old_NtDeleteValueKey(KeyHandle, ValueName);
-    LOQ_ntstatus("registry", "po", "KeyHandle", KeyHandle, "ValueName", ValueName);
-    return ret;
+    LOQ_ntstatus("registry", "pok", "KeyHandle", KeyHandle, "ValueName", ValueName,
+		"FullName", KeyHandle, ValueName);
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtLoadKey,

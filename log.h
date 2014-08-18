@@ -45,6 +45,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //       type r is for ascii functions, R for unicode (Nt* are unicode)
 // e  -> (HKEY, char *) -> key/ascii key/value pair (to be normalized)
 // E  -> (HKEY, wchar_t *) -> key/unicode key/value pair (to be normalized)
+// k  -> (HKEY, UNICODE_STRING *) -> unicode string for registry values (to be normalized)
+// v  -> (HKEY, char *) -> key/ascii value pair for registry values (to be normalized)
+// V  -> (HKEY, wchar_t *) -> key/ascii value pair for registry values (to be normalized)
+
 //
 // Each of these format specifiers are prefixed with a zero-terminated key
 // value, e.g.
