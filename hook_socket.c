@@ -41,7 +41,7 @@ HOOKDEF(int, WINAPI, WSAStartup,
     _Out_  LPWSADATA lpWSAData
 ) {
     int ret = Old_WSAStartup(wVersionRequested, lpWSAData);
-    LOQ_zero("socket", "p", "VersionRequested", wVersionRequested);
+    LOQ_zero("network", "p", "VersionRequested", wVersionRequested);
     return ret;
 }
 
@@ -49,7 +49,7 @@ HOOKDEF(struct hostent *, WSAAPI, gethostbyname,
     __in  const char *name
 ) {
     struct hostent *ret = Old_gethostbyname(name);
-    LOQ_nonnull("socket", "s", "Name", name);
+    LOQ_nonnull("network", "s", "Name", name);
     return ret;
 }
 
@@ -59,7 +59,7 @@ HOOKDEF(SOCKET, WSAAPI, socket,
     __in  int protocol
 ) {
     SOCKET ret = Old_socket(af, type, protocol);
-    LOQ_sock("socket", "iiii", "af", af, "type", type, "protocol", protocol, "socket", ret);
+    LOQ_sock("network", "iiii", "af", af, "type", type, "protocol", protocol, "socket", ret);
     return ret;
 }
 
@@ -71,7 +71,7 @@ HOOKDEF(int, WSAAPI, connect,
     int ret = Old_connect(s, name, namelen);
     const char *ip = NULL; int port = 0;
     get_ip_port(name, &ip, &port);
-    LOQ_sockerr("socket", "isi", "socket", s, "ip", ip, "port", port);
+    LOQ_sockerr("network", "isi", "socket", s, "ip", ip, "port", port);
     return ret;
 }
 
@@ -82,7 +82,7 @@ HOOKDEF(int, WSAAPI, send,
     __in  int flags
 ) {
     int ret = Old_send(s, buf, len, flags);
-    LOQ_sockerr("socket", "ib", "socket", s, "buffer", ret < 1 ? 0 : ret, buf);
+    LOQ_sockerr("network", "ib", "socket", s, "buffer", ret < 1 ? 0 : ret, buf);
     return ret;
 }
 
@@ -99,7 +99,7 @@ HOOKDEF(int, WSAAPI, sendto,
     if(ret > 0) {
         get_ip_port(to, &ip, &port);
     }
-    LOQ_sockerr("socket", "ibsi", "socket", s, "buffer", ret < 1 ? 0 : ret, buf,
+    LOQ_sockerr("network", "ibsi", "socket", s, "buffer", ret < 1 ? 0 : ret, buf,
         "ip", ip, "port", port);
     return ret;
 }
@@ -111,7 +111,7 @@ HOOKDEF(int, WSAAPI, recv,
     __in   int flags
 ) {
     int ret = Old_recv(s, buf, len, flags);
-    LOQ_sockerr("socket", "ib", "socket", s, "buffer", ret < 1 ? 0 : len, buf);
+    LOQ_sockerr("network", "ib", "socket", s, "buffer", ret < 1 ? 0 : len, buf);
     return ret;
 }
 
@@ -128,7 +128,7 @@ HOOKDEF(int, WSAAPI, recvfrom,
     if(ret > 0) {
         get_ip_port(from, &ip, &port);
     }
-    LOQ_sockerr("socket", "ibsi", "socket", s, "buffer", ret < 1 ? 0 : ret, buf,
+    LOQ_sockerr("network", "ibsi", "socket", s, "buffer", ret < 1 ? 0 : ret, buf,
         "ip", ip, "port", port);
     return ret;
 }
@@ -147,7 +147,7 @@ HOOKDEF(SOCKET, WSAAPI, accept,
         get_ip_port(&addr_c, &ip_c, &port_c);
     }
 
-    LOQ_sockerr("socket", "iisisi", "socket", s, "ClientSocket", ret,
+    LOQ_sockerr("network", "iisisi", "socket", s, "ClientSocket", ret,
         "ip_accept", ip_s, "port_accept", port_s,
         "ip_client", ip_c, "port_client", port_c);
     return ret;
@@ -162,7 +162,7 @@ HOOKDEF(int, WSAAPI, bind,
     const char *ip = NULL; int port = 0;
     get_ip_port(name, &ip, &port);
 
-    LOQ_sockerr("socket", "isi", "socket", s, "ip", ip, "port", port);
+    LOQ_sockerr("network", "isi", "socket", s, "ip", ip, "port", port);
     return ret;
 }
 
@@ -171,7 +171,7 @@ HOOKDEF(int, WSAAPI, listen,
     __in  int backlog
 ) {
     int ret = Old_listen(s, backlog);
-    LOQ_sockerr("socket", "i", "socket", s);
+    LOQ_sockerr("network", "i", "socket", s);
     return ret;
 }
 
@@ -183,7 +183,7 @@ HOOKDEF(int, WSAAPI, select,
     __in     const struct timeval *timeout
 ) {
     int ret = Old_select(s, readfds, writefds, exceptfds, timeout);
-    LOQ_sockerr("socket", "i", "socket", s);
+    LOQ_sockerr("network", "i", "socket", s);
     return ret;
 }
 
@@ -195,7 +195,7 @@ HOOKDEF(int, WSAAPI, setsockopt,
     __in  int optlen
 ) {
     int ret = Old_setsockopt(s, level, optname, optval, optlen);
-    LOQ_sockerr("socket", "illb", "socket", s, "level", level, "optname", optname,
+    LOQ_sockerr("network", "illb", "socket", s, "level", level, "optname", optname,
         "optval", optlen, optval);
     return ret;
 }
@@ -206,7 +206,7 @@ HOOKDEF(int, WSAAPI, ioctlsocket,
     __inout  u_long *argp
 ) {
     int ret = Old_ioctlsocket(s, cmd, argp);
-    LOQ_sockerr("socket", "il", "socket", s, "command", cmd);
+    LOQ_sockerr("network", "il", "socket", s, "command", cmd);
     return ret;
 }
 
@@ -214,7 +214,7 @@ HOOKDEF(int, WSAAPI, closesocket,
     __in  SOCKET s
 ) {
     int ret = Old_closesocket(s);
-    LOQ_sockerr("socket", "i", "socket", s);
+    LOQ_sockerr("network", "i", "socket", s);
     return ret;
 }
 
@@ -223,7 +223,7 @@ HOOKDEF(int, WSAAPI, shutdown,
     __in  int how
 ) {
     int ret = Old_shutdown(s, how);
-    LOQ_sockerr("socket", "il", "socket", s, "how", how);
+    LOQ_sockerr("network", "il", "socket", s, "how", how);
     return ret;
 }
 
@@ -244,7 +244,7 @@ HOOKDEF(SOCKET, WSAAPI, WSAAccept,
         get_ip_port(&addr_c, &ip_c, &port_c);
     }
 
-    LOQ_sockerr("socket", "iisisi", "socket", s, "ClientSocket", ret,
+    LOQ_sockerr("network", "iisisi", "socket", s, "ClientSocket", ret,
         "ip_accept", ip_s, "port_accept", port_s,
         "ip_client", ip_c, "port_client", port_c);
     return ret;
@@ -262,7 +262,7 @@ HOOKDEF(int, WSAAPI, WSARecv,
     int ret = Old_WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd,
         lpFlags, lpOverlapped, lpCompletionRoutine);
     // TODO dump buffers
-    LOQ_sockerr("socket", "i", "socket", s);
+    LOQ_sockerr("network", "i", "socket", s);
     return ret;
 }
 
@@ -283,7 +283,7 @@ HOOKDEF(int, WSAAPI, WSARecvFrom,
     const char *ip = NULL; int port = 0;
     get_ip_port(lpFrom, &ip, &port);
     // TODO dump buffer, implement support for completion routine
-    LOQ_sockerr("socket", "isi", "socket", s, "ip", ip, "port", port);
+    LOQ_sockerr("network", "isi", "socket", s, "ip", ip, "port", port);
     return ret;
 }
 
@@ -299,7 +299,7 @@ HOOKDEF(int, WSAAPI, WSASend,
     int ret = Old_WSASend(s, lpBuffers, dwBufferCount, lpNumberOfBytesSent,
         dwFlags, lpOverlapped, lpCompletionRoutine);
     // TODO dump buffers
-    LOQ_sockerr("socket", "i", "Socket", s);
+    LOQ_sockerr("network", "i", "Socket", s);
     return ret;
 }
 
@@ -320,7 +320,7 @@ HOOKDEF(int, WSAAPI, WSASendTo,
     BOOL ret = Old_WSASendTo(s, lpBuffers, dwBufferCount, lpNumberOfBytesSent,
         dwFlags, lpTo, iToLen, lpOverlapped, lpCompletionRoutine);
     // TODO dump buffers
-    LOQ_sockerr("socket", "isi", "socket", s, "ip", ip, "port", port);
+    LOQ_sockerr("network", "isi", "socket", s, "ip", ip, "port", port);
     return ret;
 }
 
@@ -334,7 +334,7 @@ HOOKDEF(SOCKET, WSAAPI, WSASocketA,
 ) {
     SOCKET ret = Old_WSASocketA(af, type, protocol, lpProtocolInfo,
         g, dwFlags);
-    LOQ_sock("socket", "iiii", "af", af, "type", type, "protocol", protocol, "socket", ret);
+    LOQ_sock("network", "iiii", "af", af, "type", type, "protocol", protocol, "socket", ret);
     return ret;
 }
 
@@ -348,7 +348,7 @@ HOOKDEF(SOCKET, WSAAPI, WSASocketW,
 ) {
     SOCKET ret = Old_WSASocketW(af, type, protocol, lpProtocolInfo,
         g, dwFlags);
-    LOQ_sock("socket", "iiii", "af", af, "type", type, "protocol", protocol, "socket", ret);
+    LOQ_sock("network", "iiii", "af", af, "type", type, "protocol", protocol, "socket", ret);
     return ret;
 }
 
@@ -365,7 +365,7 @@ HOOKDEF(BOOL, PASCAL, ConnectEx,
         lpdwBytesSent, lpOverlapped);
     const char *ip = NULL; int port = 0;
     get_ip_port(name, &ip, &port);
-    LOQ_bool("socket", "iBsi", "socket", s, "SendBuffer", lpdwBytesSent, lpSendBuffer,
+    LOQ_bool("network", "iBsi", "socket", s, "SendBuffer", lpdwBytesSent, lpSendBuffer,
         "ip", ip, "port", port);
     return ret;
 }
@@ -381,7 +381,7 @@ HOOKDEF(BOOL, PASCAL, TransmitFile,
 ) {
     BOOL ret = Old_TransmitFile(hSocket, hFile, nNumberOfBytesToWrite,
         nNumberOfBytesPerSend, lpOverlapped, lpTransmitBuffers, dwFlags);
-    LOQ_bool("socket", "ipll", "socket", hSocket, "FileHandle", hFile,
+    LOQ_bool("network", "ipll", "socket", hSocket, "FileHandle", hFile,
         "NumberOfBytesToWrite", nNumberOfBytesToWrite,
         "NumberOfBytesPerSend", nNumberOfBytesPerSend);
     return ret;
