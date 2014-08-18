@@ -33,12 +33,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateKey,
     __in        ULONG CreateOptions,
     __out_opt   PULONG Disposition
 ) {
+	ENSURE_ULONG(Disposition);
 	NTSTATUS ret = Old_NtCreateKey(KeyHandle, DesiredAccess, ObjectAttributes,
         TitleIndex, Class, CreateOptions, Disposition);
-    LOQ_ntstatus("registry", "PlpouK", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("registry", "PlpouKL", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
 		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
-		"ObjectAttributes", ObjectAttributes, "Class", Class);
+		"ObjectAttributes", ObjectAttributes, "Class", Class,
+		"Disposition", Disposition);
     return ret;
 }
 

@@ -61,11 +61,13 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExA,
     __out       PHKEY phkResult,
     __out_opt   LPDWORD lpdwDisposition
 ) {
+	ENSURE_DWORD(lpdwDisposition);
 	LONG ret = Old_RegCreateKeyExA(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
-    LOQ_zero("registry", "psslPe", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
-        "Access", samDesired, "Handle", phkResult, "FullName", hKey, lpSubKey);
+    LOQ_zero("registry", "psslPeL", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
+        "Access", samDesired, "Handle", phkResult, "FullName", hKey, lpSubKey,
+		"Disposition", lpdwDisposition);
     return ret;
 }
 
@@ -80,11 +82,13 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExW,
     __out       PHKEY phkResult,
     __out_opt   LPDWORD lpdwDisposition
 ) {
+	ENSURE_DWORD(lpdwDisposition);
 	LONG ret = Old_RegCreateKeyExW(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
-    LOQ_zero("registry", "puulPE", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
-        "Access", samDesired, "Handle", phkResult, "FullName", hKey, lpSubKey);
+    LOQ_zero("registry", "puulPEL", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
+        "Access", samDesired, "Handle", phkResult, "FullName", hKey, lpSubKey,
+		"Disposition", lpdwDisposition);
 	return ret;
 }
 

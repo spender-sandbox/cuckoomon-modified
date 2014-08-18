@@ -525,11 +525,23 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 	}
 
 normal:
-	if (!wcsncmp(keybuf->KeyName, g_hkcu.hkcu_string, g_hkcu.len) && (keybuf->KeyName[g_hkcu.len] == L'\\' || keybuf->KeyName[g_hkcu.len] == L'\0')) {
+	if (!wcsnicmp(keybuf->KeyName, g_hkcu.hkcu_string, g_hkcu.len) && (keybuf->KeyName[g_hkcu.len] == L'\\' || keybuf->KeyName[g_hkcu.len] == L'\0')) {
 		unsigned int ourlen = lstrlenW(L"HKEY_CURRENT_USER");
 		memcpy(keybuf->KeyName, L"HKEY_CURRENT_USER", ourlen * sizeof(WCHAR));
 		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + g_hkcu.len, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - ((g_hkcu.len) * sizeof(WCHAR)));
 		keybuf->KeyNameLength -= (g_hkcu.len - ourlen) * sizeof(WCHAR);
+	}
+	else if (!wcsnicmp(keybuf->KeyName, L"\\REGISTRY\\MACHINE", 17) && (keybuf->KeyName[17] == L'\\' || keybuf->KeyName[17] == L'\0')) {
+		unsigned int ourlen = 18;
+		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + 17, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - ((17) * sizeof(WCHAR)));
+		memcpy(keybuf->KeyName, L"HKEY_LOCAL_MACHINE", ourlen * sizeof(WCHAR));
+		keybuf->KeyNameLength += (ourlen - 17) * sizeof(WCHAR);
+	}
+	else if (!wcsnicmp(keybuf->KeyName, L"\\REGISTRY\\USER", 14) && (keybuf->KeyName[14] == L'\\' || keybuf->KeyName[14] == L'\0')) {
+		unsigned int ourlen = 10;
+		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + g_hkcu.len, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - ((g_hkcu.len) * sizeof(WCHAR)));
+		memcpy(keybuf->KeyName, L"HKEY_USERS", ourlen * sizeof(WCHAR));
+		keybuf->KeyNameLength -= (14 - ourlen) * sizeof(WCHAR);
 	}
 	return keybuf->KeyName;
 error:
