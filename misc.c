@@ -379,7 +379,65 @@ normal_copy:
 	return out;
 }
 
+wchar_t *get_full_key_pathA(HKEY registry, const char *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
+{
+	OBJECT_ATTRIBUTES objattr;
+	UNICODE_STRING keystr;
+	const char *p;
+	wchar_t *u;
+	wchar_t *ret;
 
+	memset(&objattr, 0, sizeof(objattr));
+
+	keystr.Buffer = malloc(MAX_KEY_BUFLEN);
+	keystr.MaximumLength = MAX_KEY_BUFLEN;
+	objattr.ObjectName = &keystr;
+
+	if (in) {
+		for (p = in, u = objattr.ObjectName->Buffer; *p; p++, u++) {
+			*u = (wchar_t)(unsigned short)*p;
+		}
+		keystr.Length = (unsigned short)(p - in) * sizeof(wchar_t);
+	}
+	else {
+		keystr.Buffer[0] = L'\0';
+		keystr.Length = 0;
+	}
+
+	objattr.RootDirectory = registry;
+
+	ret = get_key_path(&objattr, keybuf, len);
+	free(keystr.Buffer);
+	return ret;
+}
+
+wchar_t *get_full_key_pathW(HKEY registry, const wchar_t *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
+{
+	OBJECT_ATTRIBUTES objattr;
+	UNICODE_STRING keystr;
+	wchar_t *ret;
+
+	memset(&objattr, 0, sizeof(objattr));
+
+	keystr.Buffer = malloc(MAX_KEY_BUFLEN);
+	keystr.MaximumLength = MAX_KEY_BUFLEN;
+	objattr.ObjectName = &keystr;
+
+	if (in) {
+		wcscpy(keystr.Buffer, in);
+		keystr.Length = lstrlenW(keystr.Buffer) * sizeof(wchar_t);
+	}
+	else {
+		keystr.Buffer[0] = L'\0';
+		keystr.Length = 0;
+	}
+
+	objattr.RootDirectory = registry;
+
+	ret = get_key_path(&objattr, keybuf, len);
+	free(keystr.Buffer);
+	return ret;
+}
 
 wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {

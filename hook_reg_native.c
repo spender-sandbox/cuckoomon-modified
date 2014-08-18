@@ -33,15 +33,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateKey,
     __in        ULONG CreateOptions,
     __out_opt   PULONG Disposition
 ) {
-	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
-	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
 	NTSTATUS ret = Old_NtCreateKey(KeyHandle, DesiredAccess, ObjectAttributes,
         TitleIndex, Class, CreateOptions, Disposition);
-    LOQ_ntstatus("registry", "Plpouo", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("registry", "PlpouK", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
 		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
-		"ObjectAttributes", get_key_path(ObjectAttributes, keybuf, allocsize),
-        "Class", Class);
+		"ObjectAttributes", ObjectAttributes, "Class", Class);
     return ret;
 }
 
@@ -50,13 +47,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenKey,
     __in   ACCESS_MASK DesiredAccess,
     __in   POBJECT_ATTRIBUTES ObjectAttributes
 ) {
-	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
-	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
 	NTSTATUS ret = Old_NtOpenKey(KeyHandle, DesiredAccess, ObjectAttributes);
-    LOQ_ntstatus("registry", "Plpou", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("registry", "PlpoK", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
 		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
-		"ObjectAttributes", get_key_path(ObjectAttributes, keybuf, allocsize));
+		"ObjectAttributes", ObjectAttributes);
     return ret;
 }
 
@@ -66,14 +61,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenKeyEx,
     __in   POBJECT_ATTRIBUTES ObjectAttributes,
     __in   ULONG OpenOptions
 ) {
-	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
-	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
 	NTSTATUS ret = Old_NtOpenKeyEx(KeyHandle, DesiredAccess, ObjectAttributes,
         OpenOptions);
-    LOQ_ntstatus("registry", "Plpou", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("registry", "PlpoK", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
 		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
-		"ObjectAttributes", get_key_path(ObjectAttributes, keybuf, allocsize));
+		"ObjectAttributes", ObjectAttributes);
     return ret;
 }
 
@@ -242,13 +235,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtLoadKey2,
     __in  POBJECT_ATTRIBUTES SourceFile,
     __in  ULONG Flags
 ) {
-	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
-	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
 	NTSTATUS ret = Old_NtLoadKey2(TargetKey, SourceFile, Flags);
-    LOQ_ntstatus("registry", "pouOl", "TargetKeyHandle", handle_from_objattr(TargetKey),
+    LOQ_ntstatus("registry", "poKOl", "TargetKeyHandle", handle_from_objattr(TargetKey),
 		"TargetKeyName", unistr_from_objattr(TargetKey),
-		"TargetKey", get_key_path(TargetKey, keybuf, allocsize),
-		"SourceFile", SourceFile, "Flags", Flags);
+		"TargetKey", TargetKey, "SourceFile", SourceFile, "Flags", Flags);
     return ret;
 }
 
@@ -258,15 +248,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtLoadKeyEx,
     __in      ULONG Flags,
     __in_opt  HANDLE TrustClassKey
 ) {
-	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
-	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
 	NTSTATUS ret = Old_NtLoadKeyEx(TargetKey, SourceFile, Flags,
         TrustClassKey);
-    LOQ_ntstatus("registry", "ppouOl", "TrustClassKey", TrustClassKey,
+    LOQ_ntstatus("registry", "ppoKOl", "TrustClassKey", TrustClassKey,
         "TargetKeyHandle", handle_from_objattr(TargetKey),
 		"TargetKeyName", unistr_from_objattr(TargetKey),
-		"TargetKey", get_key_path(TargetKey, keybuf, allocsize),
-		"SourceFile", SourceFile, "Flags", Flags);
+		"TargetKey", TargetKey, "SourceFile", SourceFile, "Flags", Flags);
     return ret;
 }
 

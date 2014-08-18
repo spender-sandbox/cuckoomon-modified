@@ -36,12 +36,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // p  -> (void *) -> pointer (alias for l)
 // P  -> (void **) -> pointer to a handle (alias for L)
 // o  -> (UNICODE_STRING *) -> unicode string
-// O  -> (OBJECT_ATTRIBUTES *) -> wrapper around a unicode string
+// O  -> (OBJECT_ATTRIBUTES *) -> wrapper around a unicode string for filenames
+// K  -> (OBJECT_ATTRIBUTES *) -> wrapper around a unicode string for registry keys
 // a  -> (int, char **) -> array of string
 // A  -> (int, wchar_t **) -> array of unicode strings
 // r  -> (Type, int, char *) type as defined for Registry operations
 // R  -> (Type, int, wchar_t *) type as defined for Registry operations
 //       type r is for ascii functions, R for unicode (Nt* are unicode)
+// e  -> (HKEY, char *) -> key/ascii key/value pair (to be normalized)
+// E  -> (HKEY, wchar_t *) -> key/unicode key/value pair (to be normalized)
 //
 // Each of these format specifiers are prefixed with a zero-terminated key
 // value, e.g.

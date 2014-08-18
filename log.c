@@ -266,7 +266,15 @@ void loq(int index, const char *category, const char *name,
                 (void) va_arg(args, int);
                 (void) va_arg(args, const wchar_t *);
             }
-            else if(key == 'b') {
+			else if (key == 'e') {
+				(void)va_arg(args, HKEY);
+				(void)va_arg(args, const char *);
+			}
+			else if (key == 'E') {
+				(void)va_arg(args, HKEY);
+				(void)va_arg(args, const wchar_t *);
+			}
+			else if (key == 'b') {
                 (void) va_arg(args, size_t);
                 (void) va_arg(args, const char *);
             }
@@ -286,7 +294,7 @@ void loq(int index, const char *category, const char *name,
             else if(key == 'o') {
                 (void) va_arg(args, UNICODE_STRING *);
             }
-            else if(key == 'O') {
+            else if(key == 'O' || key == 'K') {
                 (void) va_arg(args, OBJECT_ATTRIBUTES *);
             }
             else if(key == 'a') {
@@ -411,7 +419,33 @@ void loq(int index, const char *category, const char *name,
             long *ptr = va_arg(args, long *);
             log_int32(ptr != NULL ? *ptr : 0);
         }
-        else if(key == 'o') {
+		else if (key == 'e') {
+			HKEY reg = va_arg(args, HKEY);
+			const char *s = va_arg(args, const char *);
+			unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+			PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+
+			log_wstring(get_full_key_pathA(reg, s, keybuf, allocsize), -1);
+			free(keybuf);
+		}
+		else if (key == 'E') {
+			HKEY reg = va_arg(args, HKEY);
+			const wchar_t *s = va_arg(args, const wchar_t *);
+			unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+			PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+
+			log_wstring(get_full_key_pathW(reg, s, keybuf, allocsize), -1);
+			free(keybuf);
+		}
+		else if (key == 'K') {
+			OBJECT_ATTRIBUTES *obj = va_arg(args, OBJECT_ATTRIBUTES *);
+			unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+			PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+
+			log_wstring(get_key_path(obj, keybuf, allocsize), -1);
+			free(keybuf);
+		}
+		else if (key == 'o') {
             UNICODE_STRING *str = va_arg(args, UNICODE_STRING *);
             if(str == NULL) {
                 log_string("", 0);
