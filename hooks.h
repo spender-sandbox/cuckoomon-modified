@@ -1646,6 +1646,15 @@ extern HOOKDEF(BOOL, WINAPI, CryptHashMessage,
     _Inout_opt_  DWORD *pcbComputedHash
 );
 
+extern HOOKDEF(BOOL, WINAPI, CryptExportKey,
+	_In_     HCRYPTKEY hKey,
+	_In_     HCRYPTKEY hExpKey,
+	_In_     DWORD dwBlobType,
+	_In_     DWORD dwFlags,
+	_Out_    BYTE *pbData,
+	_Inout_  DWORD *pdwDataLen
+);
+
 //
 // Special Hooks
 //

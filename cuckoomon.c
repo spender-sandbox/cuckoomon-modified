@@ -366,6 +366,7 @@ static hook_t g_hooks[] = {
     HOOK(advapi32, CryptDecryptMessage),
     HOOK(advapi32, CryptEncryptMessage),
     HOOK(advapi32, CryptHashMessage),
+	HOOK(advapi32, CryptExportKey),
 };
 
 // get a random hooking method, except for hook_jmp_direct

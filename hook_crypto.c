@@ -207,3 +207,17 @@ HOOKDEF(BOOL, WINAPI, CryptHashMessage,
     }
     return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, CryptExportKey,
+	_In_     HCRYPTKEY hKey,
+	_In_     HCRYPTKEY hExpKey,
+	_In_     DWORD dwBlobType,
+	_In_     DWORD dwFlags,
+	_Out_    BYTE *pbData,
+	_Inout_  DWORD *pdwDataLen
+) {
+	BOOL ret = Old_CryptExportKey(hKey, hExpKey, dwBlobType, dwFlags, pbData, pdwDataLen);
+	if (pbData && pdwDataLen)
+		LOQ_bool("crypto", "b", "Buffer", *pdwDataLen, pbData);
+	return ret;
+}
