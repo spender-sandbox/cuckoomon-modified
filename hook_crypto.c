@@ -221,3 +221,26 @@ HOOKDEF(BOOL, WINAPI, CryptExportKey,
 		LOQ_bool("crypto", "b", "Buffer", *pdwDataLen, pbData);
 	return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, CryptGenKey,
+	_In_   HCRYPTPROV hProv,
+	_In_   ALG_ID Algid,
+	_In_   DWORD dwFlags,
+	_Out_  HCRYPTKEY *phKey
+) {
+	BOOL ret = Old_CryptGenKey(hProv, Algid, dwFlags, phKey);
+	LOQ_bool("crypto", "i", "Algid", Algid);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, CryptCreateHash,
+	_In_   HCRYPTPROV hProv,
+	_In_   ALG_ID Algid,
+	_In_   HCRYPTKEY hKey,
+	_In_   DWORD dwFlags,
+	_Out_  HCRYPTHASH *phHash
+) {
+	BOOL ret = Old_CryptCreateHash(hProv, Algid, hKey, dwFlags, phHash);
+	LOQ_bool("crypto", "i", "Algid", Algid);
+	return ret;
+}

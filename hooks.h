@@ -1655,6 +1655,21 @@ extern HOOKDEF(BOOL, WINAPI, CryptExportKey,
 	_Inout_  DWORD *pdwDataLen
 );
 
+extern HOOKDEF(BOOL, WINAPI, CryptGenKey,
+	_In_   HCRYPTPROV hProv,
+	_In_   ALG_ID Algid,
+	_In_   DWORD dwFlags,
+	_Out_  HCRYPTKEY *phKey
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptCreateHash,
+	_In_   HCRYPTPROV hProv,
+	_In_   ALG_ID Algid,
+	_In_   HCRYPTKEY hKey,
+	_In_   DWORD dwFlags,
+	_Out_  HCRYPTHASH *phHash
+);
+
 //
 // Special Hooks
 //
