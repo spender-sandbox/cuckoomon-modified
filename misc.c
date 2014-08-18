@@ -499,9 +499,47 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 	if (pNtQueryKey == NULL)
 		goto error;
 
-	status = pNtQueryKey(ObjectAttributes->RootDirectory, KeyNameInformation, keybuf, len, &reslen);
-	if (status < 0)
-		goto error;
+	keybuf->KeyName[0] = L'\0';
+	keybuf->KeyNameLength = 0;
+	switch ((ULONG_PTR)ObjectAttributes->RootDirectory) {
+	case HKEY_CLASSES_ROOT:
+		wcscpy(keybuf->KeyName, L"HKEY_CLASSES_ROOT");
+		break;
+	case HKEY_CURRENT_USER:
+		wcscpy(keybuf->KeyName, L"HKEY_CURRENT_USER");
+		break;
+	case HKEY_LOCAL_MACHINE:
+		wcscpy(keybuf->KeyName, L"HKEY_LOCAL_MACHINE");
+		break;
+	case HKEY_USERS:
+		wcscpy(keybuf->KeyName, L"HKEY_USERS");
+		break;
+	case HKEY_PERFORMANCE_DATA:
+		wcscpy(keybuf->KeyName, L"HKEY_PERFORMANCE_DATA");
+		break;
+	case HKEY_PERFORMANCE_TEXT:
+		wcscpy(keybuf->KeyName, L"HKEY_PERFORMANCE_TEXT");
+		break;
+	case HKEY_PERFORMANCE_NLSTEXT:
+		wcscpy(keybuf->KeyName, L"HKEY_PERFORMANCE_NLSTEXT");
+		break;
+	case HKEY_CURRENT_CONFIG:
+		wcscpy(keybuf->KeyName, L"HKEY_CURRENT_CONFIG");
+		break;
+	case HKEY_DYN_DATA:
+		wcscpy(keybuf->KeyName, L"HKEY_DYN_DATA");
+		break;
+	case HKEY_CURRENT_USER_LOCAL_SETTINGS:
+		wcscpy(keybuf->KeyName, L"HKEY_CURRENT_USER_LOCAL_SETTINGS");
+		break;
+	}
+
+	keybuf->KeyNameLength = lstrlenW(keybuf->KeyName) * sizeof(wchar_t);
+	if (!keybuf->KeyNameLength) {
+		status = pNtQueryKey(ObjectAttributes->RootDirectory, KeyNameInformation, keybuf, len, &reslen);
+		if (status < 0)
+			goto error;
+	}
 
 	keybuf->KeyName[keybuf->KeyNameLength / sizeof(WCHAR)] = 0;
 
