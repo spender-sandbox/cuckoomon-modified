@@ -571,13 +571,13 @@ normal:
 	}
 	else if (!wcsnicmp(keybuf->KeyName, L"\\REGISTRY\\MACHINE", 17) && (keybuf->KeyName[17] == L'\\' || keybuf->KeyName[17] == L'\0')) {
 		unsigned int ourlen = 18;
-		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + 17, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - ((17) * sizeof(WCHAR)));
+		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + 17, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - (17 * sizeof(WCHAR)));
 		memcpy(keybuf->KeyName, L"HKEY_LOCAL_MACHINE", ourlen * sizeof(WCHAR));
 		keybuf->KeyNameLength += (ourlen - 17) * sizeof(WCHAR);
 	}
 	else if (!wcsnicmp(keybuf->KeyName, L"\\REGISTRY\\USER", 14) && (keybuf->KeyName[14] == L'\\' || keybuf->KeyName[14] == L'\0')) {
 		unsigned int ourlen = 10;
-		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + g_hkcu.len, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - ((g_hkcu.len) * sizeof(WCHAR)));
+		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + 14, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - (14 * sizeof(WCHAR)));
 		memcpy(keybuf->KeyName, L"HKEY_USERS", ourlen * sizeof(WCHAR));
 		keybuf->KeyNameLength -= (14 - ourlen) * sizeof(WCHAR);
 	}
