@@ -1517,6 +1517,16 @@ extern HOOKDEF(SOCKET, WSAAPI, WSASocketW,
     __in  DWORD dwFlags
 );
 
+extern HOOKDEF(int, WSAAPI, WSAConnect,
+	__in   SOCKET s,
+	__in   const struct sockaddr *name,
+	__in   int namelen,
+	__in   LPWSABUF lpCallerData,
+	__out  LPWSABUF lpCalleeData,
+	__in   LPQOS lpSQOS,
+	__in   LPQOS lpGQOS
+);
+
 extern HOOKDEF(BOOL, PASCAL, ConnectEx,
     _In_      SOCKET s,
     _In_      const struct sockaddr *name,

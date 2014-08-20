@@ -352,6 +352,22 @@ HOOKDEF(SOCKET, WSAAPI, WSASocketW,
     return ret;
 }
 
+HOOKDEF(int, WSAAPI, WSAConnect,
+	__in   SOCKET s,
+	__in   const struct sockaddr *name,
+	__in   int namelen,
+	__in   LPWSABUF lpCallerData,
+	__out  LPWSABUF lpCalleeData,
+	__in   LPQOS lpSQOS,
+	__in   LPQOS lpGQOS
+) {
+	int ret = Old_WSAConnect(s, name, namelen, lpCallerData, lpCalleeData, lpSQOS, lpGQOS);
+	const char *ip = NULL; int port = 0;
+	get_ip_port(name, &ip, &port);
+	LOQ_sockerr("network", "isi", "socket", s, "ip", ip, "port", port);
+	return ret;
+}
+
 HOOKDEF(BOOL, PASCAL, ConnectEx,
     _In_      SOCKET s,
     _In_      const struct sockaddr *name,
