@@ -82,7 +82,7 @@ HOOKDEF(int, WSAAPI, send,
     __in  int flags
 ) {
     int ret = Old_send(s, buf, len, flags);
-    LOQ_sockerr("network", "ib", "socket", s, "buffer", ret < 1 ? 0 : ret, buf);
+    LOQ_sockerr("network", "ib", "socket", s, "buffer", ret < 1 ? len : ret, buf);
     return ret;
 }
 
@@ -99,7 +99,7 @@ HOOKDEF(int, WSAAPI, sendto,
     if(ret > 0) {
         get_ip_port(to, &ip, &port);
     }
-    LOQ_sockerr("network", "ibsi", "socket", s, "buffer", ret < 1 ? 0 : ret, buf,
+    LOQ_sockerr("network", "ibsi", "socket", s, "buffer", ret < 1 ? len : ret, buf,
         "ip", ip, "port", port);
     return ret;
 }
