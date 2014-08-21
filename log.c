@@ -54,7 +54,7 @@ int g_log_index = 10;  // index must start after the special IDs (see defines)
 
 void log_flush()
 {
-    if(g_idx != 0) {
+    while (g_idx > 0) {
         int written;
         if(g_sock == INVALID_SOCKET) {
             written = fwrite(g_buffer, 1, g_idx, stderr);
@@ -63,7 +63,8 @@ void log_flush()
             written = send(g_sock, g_buffer, g_idx, 0);
         }
 
-        // TODO add more error checking
+		if (written < 0)
+			return;
 
         // if this call didn't write the entire buffer, then we have to move
         // around some stuff in the buffer
