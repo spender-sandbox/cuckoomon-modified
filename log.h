@@ -70,7 +70,6 @@ void log_anomaly(const char *subcategory, int success,
     const char *funcname, const char *msg);
 
 void log_init(unsigned int ip, unsigned short port, int debug);
-void log_flush();
 void log_free();
 
 void debug_message(const char *msg);

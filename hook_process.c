@@ -189,7 +189,6 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
     // Process will terminate. Default logging will not work. Be aware: return value not valid
     NTSTATUS ret = 0;
     LOQ_ntstatus("process", "pl", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
-    log_flush();
 
     ret = Old_NtTerminateProcess(ProcessHandle, ExitStatus);    
     return ret;

@@ -52,44 +52,6 @@ int g_log_index = 10;  // index must start after the special IDs (see defines)
 // Log API
 //
 
-void log_flush()
-{
-    while (g_idx > 0) {
-        int written;
-        if(g_sock == INVALID_SOCKET) {
-            written = fwrite(g_buffer, 1, g_idx, stderr);
-        }
-        else {
-            written = send(g_sock, g_buffer, g_idx, 0);
-        }
-
-		if (written < 0)
-			return;
-
-        // if this call didn't write the entire buffer, then we have to move
-        // around some stuff in the buffer
-        if(written < g_idx) {
-            memmove(g_buffer, g_buffer + written, g_idx - written);
-        }
-
-        // subtract the amount of written bytes from the index
-        g_idx -= written;
-    }
-}
-
-/*
-static void log_raw(const char *buf, size_t length) {
-    for (int i=0; i<length; i++) {
-        g_buffer[g_idx] = buf[i];
-        g_idx++;
-
-        if (g_idx >= BUFFERSIZE -1) {
-            log_flush();
-        }
-    }
-}
-*/
-
 static void log_raw_direct(const char *buf, size_t length) {
     if(g_sock == INVALID_SOCKET) return;
     size_t sent = 0;
@@ -112,7 +74,6 @@ void debug_message(const char *msg) {
     bson_finish( b );
     log_raw_direct(bson_data( b ), bson_size( b ));
     bson_destroy( b );
-    log_flush();
 }
 
 /*
@@ -321,7 +282,6 @@ void loq(int index, const char *category, const char *name,
         bson_finish( b );
         log_raw_direct(bson_data( b ), bson_size( b ));
         bson_destroy( b );
-        // log_flush();
     }
 
     va_end(args);
@@ -572,7 +532,6 @@ void loq(int index, const char *category, const char *name,
     // }
 
     bson_destroy( g_bson );
-    // log_flush();
     LeaveCriticalSection(&g_mutex);
 }
 
@@ -643,14 +602,11 @@ void log_init(unsigned int ip, unsigned short port, int debug)
     announce_netlog();
     log_new_process();
     log_new_thread();
-    // flushing here so host can create files / keep timestamps
-    // log_flush();
 }
 
 void log_free()
 {
     DeleteCriticalSection(&g_mutex);
-    log_flush();
     if(g_sock != INVALID_SOCKET) {
         closesocket(g_sock);
     }
