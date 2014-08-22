@@ -187,8 +187,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 ) {
     NTSTATUS ret = Old_NtReadFile(FileHandle, Event, ApcRoutine, ApcContext,
         IoStatusBlock, Buffer, Length, ByteOffset, Key);
-	LOQ_ntstatus("filesystem", "pb", "FileHandle", FileHandle,
-        "Buffer", IoStatusBlock->Information, Buffer);
+	LOQ_ntstatus("filesystem", "pbl", "FileHandle", FileHandle,
+		"Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
     return ret;
 }
 
@@ -205,8 +205,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
 ) {
     NTSTATUS ret = Old_NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext,
         IoStatusBlock, Buffer, Length, ByteOffset, Key);
-	LOQ_ntstatus("filesystem", "pb", "FileHandle", FileHandle,
-        "Buffer", IoStatusBlock->Information, Buffer);
+	LOQ_ntstatus("filesystem", "pbl", "FileHandle", FileHandle,
+		"Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
     if(NT_SUCCESS(ret)) {
         file_write(FileHandle);
     }
