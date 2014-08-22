@@ -545,8 +545,10 @@ void announce_netlog()
 
 void log_new_process()
 {
-    wchar_t module_path[MAX_PATH];
-    GetModuleFileNameW(NULL, module_path, ARRAYSIZE(module_path));
+	wchar_t *module_path = malloc(32768 * sizeof(wchar_t));
+	wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
+
+	GetModuleFileNameW(NULL, module_path, 32768);
 
     g_starttick = GetTickCount();
 
@@ -558,7 +560,10 @@ void log_new_process()
         "TimeHigh", st.dwHighDateTime,
         "ProcessIdentifier", GetCurrentProcessId(),
         "ParentProcessIdentifier", parent_process_id(),
-        "ModulePath", module_path);
+        "ModulePath", ensure_absolute_unicode_path(absolutepath, module_path));
+
+	free(module_path);
+	free(absolutepath);
 }
 
 void log_new_thread()
