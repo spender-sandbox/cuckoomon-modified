@@ -127,7 +127,7 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
     BOOL ret = Old_DeviceIoControl(hDevice, dwIoControlCode, lpInBuffer,
         nInBufferSize, lpOutBuffer, nOutBufferSize, lpBytesReturned,
         lpOverlapped);
-    LOQ_bool("device", "plbb", "DeviceHandle", hDevice, "IoControlCode", dwIoControlCode,
+    LOQ_bool("device", "ppbb", "DeviceHandle", hDevice, "IoControlCode", dwIoControlCode,
         "InBuffer", nInBufferSize, lpInBuffer,
         "OutBuffer", lpBytesReturned ? *lpBytesReturned : nOutBufferSize,
             lpOutBuffer);

@@ -762,6 +762,14 @@ extern HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     __inout  SHELLEXECUTEINFOW *pExecInfo
 );
 
+extern HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
+	__in    REFCLSID rclsid,
+	__in	LPUNKNOWN pUnkOuter,
+	__in	DWORD dwClsContext,
+	__in	REFIID riid,
+	__out	LPVOID *ppv
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtUnmapViewOfSection,
     _In_      HANDLE ProcessHandle,
     _In_opt_  PVOID BaseAddress

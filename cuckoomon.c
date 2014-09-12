@@ -63,7 +63,10 @@ static hook_t g_hooks[] = {
     HOOK2(ntdll, LdrLoadDll, TRUE),
     HOOK2(kernel32, CreateProcessInternalW, TRUE),
 
-    //
+	// COM object creation hook
+	HOOK2(ole32, CoCreateInstance, TRUE),
+	
+	//
     // File Hooks
     //
 
@@ -220,8 +223,8 @@ static hook_t g_hooks[] = {
     HOOK(kernel32, VirtualProtectEx),
     HOOK(ntdll, NtFreeVirtualMemory),
     //HOOK(kernel32, VirtualFreeEx),
-
-    HOOK(msvcrt, system),
+	
+	HOOK(msvcrt, system),
 
     //
     // Thread Hooks

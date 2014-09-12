@@ -104,3 +104,45 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
 
     return ret;
 }
+
+static GUID _CLSID_CUrlHistory =	  { 0x3C374A40L, 0xBAE4, 0x11CF, 0xBF, 0x7D, 0x00, 0xAA, 0x00, 0x69, 0x46, 0xEE };
+static GUID _CLSID_InternetExplorer = { 0x0002DF01L, 0x0000, 0x0000, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 };
+
+static char *known_object(IID *app, IID *iface)
+{
+	if (!memcmp(app, &_CLSID_CUrlHistory, sizeof(*app)))
+		return "CUrlHistory";
+	else if (!memcmp(app, &_CLSID_InternetExplorer, sizeof(*app)))
+		return "InternetExplorer";
+
+	return NULL;
+}
+
+HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
+	__in    REFCLSID rclsid,
+	__in	LPUNKNOWN pUnkOuter,
+	__in	DWORD dwClsContext,
+	__in	REFIID riid,
+	__out	LPVOID *ppv
+	) {
+	IID id1;
+	IID id2;
+	char idbuf1[40];
+	char idbuf2[40];
+	char *known;
+	HRESULT ret = Old2_CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
+
+	memcpy(&id1, rclsid, sizeof(id1));
+	memcpy(&id2, riid, sizeof(id2));
+	sprintf(idbuf1, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id1.Data1, id1.Data2, id1.Data3,
+		id1.Data4[0], id1.Data4[1], id1.Data4[2], id1.Data4[3], id1.Data4[4], id1.Data4[5], id1.Data4[6], id1.Data4[7]);
+	sprintf(idbuf2, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id2.Data1, id2.Data2, id2.Data3,
+		id2.Data4[0], id2.Data4[1], id2.Data4[2], id2.Data4[3], id2.Data4[4], id2.Data4[5], id2.Data4[6], id2.Data4[7]);
+
+	if ((known = known_object(&id1, &id2)))
+		LOQ_hresult("com", "ppss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);
+	else
+		LOQ_hresult("com", "pps", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2);
+
+	return ret;
+}
