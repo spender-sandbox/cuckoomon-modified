@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "ignore.h"
 #include "unhook.h"
+#include "misc.h"
 
 // this number can be changed if required to do so
 #define TLS_HOOK_INFO 0x44
@@ -60,33 +61,39 @@ int lde(void *addr)
     return ret;
 }
 
-static int is_interesting_backtrace(unsigned int ebp)
+static int is_interesting_backtrace(unsigned int _ebp)
 {
-    // only perform this function when the retaddr-check is enabled, otherwise
+	hook_info_t *hookinfo = hook_info();
+
+	// only perform this function when the retaddr-check is enabled, otherwise
     // return true in all cases (if retaddr-check is disabled, then every
     // backtrace is interesting)
-    if(g_enable_retaddr_check == 0) {
-        return 1;
-    }
+    //if(g_enable_retaddr_check == 0) {
+    //    return 1;
+    //}
 
     // http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
     unsigned int top = __readfsdword(0x04);
     unsigned int bottom = __readfsdword(0x08);
 
     unsigned int count = HOOK_BACKTRACE_DEPTH;
-    while (ebp >= bottom && ebp < top && count-- != 0) {
+	while (_ebp >= bottom && _ebp < top && count-- != 0) {
 
         // obtain the return address and the next value of ebp
-        ULONG_PTR addr = *(unsigned int *)(ebp + 4);
-        ebp = *(unsigned int *) ebp;
+		ULONG_PTR addr = *(unsigned int *)(_ebp + 4);
+		_ebp = *(unsigned int *)_ebp;
 
-        // if this return address is *not* to be ignored, then it's
+		if (!is_in_dll_range(addr)) {
+			hookinfo->main_caller_retaddr = addr;
+			return 1;
+		}
+			// if this return address is *not* to be ignored, then it's
         // interesting
-        if(is_ignored_retaddr(addr) == 0) {
-            return 1;
-        }
+        //if(is_ignored_retaddr(addr) == 0) {
+        //    return 1;
+        //}
     }
-    return 0;
+    return 1;
 }
 
 // create a trampoline at the given address, that is, we are going to replace

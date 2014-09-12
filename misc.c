@@ -150,7 +150,11 @@ void add_all_dlls_to_dll_ranges(void)
 {
 	LDR_MODULE *mod; PEB *peb = (PEB *)__readfsdword(0x30);
 
-	for (mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
+	/* skip the base image */
+	mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
+	if (mod->BaseAddress == NULL)
+		return;
+	for (mod = (LDR_MODULE *)mod->InLoadOrderModuleList.Flink;
 		mod->BaseAddress != NULL;
 		mod = (LDR_MODULE *)mod->InLoadOrderModuleList.Flink) {
 		add_dll_range((ULONG_PTR)mod->BaseAddress, (ULONG_PTR)mod->BaseAddress + mod->SizeOfImage);

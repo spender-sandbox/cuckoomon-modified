@@ -22,6 +22,8 @@ typedef struct _hook_info_t {
     unsigned int hook_count;
     unsigned int retaddr_esp;
 
+	ULONG_PTR main_caller_retaddr;
+
     unsigned int last_error;
     unsigned int ret_last_error;
 
@@ -123,3 +125,12 @@ enum {
         memcpy(local_name.Buffer, param_name->Buffer, \
             local_name.MaximumLength); \
     }
+
+typedef USHORT(WINAPI * _RtlCaptureStackBackTrace)(
+	ULONG FramesToSkip,
+	ULONG FramesToCapture,
+	PVOID *BackTrace,
+	PULONG BackTraceHash
+	);
+
+extern _RtlCaptureStackBackTrace fpRtlCaptureStackBackTrace;

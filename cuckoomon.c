@@ -440,7 +440,6 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         if(is_ignored_process()) {
             return TRUE;
         }
-
 #if REPORT_EXCEPTIONS
 		AddVectoredExceptionHandler(1, cuckoomon_exception_handler);
 		SetUnhandledExceptionFilter(cuckoomon_exception_handler);
