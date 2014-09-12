@@ -54,6 +54,8 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     //
 
     if(NT_SUCCESS(ret)) {
+		// unoptimized, but easy
+		add_all_dlls_to_dll_ranges();
         set_hooks_dll(library.Buffer, library.Length >> 1);
     }
 

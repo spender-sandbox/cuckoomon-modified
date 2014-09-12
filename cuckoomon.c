@@ -448,7 +448,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 #endif
 
-        // hide our module from peb
+		add_all_dlls_to_dll_ranges();
+
+		// hide our module from peb
         hide_module_from_peb(hModule);
 
         // initialize file stuff

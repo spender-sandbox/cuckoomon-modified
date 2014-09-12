@@ -122,6 +122,42 @@ BOOL is_directory_objattr(const OBJECT_ATTRIBUTES *obj)
     return FALSE;
 }
 
+DWORD loaded_dlls;
+struct dll_range dll_ranges[MAX_DLLS];
+
+static void add_dll_range(ULONG_PTR start, ULONG_PTR end)
+{
+	DWORD tmp_loaded_dlls = loaded_dlls;
+	if (tmp_loaded_dlls >= MAX_DLLS)
+		return;
+	if (is_in_dll_range(start))
+		return;
+	dll_ranges[tmp_loaded_dlls].start = start;
+	dll_ranges[tmp_loaded_dlls].end = end;
+
+	loaded_dlls++;
+}
+
+BOOL is_in_dll_range(ULONG_PTR addr)
+{
+	for (DWORD i = 0; i < loaded_dlls; i++)
+		if (addr >= dll_ranges[i].start && addr < dll_ranges[i].end)
+			return TRUE;
+	return FALSE;
+}
+
+void add_all_dlls_to_dll_ranges(void)
+{
+	LDR_MODULE *mod; PEB *peb = (PEB *)__readfsdword(0x30);
+
+	for (mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
+		mod->BaseAddress != NULL;
+		mod = (LDR_MODULE *)mod->InLoadOrderModuleList.Flink) {
+		add_dll_range((ULONG_PTR)mod->BaseAddress, (ULONG_PTR)mod->BaseAddress + mod->SizeOfImage);
+	}
+
+}
+
 // hide our module from PEB
 // http://www.openrce.org/blog/view/844/How_to_hide_dll
 

@@ -57,3 +57,13 @@ int is_shutting_down();
 #define MAX_PATH_PLUS_TOLERANCE MAX_PATH + 64
 
 #define MAX_KEY_BUFLEN ((16384 + 256) * sizeof(WCHAR))
+
+struct dll_range {
+	ULONG_PTR start;
+	ULONG_PTR end;
+};
+#define MAX_DLLS 100
+
+BOOL is_in_dll_range(ULONG_PTR addr);
+void add_all_dlls_to_dll_ranges(void);
+

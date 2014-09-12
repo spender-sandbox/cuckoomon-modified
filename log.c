@@ -160,6 +160,33 @@ static void log_buffer(const char *buf, size_t length) {
     bson_append_binary( g_bson, g_istr, BSON_BIN_BINARY, buf, trunclength );
 }
 
+typedef USHORT (WINAPI * _RtlCaptureStackBackTrace)(
+	ULONG FramesToSkip,
+	ULONG FramesToCapture,
+	PVOID *BackTrace,
+	PULONG BackTraceHash
+);
+static _RtlCaptureStackBackTrace fpRtlCaptureStackBackTrace;
+
+static PVOID get_retaddr(void)
+{
+	PVOID backtrace[50] = { 0 };
+	WORD numframes;
+
+	if (!fpRtlCaptureStackBackTrace) {
+		fpRtlCaptureStackBackTrace = (_RtlCaptureStackBackTrace)GetProcAddress(GetModuleHandleA("ntdll"), "RtlCaptureStackBackTrace");
+	}
+	if (fpRtlCaptureStackBackTrace) {
+		numframes = fpRtlCaptureStackBackTrace(3, 50, backtrace, NULL);
+		for (WORD i = 0; i < numframes; i++) {
+			if (!is_in_dll_range((ULONG_PTR)backtrace[i])) {
+				return backtrace[i];
+			}
+		}
+	}
+	return NULL;
+}
+
 void loq(int index, const char *category, const char *name,
     int is_success, int return_value, const char *fmt, ...)
 {
@@ -168,10 +195,13 @@ void loq(int index, const char *category, const char *name,
     const char * fmtbak = fmt;
     int argnum = 2;
     int count = 1; char key = 0;
+	PVOID retaddr;
+
+	retaddr = get_retaddr();
 
     EnterCriticalSection(&g_mutex);
 
-    if(logtbl_explained[index] == 0) {
+	if(logtbl_explained[index] == 0) {
         logtbl_explained[index] = 1;
         const char * pname;
 
@@ -295,7 +325,11 @@ void loq(int index, const char *category, const char *name,
 		bson_append_int(g_bson, "C", *(DWORD *)(hook_info()->retaddr_esp));
     bson_append_int( g_bson, "T", GetCurrentThreadId() );
     bson_append_int( g_bson, "t", GetTickCount() - g_starttick );
-    bson_append_start_array( g_bson, "args" );
+
+	// return location of malware callsite
+	bson_append_int(g_bson, "R", (int)retaddr);
+
+	bson_append_start_array(g_bson, "args");
     bson_append_int( g_bson, "0", is_success );
     bson_append_int( g_bson, "1", return_value );
 
