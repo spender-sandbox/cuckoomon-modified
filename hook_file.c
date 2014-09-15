@@ -258,13 +258,19 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryFile,
     __in_opt  PUNICODE_STRING FileName,
     __in      BOOLEAN RestartScan
 ) {
+	OBJECT_ATTRIBUTES objattr;
+
+	memset(&objattr, 0, sizeof(objattr));
+	objattr.ObjectName = FileName;
+	objattr.RootDirectory = FileHandle;
+
     NTSTATUS ret = Old_NtQueryDirectoryFile(FileHandle, Event,
         ApcRoutine, ApcContext, IoStatusBlock, FileInformation,
         Length, FileInformationClass, ReturnSingleEntry,
         FileName, RestartScan);
-	LOQ_ntstatus("filesystem", "pbo", "FileHandle", FileHandle,
+	LOQ_ntstatus("filesystem", "pbO", "FileHandle", FileHandle,
         "FileInformation", IoStatusBlock->Information, FileInformation,
-        "FileName", FileName);
+        "FileName", &objattr);
     return ret;
 }
 
