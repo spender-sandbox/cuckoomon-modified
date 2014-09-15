@@ -88,28 +88,35 @@ static DWORD WINAPI _unhook_detect_thread(LPVOID param)
             Sleep(100);
         }
 
-        for (uint32_t idx = 0; idx < g_index; idx++) {
-            // Check whether this memory region still equals what we made it.
-            if(!memcmp(g_addr[idx], g_our[idx], g_length[idx])) {
-                continue;
-            }
+		__try {
+			for (uint32_t idx = 0; idx < g_index; idx++) {
+				// Check whether this memory region still equals what we made it.
+				if (!memcmp(g_addr[idx], g_our[idx], g_length[idx])) {
+					continue;
+				}
 
-            // By default we assume the hook has been modified.
-            const char *msg = "Function hook was modified!";
+				// By default we assume the hook has been modified.
+				const char *msg = "Function hook was modified!";
 
-            // If the memory region matches the original contents, then it
-            // has been restored to its original state.
-            if(!memcmp(g_orig[idx], g_addr[idx], g_length[idx])) {
-                msg = "Function was unhooked/restored!";
-            }
+				// If the memory region matches the original contents, then it
+				// has been restored to its original state.
+				if (!memcmp(g_orig[idx], g_addr[idx], g_length[idx])) {
+					msg = "Function was unhooked/restored!";
+				}
 
-            if(g_hook_reported[idx] == 0) {
-                if(is_shutting_down() == 0) {
-                    log_anomaly("unhook", 1, g_funcname[idx], msg);
-                }
-                g_hook_reported[idx] = 1;
-            }
-        }
+				if (g_hook_reported[idx] == 0) {
+					if (is_shutting_down() == 0) {
+						log_anomaly("unhook", 1, g_funcname[idx], msg);
+					}
+					g_hook_reported[idx] = 1;
+				}
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			// cuckoo currently has no handling for FreeLibrary, so if a hooked DLL ends up
+			// being unloaded we would crash in the code above
+			;
+		}
     }
 
     return 0;

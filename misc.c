@@ -666,9 +666,14 @@ void hkcu_init(void)
 	LocalFree(sidstr);
 }
 
+extern int process_shutting_down;
+
 int is_shutting_down()
 {
-    HANDLE mutex_handle =
+	if (process_shutting_down)
+		return 1;
+
+	HANDLE mutex_handle =
         OpenMutex(SYNCHRONIZE, FALSE, g_config.shutdown_mutex);
     if(mutex_handle != NULL) {
         CloseHandle(mutex_handle);

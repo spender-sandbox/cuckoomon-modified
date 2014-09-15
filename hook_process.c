@@ -182,6 +182,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,
     return ret;
 }
 
+int process_shutting_down;
+
 HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
     __in_opt  HANDLE ProcessHandle,
     __in      NTSTATUS ExitStatus
@@ -189,6 +191,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
     // Process will terminate. Default logging will not work. Be aware: return value not valid
     NTSTATUS ret = 0;
     LOQ_ntstatus("process", "pl", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
+	if (ProcessHandle == (HANDLE)0xffffffff)
+		process_shutting_down = 1;
 
     ret = Old_NtTerminateProcess(ProcessHandle, ExitStatus);    
     return ret;
