@@ -125,12 +125,3 @@ enum {
         memcpy(local_name.Buffer, param_name->Buffer, \
             local_name.MaximumLength); \
     }
-
-typedef USHORT(WINAPI * _RtlCaptureStackBackTrace)(
-	ULONG FramesToSkip,
-	ULONG FramesToCapture,
-	PVOID *BackTrace,
-	PULONG BackTraceHash
-	);
-
-extern _RtlCaptureStackBackTrace fpRtlCaptureStackBackTrace;
