@@ -77,6 +77,13 @@ static int is_interesting_backtrace(unsigned int _ebp)
     unsigned int bottom = __readfsdword(0x08);
 
     unsigned int count = HOOK_BACKTRACE_DEPTH;
+
+	if (hookinfo->retaddr_esp >= bottom && hookinfo->retaddr_esp < top &&
+		!is_in_dll_range((ULONG_PTR)*(DWORD *)hookinfo->retaddr_esp)) {
+		hookinfo->main_caller_retaddr = (ULONG_PTR)*(DWORD *)hookinfo->retaddr_esp;
+		return 1;
+	}
+
 	while (_ebp >= bottom && _ebp < top && count-- != 0) {
 
         // obtain the return address and the next value of ebp
