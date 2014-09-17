@@ -509,13 +509,22 @@ void loq(int index, const char *category, const char *name,
                 }
                 // ascii strings
                 else if(key == 'r') {
-                    bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
-                        (const char *) data, size);
+					if (size >= 1 && data[size - 1] == '\0')
+						log_string(data, size - 1);
+					else
+						log_string(data, size);
+                    //bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
+                    //    (const char *) data, size);
                 }
                 // unicode strings
                 else {
-                    bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
-                        (const char *) data, size);
+					const wchar_t *wdata = (const wchar_t *)data;
+					if (size >= 2 && wdata[(size / sizeof(wchar_t)) - 1] == L'\0')
+						log_wstring(wdata, (size / sizeof(wchar_t)) - 1);
+					else
+						log_wstring(wdata, size / sizeof(wchar_t));
+                    //bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
+                    //    (const char *) data, size);
                 }
             } else {
                 bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
