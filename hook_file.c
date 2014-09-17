@@ -239,7 +239,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
         ApcRoutine, ApcContext, IoStatusBlock, IoControlCode,
         InputBuffer, InputBufferLength, OutputBuffer,
         OutputBufferLength);
-	LOQ_ntstatus("filesystem", "ppbb", "FileHandle", FileHandle,
+	LOQ_ntstatus("device", "ppbb", "FileHandle", FileHandle,
 		"IoControlCode", IoControlCode,
         "InputBuffer", InputBufferLength, InputBuffer,
         "OutputBuffer", IoStatusBlock->Information, OutputBuffer);
