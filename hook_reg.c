@@ -65,7 +65,7 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExA,
 	LONG ret = Old_RegCreateKeyExA(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
-    LOQ_zero("registry", "psslPeL", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
+    LOQ_zero("registry", "psspPeL", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
         "Access", samDesired, "Handle", phkResult, "FullName", hKey, lpSubKey,
 		"Disposition", lpdwDisposition);
     return ret;
@@ -86,7 +86,7 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExW,
 	LONG ret = Old_RegCreateKeyExW(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
-    LOQ_zero("registry", "puulPEL", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
+    LOQ_zero("registry", "puupPEL", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
         "Access", samDesired, "Handle", phkResult, "FullName", hKey, lpSubKey,
 		"Disposition", lpdwDisposition);
 	return ret;
