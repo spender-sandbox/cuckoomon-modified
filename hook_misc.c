@@ -81,7 +81,7 @@ HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
 
     NTSTATUS ret = Old_LdrLoadDll(PathToFile, Flags, ModuleFileName,
         ModuleHandle);
-    LOQ_ntstatus("system", "loP", "Flags", Flags, "FileName", &library,
+    LOQ_ntstatus("system", "poP", "Flags", Flags, "FileName", &library,
         "BaseAddress", ModuleHandle);
     return ret;
 }
