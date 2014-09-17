@@ -323,7 +323,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenDirectoryObject,
 ) {
     NTSTATUS ret = Old_NtOpenDirectoryObject(DirectoryHandle, DesiredAccess,
         ObjectAttributes);
-	LOQ_ntstatus("filesystem", "PlO", "DirectoryHandle", DirectoryHandle,
+	LOQ_ntstatus("filesystem", "PpO", "DirectoryHandle", DirectoryHandle,
         "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes);
     return ret;
 }
@@ -335,7 +335,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateDirectoryObject,
 ) {
     NTSTATUS ret = Old_NtCreateDirectoryObject(DirectoryHandle, DesiredAccess,
         ObjectAttributes);
-	LOQ_ntstatus("filesystem", "PlO", "DirectoryHandle", DirectoryHandle,
+	LOQ_ntstatus("filesystem", "PpO", "DirectoryHandle", DirectoryHandle,
         "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes);
     return ret;
 }
