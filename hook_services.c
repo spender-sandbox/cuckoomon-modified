@@ -65,7 +65,7 @@ HOOKDEF(SC_HANDLE, WINAPI, CreateServiceA,
         lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType,
         dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId,
         lpDependencies, lpServiceStartName, lpPassword);
-    LOQ_nonnull("services", "pss4l3s", "ServiceControlHandle", hSCManager,
+    LOQ_nonnull("services", "pssp3l3s", "ServiceControlHandle", hSCManager,
         "ServiceName", lpServiceName, "DisplayName", lpDisplayName,
         "DesiredAccess", dwDesiredAccess, "ServiceType", dwServiceType,
         "StartType", dwStartType, "ErrorControl", dwErrorControl,
@@ -94,7 +94,7 @@ HOOKDEF(SC_HANDLE, WINAPI, CreateServiceW,
         lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType,
         dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId,
         lpDependencies, lpServiceStartName, lpPassword);
-    LOQ_nonnull("services", "puu4lF2u", "ServiceControlHandle", hSCManager,
+    LOQ_nonnull("services", "puup3lF2u", "ServiceControlHandle", hSCManager,
         "ServiceName", lpServiceName, "DisplayName", lpDisplayName,
         "DesiredAccess", dwDesiredAccess, "ServiceType", dwServiceType,
         "StartType", dwStartType, "ErrorControl", dwErrorControl,
@@ -111,7 +111,7 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenServiceA,
 ) {
     SC_HANDLE ret = Old_OpenServiceA(hSCManager, lpServiceName,
         dwDesiredAccess);
-    LOQ_nonnull("services", "psl", "ServiceControlManager", hSCManager,
+    LOQ_nonnull("services", "psp", "ServiceControlManager", hSCManager,
         "ServiceName", lpServiceName, "DesiredAccess", dwDesiredAccess);
     return ret;
 }
@@ -123,7 +123,7 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenServiceW,
 ) {
     SC_HANDLE ret = Old_OpenServiceW(hSCManager, lpServiceName,
         dwDesiredAccess);
-    LOQ_nonnull("services", "pul", "ServiceControlManager", hSCManager,
+    LOQ_nonnull("services", "pup", "ServiceControlManager", hSCManager,
         "ServiceName", lpServiceName, "DesiredAccess", dwDesiredAccess);
     return ret;
 }
