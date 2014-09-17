@@ -275,7 +275,7 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExA,
 			"FullName", hKey, lpValueName);
     }
     else {
-        LOQ_zero("registry", "psLLv", "Handle", hKey, "ValueName", lpValueName,
+        LOQ_zero("registry", "psPLv", "Handle", hKey, "ValueName", lpValueName,
             "Type", lpType, "DataLength", lpcbData,
 			"FullName", hKey, lpValueName);
     }
@@ -300,7 +300,7 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExW,
 			"FullName", hKey, lpValueName);
 	}
     else {
-        LOQ_zero("registry", "puLLV", "Handle", hKey, "ValueName", lpValueName,
+        LOQ_zero("registry", "puPLV", "Handle", hKey, "ValueName", lpValueName,
             "Type", lpType, "DataLength", lpcbData,
 			"FullName", hKey, lpValueName);
 	}
