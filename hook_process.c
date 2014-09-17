@@ -302,7 +302,7 @@ HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     __inout  SHELLEXECUTEINFOW *pExecInfo
 ) {
     BOOL ret = Old_ShellExecuteExW(pExecInfo);
-    LOQ_bool("process", "2ul", "FilePath", pExecInfo->lpFile,
+    LOQ_bool("process", "Ful", "FilePath", pExecInfo->lpFile,
         "Parameters", pExecInfo->lpParameters, "Show", pExecInfo->nShow);
     return ret;
 }
