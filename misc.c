@@ -361,7 +361,7 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	if (tmpout == NULL || nonexistent == NULL)
 		goto normal_copy;
 
-	if (wcsncmp(inadj, L"\\\\?\\", 4)) {
+	if (lstrlenW(inadj) > 2 && inadj[1] == L':' && inadj[2] == L'\\' && wcsncmp(inadj, L"\\\\?\\", 4)) {
 		wchar_t *tmpout2;
 
 		tmpout2 = malloc(32768 * sizeof(wchar_t));
