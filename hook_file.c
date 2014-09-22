@@ -170,8 +170,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
 ) {
     NTSTATUS ret = Old_NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes,
         IoStatusBlock, ShareAccess, OpenOptions);
-	LOQ_ntstatus("filesystem", "PpOol", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
-        "FileName", ObjectAttributes, "OriginalFileName", ObjectAttributes->ObjectName, "ShareAccess", ShareAccess);
+	LOQ_ntstatus("filesystem", "PpOl", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
+        "FileName", ObjectAttributes, "ShareAccess", ShareAccess);
     if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {
         handle_new_file(*FileHandle, ObjectAttributes);
     }
