@@ -623,6 +623,13 @@ normal:
 		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + g_hkcu.len, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - ((g_hkcu.len) * sizeof(WCHAR)));
 		keybuf->KeyNameLength -= (g_hkcu.len - ourlen) * sizeof(WCHAR);
 	}
+	else if (!wcsnicmp(keybuf->KeyName, g_hkcu.hkcu_string, g_hkcu.len) && !wcsnicmp(&keybuf->KeyName[g_hkcu.len], L"_Classes", 8)) {
+		unsigned int ourlen = lstrlenW(L"HKEY_CURRENT_USER\\Software\\Classes");
+		unsigned int existlen = g_hkcu.len + 8;
+		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + existlen, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - (existlen * sizeof(WCHAR)));
+		memcpy(keybuf->KeyName, L"HKEY_CURRENT_USER\\Software\\Classes", ourlen * sizeof(WCHAR));
+		keybuf->KeyNameLength -= (existlen - ourlen) * sizeof(WCHAR);
+	}
 	else if (!wcsnicmp(keybuf->KeyName, L"\\REGISTRY\\MACHINE", 17) && (keybuf->KeyName[17] == L'\\' || keybuf->KeyName[17] == L'\0')) {
 		unsigned int ourlen = 18;
 		memmove(keybuf->KeyName + ourlen, keybuf->KeyName + 17, keybuf->KeyNameLength + (1 * sizeof(WCHAR)) - (17 * sizeof(WCHAR)));
