@@ -45,9 +45,13 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
         ModuleHandle);
 
     if (hook_info()->depth_count == 1) {
-        LOQspecial_ntstatus("system", "loP", "Flags", Flags, "FileName", &library,
-            "BaseAddress", ModuleHandle);
-    }
+		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
+	        LOQspecial_ntstatus("system", "lFP", "Flags", Flags, "FileName", library.Buffer,
+		       "BaseAddress", ModuleHandle);
+		else
+			LOQspecial_ntstatus("system", "loP", "Flags", Flags, "FileName", &library,
+				"BaseAddress", ModuleHandle);
+	}
 
     //
     // Check this DLL against our table of hooks, because we might have to
