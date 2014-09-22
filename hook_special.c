@@ -147,9 +147,9 @@ HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 		id2.Data4[0], id2.Data4[1], id2.Data4[2], id2.Data4[3], id2.Data4[4], id2.Data4[5], id2.Data4[6], id2.Data4[7]);
 
 	if ((known = known_object(&id1, &id2)))
-		LOQ_hresult("com", "ppss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);
+		LOQspecial_hresult("com", "spss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);
 	else
-		LOQ_hresult("com", "pps", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2);
+		LOQspecial_hresult("com", "sps", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2);
 
 	return ret;
 }
