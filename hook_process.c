@@ -302,9 +302,16 @@ HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     __inout  SHELLEXECUTEINFOW *pExecInfo
 ) {
     BOOL ret = Old_ShellExecuteExW(pExecInfo);
-    LOQ_bool("process", "Ful", "FilePath", pExecInfo->lpFile,
-        "Parameters", pExecInfo->lpParameters, "Show", pExecInfo->nShow);
-    return ret;
+	if (pExecInfo->lpFile && lstrlenW(pExecInfo->lpFile) > 2 &&
+		pExecInfo->lpFile[1] == L':' && pExecInfo->lpFile[2] == L'\\') {
+		LOQ_bool("process", "Ful", "FilePath", pExecInfo->lpFile,
+			"Parameters", pExecInfo->lpParameters, "Show", pExecInfo->nShow);
+	} else {
+		LOQ_bool("process", "uul", "FilePath", pExecInfo->lpFile,
+			"Parameters", pExecInfo->lpParameters, "Show", pExecInfo->nShow);
+	}
+
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtUnmapViewOfSection,

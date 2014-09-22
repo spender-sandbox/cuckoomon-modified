@@ -376,11 +376,14 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 		}
 		free(tmpout2);
 	}
+	else if (inadj == in + 4) {
+		wcsncpy(tmpout, inadj, 32768);
+	}
 	else {
 		if (!GetFullPathNameW(inadj, 32768, tmpout, NULL))
 			goto normal_copy;
 	}
-	
+
 	lenchars = 0;
 	nonexistentidx = 32767;
 	nonexistent[nonexistentidx] = L'\0';
