@@ -291,8 +291,10 @@ uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
 
 	
 	path[length++] = L'\\';
-
-	copylen = min(0, buffer_length - 1 - length);
+	if (length >= (buffer_length - 1))
+		copylen = 0;
+	else
+		copylen = buffer_length - 1 - length;
 	copylen = min(copylen, obj_length);
 	memcpy(&path[length], obj->ObjectName->Buffer, copylen * sizeof(wchar_t));
 	path[length + copylen] = L'\0';
