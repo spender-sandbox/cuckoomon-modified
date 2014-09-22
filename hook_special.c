@@ -45,7 +45,7 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
         ModuleHandle);
 
     if (hook_info()->depth_count == 1) {
-        LOQspecial_ntstatus("system", "lFP", "Flags", Flags, "FileName", library.Buffer,
+        LOQspecial_ntstatus("system", "loP", "Flags", Flags, "FileName", &library,
             "BaseAddress", ModuleHandle);
     }
 

@@ -107,7 +107,7 @@ static void file_write(HANDLE file_handle)
 
 static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 {
-    if(is_directory_objattr(obj) == 0 && is_ignored_file_objattr(obj) == 0) {
+    if(is_directory_objattr(obj) == 0) {
 
         wchar_t fname[MAX_PATH_PLUS_TOLERANCE];
 		wchar_t *absolutename = malloc(32768 * sizeof(wchar_t));
@@ -115,13 +115,17 @@ static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 		path_from_object_attributes(obj, fname, MAX_PATH_PLUS_TOLERANCE);
 
 		if (absolutename != NULL) {
+			unsigned int len;
 			ensure_absolute_unicode_path(absolutename, fname);
+			len = lstrlenW(absolutename);
 			// cache this file
-			cache_file(file_handle, absolutename, lstrlenW(absolutename), obj->Attributes);
+			if (is_ignored_file_unicode(absolutename, len) == 0)
+				cache_file(file_handle, absolutename, len, obj->Attributes);
 			free(absolutename);
 		}
 		else {
-			cache_file(file_handle, fname, lstrlenW(fname), obj->Attributes);
+			if (is_ignored_file_objattr(obj) == 0)
+				cache_file(file_handle, fname, lstrlenW(fname), obj->Attributes);
 		}
     }
 }
@@ -166,8 +170,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
 ) {
     NTSTATUS ret = Old_NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes,
         IoStatusBlock, ShareAccess, OpenOptions);
-	LOQ_ntstatus("filesystem", "PpOl", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
-        "FileName", ObjectAttributes, "ShareAccess", ShareAccess);
+	LOQ_ntstatus("filesystem", "PpOol", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
+        "FileName", ObjectAttributes, "OriginalFileName", ObjectAttributes->ObjectName, "ShareAccess", ShareAccess);
     if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {
         handle_new_file(*FileHandle, ObjectAttributes);
     }

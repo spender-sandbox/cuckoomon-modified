@@ -349,11 +349,14 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	wchar_t *pathcomponent;
 	unsigned int pathcomponentlen;
 	const wchar_t *inadj;
+	unsigned int inlen;
 
 	if (!wcsncmp(in, L"\\??\\", 4))
 		inadj = in + 4;
 	else
 		inadj = in;
+
+	inlen = lstrlenW(inadj);
 
 	tmpout = malloc(32768 * sizeof(wchar_t));
 	nonexistent = malloc(32768 * sizeof(wchar_t));
@@ -361,7 +364,11 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	if (tmpout == NULL || nonexistent == NULL)
 		goto normal_copy;
 
-	if (lstrlenW(inadj) > 2 && inadj[1] == L':' && inadj[2] == L'\\' && wcsncmp(inadj, L"\\\\?\\", 4)) {
+	if (inlen > 0 && inadj[0] == L'\\') {
+		// handle \\Device\\*
+		goto normal_copy;
+	}
+	else if (inlen > 1 && inadj[1] == L':') {
 		wchar_t *tmpout2;
 
 		tmpout2 = malloc(32768 * sizeof(wchar_t));
@@ -377,7 +384,9 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 		free(tmpout2);
 	}
 	else if (inadj == in + 4) {
-		wcsncpy(tmpout, inadj, 32768);
+		// handle \\??\\*\\*
+		inadj = in;
+		goto normal_copy;
 	}
 	else {
 		if (!GetFullPathNameW(inadj, 32768, tmpout, NULL))
