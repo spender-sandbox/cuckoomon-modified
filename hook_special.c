@@ -114,6 +114,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
 
 static GUID _CLSID_CUrlHistory =	  { 0x3C374A40L, 0xBAE4, 0x11CF, 0xBF, 0x7D, 0x00, 0xAA, 0x00, 0x69, 0x46, 0xEE };
 static GUID _CLSID_InternetExplorer = { 0x0002DF01L, 0x0000, 0x0000, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 };
+static GUID _CLSID_InternetSecurityManager = { 0x79EAC9EE, 0xBAF9, 0x11CE, 0x8C, 0x82, 0x00, 0xAA, 0x00, 0x4B, 0xA9, 0x0B };
 
 static char *known_object(IID *app, IID *iface)
 {
@@ -121,6 +122,8 @@ static char *known_object(IID *app, IID *iface)
 		return "CUrlHistory";
 	else if (!memcmp(app, &_CLSID_InternetExplorer, sizeof(*app)))
 		return "InternetExplorer";
+	else if (!memcmp(app, &_CLSID_InternetSecurityManager, sizeof(*app)))
+		return "InternetSecurityManager";
 
 	return NULL;
 }
