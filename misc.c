@@ -702,3 +702,54 @@ int is_shutting_down()
     }
     return 0;
 }
+
+static char *g_dosdevices_a[26];
+static char *g_targetnames_a[26];
+
+static wchar_t *g_dosdevices_w[26];
+static wchar_t *g_targetnames_w[26];
+static unsigned int g_num_dosdevices;
+
+wchar_t *get_matching_unicode_dosdevice(wchar_t *path)
+{
+	unsigned int i;
+	for (i = 0; i < g_num_dosdevices; i++) {
+		if (!wcsncmp(path, g_targetnames_w[i], wcslen(g_targetnames_w[i])))
+			return g_dosdevices_w[i];
+	}
+	return NULL;
+}
+
+void dosdevice_map_init(void)
+{
+	char letter[3];
+	char buf[MAX_PATH];
+	char c;
+	unsigned int idx = 0;
+	unsigned int i, x;
+	int len;
+	letter[1] = ':';
+	letter[2] = '\0';
+	for (c = 'A'; c <= 'Z'; c++) {
+		letter[0] = c;
+		if (QueryDosDeviceA(letter, buf, MAX_PATH)) {
+			g_dosdevices_a[idx] = strdup(letter);
+			g_targetnames_a[idx] = strdup(buf);
+			idx++;
+		}
+	}
+
+	for (i = 0; i < idx; i++) {
+		len = strlen(g_dosdevices_a[i]) + 1;
+		g_dosdevices_w[i] = (wchar_t *)malloc(len * sizeof(wchar_t));
+		for (x = 0; x < len; x++)
+			g_dosdevices_w[i][x] = (wchar_t)g_dosdevices_a[i][x];
+		len = strlen(g_targetnames_a[i]) + 1;
+		g_targetnames_w[i] = (wchar_t *)malloc(len * sizeof(wchar_t));
+		for (x = 0; x < len; x++)
+			g_targetnames_w[i][x] = (wchar_t)g_targetnames_a[i][x];
+	}
+	g_num_dosdevices = idx;
+
+}
+

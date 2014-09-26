@@ -214,6 +214,8 @@ static hook_t g_hooks[] = {
     // all variants of ShellExecute end up in ShellExecuteExW
     HOOK(shell32, ShellExecuteExW),
     HOOK(ntdll, NtUnmapViewOfSection),
+	// this hook needs to be disabled if you want to debug a binary with cuckoomon.dll loaded and pageheap enabled,
+	// otherwise we'll hit a deadlock on bson's calloc
     HOOK(ntdll, NtAllocateVirtualMemory),
     HOOK(ntdll, NtReadVirtualMemory),
     HOOK(kernel32, ReadProcessMemory),

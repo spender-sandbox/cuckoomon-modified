@@ -839,9 +839,21 @@ hook_info_t *hook_info()
 static void ensure_valid_hook_info()
 {
     if(hook_info() == NULL) {
-        hook_info_t *info = (hook_info_t *) calloc(1, sizeof(hook_info_t)+TLS_HOOK_INFO_RETADDR_SPACE + sizeof(unsigned int));
-        info->retaddr_esp = (unsigned int) info + sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE;
-        __writefsdword(TLS_HOOK_INFO, (unsigned int) info);
+		// this wizardry allows us to hook NtAllocateVirtualMemory -- otherwise we'd crash from infinite
+		// recursion if NtAllocateVirtualMemory was the first API we saw on a new thread
+		char dummybuf[sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE + sizeof(unsigned int)] = { 0 };
+
+		hook_info_t *info = (hook_info_t *)&dummybuf;
+		info->retaddr_esp = (unsigned int)info + sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE;
+		__writefsdword(TLS_HOOK_INFO, (unsigned int)info);
+
+		// now allocate the memory we need for the hook info struct without calling our hooks
+		hook_disable();
+		info = (hook_info_t *)calloc(1, sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE + sizeof(unsigned int));
+		hook_enable();
+
+		info->retaddr_esp = (unsigned int)info + sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE;
+		__writefsdword(TLS_HOOK_INFO, (unsigned int)info);
     }
 }
 

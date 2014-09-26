@@ -46,6 +46,8 @@ static lookup_t g_files;
 
 void file_init()
 {
+	dosdevice_map_init();
+
     lookup_init(&g_files);
 }
 
