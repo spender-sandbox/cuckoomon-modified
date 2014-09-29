@@ -352,10 +352,14 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	unsigned int inlen;
 	int is_globalroot = 0;
 
-	if (!wcsncmp(in, L"\\??\\", 4))
+	if (!wcsncmp(in, L"\\??\\", 4)) {
 		inadj = in + 4;
-	else if (!wcsnicmp(in, L"\\\\?\\globalroot", 14))
+		is_globalroot = 1;
+	} 
+	else if (!wcsnicmp(in, L"\\\\?\\globalroot", 14)) {
 		inadj = in + 14;
+		is_globalroot = 1;
+	}
 	else
 		inadj = in;
 
