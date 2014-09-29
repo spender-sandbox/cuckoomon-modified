@@ -35,6 +35,7 @@ static LARGE_INTEGER time_skipped;
 static LARGE_INTEGER time_start;
 
 static int num_skipped = 0;
+static int num_small = 0;
 
 HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    BOOLEAN Alertable,
@@ -60,7 +61,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 				num_skipped++;
 			}
 			else if (num_skipped == 20) {
-				LOQ_ntstatus("system", "s", "Status", "Log limit reached");
+				LOQ_ntstatus("system", "s", "Status", "Skipped log limit reached");
 				num_skipped++;
 			}
             return ret;
@@ -70,7 +71,18 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
         }
     }
     unsigned long milli = (unsigned long)(-DelayInterval->QuadPart / 10000);
-    LOQ_ntstatus("system", "l", "Milliseconds", milli);
+	if (milli <= 10) {
+		if (num_small < 20) {
+			LOQ_ntstatus("system", "l", "Milliseconds", milli);
+			num_small++;
+		}
+		else if (num_small == 20) {
+			LOQ_ntstatus("system", "s", "Status", "Small log limit reached");
+		}
+	}
+	else {
+		LOQ_ntstatus("system", "l", "Milliseconds", milli);
+	}
     return Old_NtDelayExecution(Alertable, DelayInterval);
 }
 
