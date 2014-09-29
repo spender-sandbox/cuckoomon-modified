@@ -42,9 +42,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    PLARGE_INTEGER DelayInterval
 ) {
     NTSTATUS ret = 0;
+	LONGLONG interval = -DelayInterval->QuadPart;
+	unsigned long milli = (unsigned long)(interval / 10000);
 
     // do we want to skip this sleep?
-    if(sleep_skip_active != 0) {
+    if(sleep_skip_active != 0 && interval >= 0LL) {
         FILETIME ft; LARGE_INTEGER li;
         GetSystemTimeAsFileTime(&ft);
         li.HighPart = ft.dwHighDateTime;
@@ -52,11 +54,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 
         // check if we're still within the hardcoded limit
         if(li.QuadPart < time_start.QuadPart + MAX_SLEEP_SKIP_DIFF * 10000) {
-            time_skipped.QuadPart += -DelayInterval->QuadPart;
+            time_skipped.QuadPart += interval;
 
 			if (num_skipped < 20) {
 				// notify how much we've skipped
-				unsigned long milli = (unsigned long)(-DelayInterval->QuadPart / 10000);
 				LOQ_ntstatus("system", "ls", "Milliseconds", milli, "Status", "Skipped");
 				num_skipped++;
 			}
@@ -70,7 +71,6 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
             sleep_skip_active = 0;
         }
     }
-    unsigned long milli = (unsigned long)(-DelayInterval->QuadPart / 10000);
 	if (milli <= 10) {
 		if (num_small < 20) {
 			LOQ_ntstatus("system", "l", "Milliseconds", milli);
