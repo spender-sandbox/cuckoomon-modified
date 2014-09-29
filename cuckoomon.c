@@ -418,9 +418,16 @@ LONG WINAPI cuckoomon_exception_handler(
 	__in struct _EXCEPTION_POINTERS *ExceptionInfo
 	) {
 	char msg[1024];
+	char *dllname;
+	unsigned int offset;
 	DWORD *teb = (DWORD *)__readfsdword(0x18);
 	DWORD *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
-	sprintf(msg, "Exception Caught! EIP: %08x, Fault Address: %08x, Exception Code: %08x, Stack Range: %08x->%08x, Stack Dump: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n",
+
+	dllname = convert_address_to_dll_name_and_offset((ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress, &offset);
+	strcpy(msg, "Exception Caught! EIP:");
+	if (dllname)
+		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
+	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %08x, Fault Address: %08x, Exception Code: %08x, Stack Range: %08x->%08x, Stack Dump: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n",
 		ExceptionInfo->ExceptionRecord->ExceptionAddress, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], ExceptionInfo->ExceptionRecord->ExceptionCode,
 		teb[2], teb[1], stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
 	debug_message(msg);

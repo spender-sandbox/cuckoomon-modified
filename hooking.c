@@ -730,7 +730,7 @@ int hook_api(hook_t *h, int type)
         return -1;
     }
 
-    int ret = -1;
+	int ret = -1;
 
     // check if this is a valid hook type
     if(type >= 0 && type < ARRAYSIZE(hook_types)) {

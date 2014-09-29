@@ -69,3 +69,5 @@ void add_all_dlls_to_dll_ranges(void);
 
 wchar_t *get_matching_unicode_specialname(const wchar_t *path, unsigned int *matchlen);
 void specialname_map_init(void);
+
+char *convert_address_to_dll_name_and_offset(ULONG_PTR addr, unsigned int *offset);

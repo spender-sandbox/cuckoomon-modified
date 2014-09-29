@@ -162,6 +162,28 @@ void add_all_dlls_to_dll_ranges(void)
 
 }
 
+char *convert_address_to_dll_name_and_offset(ULONG_PTR addr, unsigned int *offset)
+{
+	LDR_MODULE *mod; PEB *peb = (PEB *)__readfsdword(0x30);
+
+	for (mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
+		mod->BaseAddress != NULL;
+		mod = (LDR_MODULE *)mod->InLoadOrderModuleList.Flink) {
+		if (addr < (ULONG_PTR)mod->BaseAddress || addr >= ((ULONG_PTR)mod->BaseAddress + mod->SizeOfImage))
+			continue;
+		char *buf = calloc(1, (mod->BaseDllName.Length / sizeof(wchar_t)) + 1);
+		unsigned int i;
+		if (buf == NULL)
+			return NULL;
+		for (i = 0; i < (mod->BaseDllName.Length / sizeof(wchar_t)); i++)
+			buf[i] = (char)mod->BaseDllName.Buffer[i];
+		*offset = addr - (ULONG_PTR)mod->BaseAddress;
+		return buf;
+	}
+	return NULL;
+}
+
+
 // hide our module from PEB
 // http://www.openrce.org/blog/view/844/How_to_hide_dll
 
