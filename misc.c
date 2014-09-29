@@ -446,7 +446,7 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 
 globalroot_copy:
 	wcscpy(out, L"\\??\\");
-	wcsncpy(out, inadj, 32768 - 4);
+	wcsncat(out, inadj, 32768 - 4);
 	goto out;
 
 normal_copy:
