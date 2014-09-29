@@ -138,6 +138,24 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemTime,
     return 0;
 }
 
+HOOKDEF(void, WINAPI, GetSystemTimeAsFileTime,
+	_Out_ LPFILETIME lpSystemTimeAsFileTime
+) {
+	LARGE_INTEGER li;
+	FILETIME ft;
+	Old_GetSystemTimeAsFileTime(&ft);
+
+	li.HighPart = ft.dwHighDateTime;
+	li.LowPart = ft.dwLowDateTime;
+	li.QuadPart += time_skipped.QuadPart;
+	ft.dwHighDateTime = li.HighPart;
+	ft.dwLowDateTime = li.LowPart;
+
+	memcpy(lpSystemTimeAsFileTime, &ft, sizeof(ft));
+
+	return;
+}
+
 void disable_sleep_skip()
 {
     if (sleep_skip_active && !g_config.force_sleepskip) {

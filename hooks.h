@@ -1350,6 +1350,10 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemTime,
     _Out_  PLARGE_INTEGER SystemTime
 );
 
+extern HOOKDEF(void, WINAPI, GetSystemTimeAsFileTime,
+	_Out_ LPFILETIME lpSystemTimeAsFileTime
+);
+
 //
 // Socket Hooks
 //
