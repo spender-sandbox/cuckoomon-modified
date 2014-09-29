@@ -34,6 +34,8 @@ static int sleep_skip_active = 1;
 static LARGE_INTEGER time_skipped;
 static LARGE_INTEGER time_start;
 
+static int num_skipped = 0;
+
 HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    BOOLEAN Alertable,
     __in    PLARGE_INTEGER DelayInterval
@@ -51,9 +53,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
         if(li.QuadPart < time_start.QuadPart + MAX_SLEEP_SKIP_DIFF * 10000) {
             time_skipped.QuadPart += -DelayInterval->QuadPart;
 
-            // notify how much we've skipped
-            unsigned long milli = (unsigned long)(-DelayInterval->QuadPart / 10000);
-            LOQ_ntstatus("system", "ls", "Milliseconds", milli, "Status", "Skipped");
+			if (num_skipped < 20) {
+				// notify how much we've skipped
+				unsigned long milli = (unsigned long)(-DelayInterval->QuadPart / 10000);
+				LOQ_ntstatus("system", "ls", "Milliseconds", milli, "Status", "Skipped");
+				num_skipped++;
+			}
+			else if (num_skipped == 20) {
+				LOQ_ntstatus("system", "s", "Status", "Log limit reached");
+				num_skipped++;
+			}
             return ret;
         }
         else {
