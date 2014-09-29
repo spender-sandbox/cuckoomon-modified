@@ -78,6 +78,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 		}
 		else if (num_small == 20) {
 			LOQ_ntstatus("system", "s", "Status", "Small log limit reached");
+			num_small++;
 		}
 	}
 	else {
