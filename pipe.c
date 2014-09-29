@@ -73,7 +73,20 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
 
             ret += _pipe_unicode(&out, s, lstrlenW(s));
         }
-        else if(*fmt == 's') {
+		else if (*fmt == 'F') {
+			const wchar_t *s = va_arg(args, const wchar_t *);
+			wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
+			if (s == NULL) return -1;
+			if (absolutepath) {
+				ensure_absolute_unicode_path(absolutepath, s);
+				ret += _pipe_unicode(&out, absolutepath, lstrlenW(absolutepath));
+				free(absolutepath);
+			}
+			else {
+				return -1;
+			}
+		}
+		else if (*fmt == 's') {
             int len = va_arg(args, int);
             const char *s = va_arg(args, const char *);
             if(s == NULL) return -1;

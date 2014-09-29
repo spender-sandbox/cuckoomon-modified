@@ -67,5 +67,5 @@ struct dll_range {
 BOOL is_in_dll_range(ULONG_PTR addr);
 void add_all_dlls_to_dll_ranges(void);
 
-wchar_t *get_matching_unicode_dosdevice(wchar_t *path);
-void dosdevice_map_init(void);
+wchar_t *get_matching_unicode_specialname(const wchar_t *path, unsigned int *matchlen);
+void specialname_map_init(void);

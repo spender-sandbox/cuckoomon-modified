@@ -350,9 +350,12 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	unsigned int pathcomponentlen;
 	const wchar_t *inadj;
 	unsigned int inlen;
+	int is_globalroot = 0;
 
 	if (!wcsncmp(in, L"\\??\\", 4))
 		inadj = in + 4;
+	else if (!wcsnicmp(in, L"\\\\?\\globalroot", 14))
+		inadj = in + 14;
 	else
 		inadj = in;
 
@@ -365,8 +368,25 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 		goto normal_copy;
 
 	if (inlen > 0 && inadj[0] == L'\\') {
-		// handle \\Device\\*
-		goto normal_copy;
+		// handle \\Device\\* and \\systemroot\\*
+		unsigned int matchlen;
+		wchar_t *tmpout2;
+		wchar_t *retstr = get_matching_unicode_specialname(inadj, &matchlen);
+		if (retstr == NULL)
+			goto globalroot_copy;
+		// rewrite \\Device\\HarddiskVolumeX etc to the appropriate drive letter
+		tmpout2 = malloc(32768 * sizeof(wchar_t));
+		if (tmpout2 == NULL)
+			goto globalroot_copy;
+
+		wcscpy(tmpout2, L"\\\\?\\");
+		wcscat(tmpout2, retstr);
+		wcsncat(tmpout2, inadj + matchlen, 32768 - 4 - 3);
+		if (!GetFullPathNameW(tmpout2, 32768, tmpout, NULL)) {
+			free(tmpout2);
+			goto globalroot_copy;
+		}
+		free(tmpout2);
 	}
 	else if (inlen > 1 && inadj[1] == L':') {
 		wchar_t *tmpout2;
@@ -383,10 +403,9 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 		}
 		free(tmpout2);
 	}
-	else if (inadj == in + 4) {
+	else if (is_globalroot) {
 		// handle \\??\\*\\*
-		inadj = in;
-		goto normal_copy;
+		goto globalroot_copy;
 	}
 	else {
 		if (!GetFullPathNameW(inadj, 32768, tmpout, NULL))
@@ -421,10 +440,16 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 		free(nonexistent);
 	return out;
 
+globalroot_copy:
+	wcscpy(out, L"\\??\\");
+	wcsncpy(out, inadj, 32768 - 4);
+	goto out;
+
 normal_copy:
 	wcsncpy(out, inadj, 32768);
 	if (!wcsncmp(out, L"\\\\?\\", 4))
 		memmove(out, out + 4, (lstrlenW(out) + 1 - 4) * sizeof(wchar_t));
+out:
 	out[32767] = L'\0';
 	if (tmpout)
 		free(tmpout);
@@ -703,53 +728,61 @@ int is_shutting_down()
     return 0;
 }
 
-static char *g_dosdevices_a[26];
-static char *g_targetnames_a[26];
+static char *g_specialnames_a[27];
+static char *g_targetnames_a[27];
 
-static wchar_t *g_dosdevices_w[26];
-static wchar_t *g_targetnames_w[26];
-static unsigned int g_num_dosdevices;
+static wchar_t *g_specialnames_w[27];
+static wchar_t *g_targetnames_w[27];
+static unsigned int g_num_specialnames;
 
-wchar_t *get_matching_unicode_dosdevice(wchar_t *path)
+wchar_t *get_matching_unicode_specialname(const wchar_t *path, unsigned int *matchlen)
 {
 	unsigned int i;
-	for (i = 0; i < g_num_dosdevices; i++) {
-		if (!wcsncmp(path, g_targetnames_w[i], wcslen(g_targetnames_w[i])))
-			return g_dosdevices_w[i];
+	for (i = 0; i < g_num_specialnames; i++) {
+		if (!wcsnicmp(path, g_targetnames_w[i], wcslen(g_targetnames_w[i]))) {
+			*matchlen = lstrlenW(g_targetnames_w[i]);
+			return g_specialnames_w[i];
+		}
 	}
 	return NULL;
 }
 
-void dosdevice_map_init(void)
+void specialname_map_init(void)
 {
 	char letter[3];
 	char buf[MAX_PATH];
 	char c;
 	unsigned int idx = 0;
 	unsigned int i, x;
-	int len;
+	unsigned int len;
 	letter[1] = ':';
 	letter[2] = '\0';
 	for (c = 'A'; c <= 'Z'; c++) {
 		letter[0] = c;
 		if (QueryDosDeviceA(letter, buf, MAX_PATH)) {
-			g_dosdevices_a[idx] = strdup(letter);
+			g_specialnames_a[idx] = strdup(letter);
 			g_targetnames_a[idx] = strdup(buf);
 			idx++;
 		}
 	}
 
+	GetWindowsDirectoryA(buf, MAX_PATH);
+	g_specialnames_a[idx] = strdup("\\systemroot");
+	g_targetnames_a[idx] = strdup(buf);
+	idx++;
+
 	for (i = 0; i < idx; i++) {
-		len = strlen(g_dosdevices_a[i]) + 1;
-		g_dosdevices_w[i] = (wchar_t *)malloc(len * sizeof(wchar_t));
+		len = strlen(g_specialnames_a[i]) + 1;
+		g_specialnames_w[i] = (wchar_t *)malloc(len * sizeof(wchar_t));
 		for (x = 0; x < len; x++)
-			g_dosdevices_w[i][x] = (wchar_t)g_dosdevices_a[i][x];
+			g_specialnames_w[i][x] = (wchar_t)g_specialnames_a[i][x];
 		len = strlen(g_targetnames_a[i]) + 1;
 		g_targetnames_w[i] = (wchar_t *)malloc(len * sizeof(wchar_t));
 		for (x = 0; x < len; x++)
 			g_targetnames_w[i][x] = (wchar_t)g_targetnames_a[i][x];
 	}
-	g_num_dosdevices = idx;
+
+	g_num_specialnames = idx;
 
 }
 

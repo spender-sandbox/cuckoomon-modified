@@ -31,8 +31,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     FILE_WRITE_DATA | FILE_APPEND_DATA | STANDARD_RIGHTS_WRITE | \
     STANDARD_RIGHTS_ALL)
 
-#define HDDVOL1 L"\\Device\\HarddiskVolume1"
-
 // length of a hardcoded unicode string
 #define UNILEN(x) (sizeof(x) / sizeof(wchar_t) - 1)
 
@@ -46,7 +44,7 @@ static lookup_t g_files;
 
 void file_init()
 {
-	dosdevice_map_init();
+	specialname_map_init();
 
     lookup_init(&g_files);
 }
@@ -56,21 +54,10 @@ static void new_file(const UNICODE_STRING *obj)
     const wchar_t *str = obj->Buffer;
     unsigned int len = obj->Length / sizeof(wchar_t);
 
-    // if it's a path including \??\ then we can send it straight away,
-    // but we strip the \??\ part
-    if(len > 4 && !wcsncmp(str, L"\\??\\", 4)) {
-        pipe("FILE_NEW:%S", len - 4, str + 4);
-    }
     // maybe it's an absolute path (or a relative path with a harddisk,
     // such as C:abc.txt)
-    else if(isalpha(str[0]) != 0 && str[1] == ':') {
+    if(isalpha(str[0]) != 0 && str[1] == ':') {
         pipe("FILE_NEW:%S", len, str);
-    }
-    // the filename starts with \Device\HarddiskVolume1, which is
-    // basically just C:
-    else if(!wcsnicmp(str, HDDVOL1, UNILEN(HDDVOL1))) {
-        str += UNILEN(HDDVOL1), len -= UNILEN(HDDVOL1);
-        pipe("FILE_NEW:C:%S", len, str);
     }
 }
 
@@ -222,7 +209,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
 HOOKDEF(NTSTATUS, WINAPI, NtDeleteFile,
     __in  POBJECT_ATTRIBUTES ObjectAttributes
 ) {
-    pipe("FILE_DEL:%O", ObjectAttributes);
+	pipe("FILE_DEL:%O", ObjectAttributes);
 
     NTSTATUS ret = Old_NtDeleteFile(ObjectAttributes);
 	LOQ_ntstatus("filesystem", "O", "FileName", ObjectAttributes);
@@ -307,13 +294,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetInformationFile,
             *(BOOLEAN *) FileInformation != FALSE) {
 
         wchar_t path[MAX_PATH_PLUS_TOLERANCE];
-		wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
-		if (absolutepath) {
-			path_from_handle(FileHandle, path, (unsigned int)MAX_PATH_PLUS_TOLERANCE);
-			ensure_absolute_unicode_path(absolutepath, path);
-			pipe("FILE_DEL:%Z", absolutepath);
-			free(absolutepath);
-		}
+		path_from_handle(FileHandle, path, (unsigned int)MAX_PATH_PLUS_TOLERANCE);
+		pipe("FILE_DEL:%F", path);
     }
 
     NTSTATUS ret = Old_NtSetInformationFile(FileHandle, IoStatusBlock,
@@ -392,10 +374,16 @@ HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
 ) {
     BOOL ret = Old_MoveFileWithProgressW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, dwFlags);
-	LOQ_bool("filesystem", "FF", "ExistingFileName", lpExistingFileName,
-        "NewFileName", lpNewFileName);
-    if(ret != FALSE) {
-        pipe("FILE_MOVE:%Z::%Z", lpExistingFileName, lpNewFileName);
+	LOQ_bool("filesystem", "FFp", "ExistingFileName", lpExistingFileName,
+        "NewFileName", lpNewFileName, "Flags", dwFlags);
+    if (ret != FALSE) {
+		if (lpNewFileName)
+			pipe("FILE_MOVE:%F::%F", lpExistingFileName, lpNewFileName);
+		else {
+			// we can do this here because it's not scheduled for deletion until reboot
+			pipe("FILE_DEL:%F", lpExistingFileName);
+		}
+
     }
     return ret;
 }
