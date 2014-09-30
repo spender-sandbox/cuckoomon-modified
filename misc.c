@@ -323,6 +323,13 @@ uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
     return length + copylen;
 }
 
+static char *system32dir_a;
+static char *sysnativedir_a;
+static wchar_t *system32dir_w;
+static wchar_t *sysnativedir_w;
+static unsigned int system32dir_len;
+static unsigned int sysnativedir_len;
+
 char *ensure_absolute_ascii_path(char *out, const char *in)
 {
 	char tmpout[MAX_PATH];
@@ -353,11 +360,15 @@ char *ensure_absolute_ascii_path(char *out, const char *in)
 		*pathcomponent = '\0';
 	}
 	strncat(out, nonexistent + nonexistentidx, MAX_PATH - strlen(out));
-	out[MAX_PATH - 1] = '\0';
-	return out;
+	goto out;
 
 normal_copy:
 	strncpy(out, in, MAX_PATH);
+out:
+	if (is_wow64_fs_redirection_disabled() && !strnicmp(out, system32dir_a, system32dir_len)) {
+		memmove(out + system32dir_len + 1, out + system32dir_len, strlen(out + system32dir_len) + 1);
+		memcpy(out, sysnativedir_a, sysnativedir_len);
+	}
 	out[MAX_PATH - 1] = '\0';
 	return out;
 }
@@ -377,7 +388,7 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	if (!wcsncmp(in, L"\\??\\", 4)) {
 		inadj = in + 4;
 		is_globalroot = 1;
-	} 
+	}
 	else if (!wcsnicmp(in, L"\\\\?\\globalroot", 14)) {
 		inadj = in + 14;
 		is_globalroot = 1;
@@ -399,18 +410,18 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 		wchar_t *tmpout2;
 		wchar_t *retstr = get_matching_unicode_specialname(inadj, &matchlen);
 		if (retstr == NULL)
-			goto globalroot_copy;
+			goto normal_copy;
 		// rewrite \\Device\\HarddiskVolumeX etc to the appropriate drive letter
 		tmpout2 = malloc(32768 * sizeof(wchar_t));
 		if (tmpout2 == NULL)
-			goto globalroot_copy;
+			goto normal_copy;
 
 		wcscpy(tmpout2, L"\\\\?\\");
 		wcscat(tmpout2, retstr);
 		wcsncat(tmpout2, inadj + matchlen, 32768 - 4 - 3);
 		if (!GetFullPathNameW(tmpout2, 32768, tmpout, NULL)) {
 			free(tmpout2);
-			goto globalroot_copy;
+			goto normal_copy;
 		}
 		free(tmpout2);
 	}
@@ -459,6 +470,11 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 
 	if (!wcsncmp(out, L"\\\\?\\", 4))
 		memmove(out, out + 4, (lstrlenW(out) + 1 - 4) * sizeof(wchar_t));
+
+	if (is_wow64_fs_redirection_disabled() && !wcsnicmp(out, system32dir_w, system32dir_len)) {
+		memmove(out + system32dir_len + 1, out + system32dir_len, (lstrlenW(out + system32dir_len) + 1) * sizeof(wchar_t));
+		memcpy(out, sysnativedir_w, sysnativedir_len * sizeof(wchar_t));
+	}
 	out[32767] = L'\0';
 	if (tmpout)
 		free(tmpout);
@@ -793,9 +809,29 @@ void specialname_map_init(void)
 	}
 
 	GetWindowsDirectoryA(buf, MAX_PATH);
-	g_specialnames_a[idx] = strdup("\\systemroot");
-	g_targetnames_a[idx] = strdup(buf);
+	g_targetnames_a[idx] = strdup("\\systemroot");
+	g_specialnames_a[idx] = strdup(buf);
 	idx++;
+
+	len = strlen(buf) + strlen("\\system32");
+	system32dir_a = calloc(1, len + 1);
+	system32dir_w = calloc(1, (len + 1) * sizeof(wchar_t));
+	strcpy(system32dir_a, buf);
+	strcat(system32dir_a, "\\system32");
+	for (x = 0; x < len - strlen("\\system32"); x++)
+		system32dir_w[x] = (wchar_t)buf[x];
+	wcscat(system32dir_w, L"\\system32");
+	system32dir_len = len;
+
+	len = strlen(buf) + strlen("\\sysnative");
+	sysnativedir_a = calloc(1, len + 1);
+	sysnativedir_w = calloc(1, (len + 1) * sizeof(wchar_t));
+	strcpy(sysnativedir_a, buf);
+	strcat(sysnativedir_a, "\\sysnative");
+	for (x = 0; x < len - strlen("\\sysnative"); x++)
+		sysnativedir_w[x] = (wchar_t)buf[x];
+	wcscat(sysnativedir_w, L"\\sysnative");
+	sysnativedir_len = len;
 
 	for (i = 0; i < idx; i++) {
 		len = strlen(g_specialnames_a[i]) + 1;
@@ -812,3 +848,14 @@ void specialname_map_init(void)
 
 }
 
+int is_wow64_fs_redirection_disabled(void)
+{
+	PCHAR teb = (PCHAR)__readfsdword(0x18);
+	PCHAR ptr1 = (PCHAR)(ULONG_PTR)*(DWORD *)(teb + 0xf70);
+	if (ptr1 == NULL)
+		return 0;
+	if (*(DWORD *)(ptr1 + 0x14c0) == 1 && *(DWORD *)(ptr1 + 0x14c4) == 0)
+		return 1;
+	else
+		return 0;
+}
