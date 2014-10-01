@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "pipe.h"
 #include "misc.h"
 
-
 HOOKDEF(NTSTATUS, WINAPI, NtCreateKey,
     __out       PHANDLE KeyHandle,
     __in        ACCESS_MASK DesiredAccess,
@@ -36,7 +35,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateKey,
 	ENSURE_ULONG(Disposition);
 	NTSTATUS ret = Old_NtCreateKey(KeyHandle, DesiredAccess, ObjectAttributes,
         TitleIndex, Class, CreateOptions, Disposition);
-    LOQ_ntstatus("registry", "PlpouKL", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("registry", "PppoKoL", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
 		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
 		"ObjectAttributes", ObjectAttributes, "Class", Class,
@@ -50,7 +49,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenKey,
     __in   POBJECT_ATTRIBUTES ObjectAttributes
 ) {
 	NTSTATUS ret = Old_NtOpenKey(KeyHandle, DesiredAccess, ObjectAttributes);
-    LOQ_ntstatus("registry", "PlpoK", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("registry", "PppoK", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
 		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
 		"ObjectAttributes", ObjectAttributes);
@@ -65,7 +64,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenKeyEx,
 ) {
 	NTSTATUS ret = Old_NtOpenKeyEx(KeyHandle, DesiredAccess, ObjectAttributes,
         OpenOptions);
-    LOQ_ntstatus("registry", "PlpoK", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("registry", "PppoK", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
 		"ObjectAttributesName", unistr_from_objattr(ObjectAttributes),
 		"ObjectAttributes", ObjectAttributes);
