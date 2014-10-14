@@ -502,14 +502,14 @@ out:
 
 wchar_t *get_full_keyvalue_pathA(HKEY registry, const char *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {
-	if (in)
+	if (in && strlen(in))
 		return get_full_key_pathA(registry, in, keybuf, len);
 	else
 		return get_full_key_pathA(registry, "(Default)", keybuf, len);
 }
 wchar_t *get_full_keyvalue_pathW(HKEY registry, const wchar_t *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {
-	if (in)
+	if (in && wcslen(in))
 		return get_full_key_pathW(registry, in, keybuf, len);
 	else
 		return get_full_key_pathW(registry, L"(Default)", keybuf, len);
