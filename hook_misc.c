@@ -217,9 +217,9 @@ HOOKDEF(NTSTATUS, WINAPI, ZwMapViewOfSection,
     NTSTATUS ret = Old_ZwMapViewOfSection(SectionHandle, ProcessHandle,
         BaseAddress, ZeroBits, CommitSize, SectionOffset, ViewSize,
         InheritDisposition, AllocationType, Win32Protect);
-    LOQ_ntstatus("process", "ppPp", "SectionHandle", SectionHandle,
+    LOQ_ntstatus("process", "ppPpPp", "SectionHandle", SectionHandle,
         "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-        "SectionOffset", SectionOffset);
+        "SectionOffset", SectionOffset, "ViewSize", ViewSize, "Win32Protect", Win32Protect);
 
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d", pid_from_process_handle(ProcessHandle));
