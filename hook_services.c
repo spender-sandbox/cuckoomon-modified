@@ -29,7 +29,7 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenSCManagerA,
 ) {
     SC_HANDLE ret = Old_OpenSCManagerA(lpMachineName, lpDatabaseName,
         dwDesiredAccess);
-    LOQ_nonnull("services", "ssl", "MachineName", lpMachineName, "DatabaseName", lpDatabaseName,
+    LOQ_nonnull("services", "ssp", "MachineName", lpMachineName, "DatabaseName", lpDatabaseName,
         "DesiredAccess", dwDesiredAccess);
     return ret;
 }
@@ -41,7 +41,7 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenSCManagerW,
 ) {
     SC_HANDLE ret = Old_OpenSCManagerW(lpMachineName, lpDatabaseName,
         dwDesiredAccess);
-    LOQ_nonnull("services", "uul", "MachineName", lpMachineName, "DatabaseName", lpDatabaseName,
+    LOQ_nonnull("services", "uup", "MachineName", lpMachineName, "DatabaseName", lpDatabaseName,
         "DesiredAccess", dwDesiredAccess);
     return ret;
 }
