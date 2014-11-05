@@ -80,20 +80,22 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenThread,
     NTSTATUS ret = Old_NtOpenThread(ThreadHandle, DesiredAccess,
         ObjectAttributes, ClientId);
 	DWORD PID = 0;
+	DWORD TID = 0;
 
 	if (NT_SUCCESS(ret) && ThreadHandle) {
 		PID = pid_from_thread_handle(*ThreadHandle);
+		TID = tid_from_thread_handle(*ThreadHandle);
 	}
 
 	if (ClientId) {
 		LOQ_ntstatus("threading", "Ppll", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
-			"ProcessId", PID, "ThreadId", ClientId->UniqueThread);
+			"ProcessId", PID, "ThreadId", TID);
 	} else {
 		LOQ_ntstatus("threading", "PpO", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
 			"ObjectAttributes", ObjectAttributes);
 	}
     if (NT_SUCCESS(ret)) {
-		pipe("PROCESS:%d", PID);
+		pipe("PROCESS:%d,%d", PID, TID);
     }
     return ret;
 }
@@ -114,7 +116,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetContextThread,
     NTSTATUS ret = Old_NtSetContextThread(ThreadHandle, Context);
     LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
 
-    pipe("PROCESS:%d", pid_from_thread_handle(ThreadHandle));
+	pipe("PROCESS:%d,%d", pid_from_thread_handle(ThreadHandle), tid_from_thread_handle(ThreadHandle));
 
     return ret;
 }

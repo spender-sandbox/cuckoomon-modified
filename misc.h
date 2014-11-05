@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ULONG_PTR parent_process_id(); // By Napalm @ NetCore2K (rohitab.com)
 DWORD pid_from_process_handle(HANDLE process_handle);
 DWORD pid_from_thread_handle(HANDLE thread_handle);
+DWORD tid_from_thread_handle(HANDLE thread_handle);
 DWORD random();
 DWORD randint(DWORD min, DWORD max);
 BOOL is_directory_objattr(const OBJECT_ATTRIBUTES *obj);

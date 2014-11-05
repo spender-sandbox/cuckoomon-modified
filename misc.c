@@ -72,7 +72,7 @@ DWORD pid_from_process_handle(HANDLE process_handle)
 	return PID;
 }
 
-DWORD pid_from_thread_handle(HANDLE thread_handle)
+static BOOL cid_from_thread_handle(HANDLE thread_handle, PCLIENT_ID cid)
 {
 	THREAD_BASIC_INFORMATION tbi;
 	ULONG ulSize;
@@ -82,6 +82,7 @@ DWORD pid_from_thread_handle(HANDLE thread_handle)
 	HANDLE dup_handle = thread_handle;
 	DWORD PID = 0;
 	BOOL duped;
+	BOOL ret = FALSE;
 
 	memset(&tbi, 0, sizeof(tbi));
 
@@ -93,14 +94,34 @@ DWORD pid_from_thread_handle(HANDLE thread_handle)
 	if(NtQueryInformationThread != NULL && NtQueryInformationThread(
             dup_handle, 0, &tbi, sizeof(tbi), &ulSize) >= 0 &&
             ulSize == sizeof(tbi)) {
-        PID = (DWORD) tbi.ClientId.UniqueProcess;
+		memcpy(cid, &tbi.ClientId, sizeof(CLIENT_ID));
+		ret = TRUE;
     }
 
 	if (duped)
 		CloseHandle(dup_handle);
 
-	return PID;
+	return ret;
 }
+
+DWORD pid_from_thread_handle(HANDLE thread_handle)
+{
+	CLIENT_ID cid;
+	memset(&cid, 0, sizeof(cid));
+
+	BOOL ret = cid_from_thread_handle(thread_handle, &cid);
+	return cid.UniqueProcess;
+}
+
+DWORD tid_from_thread_handle(HANDLE thread_handle)
+{
+	CLIENT_ID cid;
+	memset(&cid, 0, sizeof(cid));
+
+	BOOL ret = cid_from_thread_handle(thread_handle, &cid);
+	return cid.UniqueThread;
+}
+
 
 DWORD random()
 {
