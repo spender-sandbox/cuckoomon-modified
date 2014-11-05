@@ -49,18 +49,27 @@ DWORD pid_from_process_handle(HANDLE process_handle)
     LONG (WINAPI *NtQueryInformationProcess)(HANDLE ProcessHandle,
         ULONG ProcessInformationClass, PVOID ProcessInformation,
         ULONG ProcessInformationLength, PULONG ReturnLength);
+	HANDLE dup_handle = process_handle;
+	DWORD PID = 0;
+	BOOL duped;
 
 	memset(&pbi, 0, sizeof(pbi));
 	
-	*(FARPROC *) &NtQueryInformationProcess = GetProcAddress(
+	duped = DuplicateHandle(GetCurrentProcess(), process_handle, GetCurrentProcess(), &dup_handle, PROCESS_QUERY_INFORMATION, FALSE, 0);
+
+	*(FARPROC *)&NtQueryInformationProcess = GetProcAddress(
         GetModuleHandle("ntdll"), "NtQueryInformationProcess");
 
     if(NtQueryInformationProcess != NULL && NtQueryInformationProcess(
-            process_handle, 0, &pbi, sizeof(pbi), &ulSize) >= 0 &&
+            dup_handle, 0, &pbi, sizeof(pbi), &ulSize) >= 0 &&
             ulSize == sizeof(pbi)) {
-        return pbi.UniqueProcessId;
+        PID = pbi.UniqueProcessId;
     }
-    return 0;
+
+	if (duped)
+		CloseHandle(dup_handle);
+
+	return PID;
 }
 
 DWORD pid_from_thread_handle(HANDLE thread_handle)
@@ -70,18 +79,27 @@ DWORD pid_from_thread_handle(HANDLE thread_handle)
     LONG (WINAPI *NtQueryInformationThread)(HANDLE ThreadHandle,
         ULONG ThreadInformationClass, PVOID ThreadInformation,
         ULONG ThreadInformationLength, PULONG ReturnLength);
+	HANDLE dup_handle = thread_handle;
+	DWORD PID = 0;
+	BOOL duped;
 
 	memset(&tbi, 0, sizeof(tbi));
 
     *(FARPROC *) &NtQueryInformationThread = GetProcAddress(
         GetModuleHandle("ntdll"), "NtQueryInformationThread");
 
-    if(NtQueryInformationThread != NULL && NtQueryInformationThread(
-            thread_handle, 0, &tbi, sizeof(tbi), &ulSize) >= 0 &&
+	duped = DuplicateHandle(GetCurrentProcess(), thread_handle, GetCurrentProcess(), &dup_handle, THREAD_QUERY_INFORMATION, FALSE, 0);
+	
+	if(NtQueryInformationThread != NULL && NtQueryInformationThread(
+            dup_handle, 0, &tbi, sizeof(tbi), &ulSize) >= 0 &&
             ulSize == sizeof(tbi)) {
-        return (DWORD) tbi.ClientId.UniqueProcess;
+        PID = (DWORD) tbi.ClientId.UniqueProcess;
     }
-    return 0;
+
+	if (duped)
+		CloseHandle(dup_handle);
+
+	return PID;
 }
 
 DWORD random()

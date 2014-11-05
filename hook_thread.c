@@ -79,18 +79,21 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenThread,
 ) {
     NTSTATUS ret = Old_NtOpenThread(ThreadHandle, DesiredAccess,
         ObjectAttributes, ClientId);
+	DWORD PID = 0;
+
+	if (NT_SUCCESS(ret) && ThreadHandle) {
+		PID = pid_from_thread_handle(*ThreadHandle);
+	}
 
 	if (ClientId) {
 		LOQ_ntstatus("threading", "Ppll", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
-			"ProcessId", ClientId->UniqueProcess, "ThreadId", ClientId->UniqueThread);
-	}
-	else {
+			"ProcessId", PID, "ThreadId", ClientId->UniqueThread);
+	} else {
 		LOQ_ntstatus("threading", "PpO", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
 			"ObjectAttributes", ObjectAttributes);
 	}
     if (NT_SUCCESS(ret)) {
-        // TODO: are we sure that OpenThread specifies the PID?
-        pipe("PROCESS:%d", ClientId->UniqueProcess);
+		pipe("PROCESS:%d", PID);
     }
     return ret;
 }
