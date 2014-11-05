@@ -79,7 +79,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenThread,
 ) {
     NTSTATUS ret = Old_NtOpenThread(ThreadHandle, DesiredAccess,
         ObjectAttributes, ClientId);
-    LOQ_ntstatus("threading", "PlO", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("threading", "PpO", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
         "ObjectAttributes", ObjectAttributes);
 
     if (NT_SUCCESS(ret)) {
@@ -154,7 +154,7 @@ HOOKDEF(HANDLE, WINAPI, CreateThread,
 ) {
 	HANDLE ret = Old_CreateThread(lpThreadAttributes, dwStackSize,
         lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
-    LOQ_nonnull("threading", "pplL", "StartRoutine", lpStartAddress, "Parameter", lpParameter,
+    LOQ_nonnull("threading", "pppL", "StartRoutine", lpStartAddress, "Parameter", lpParameter,
         "CreationFlags", dwCreationFlags, "ThreadId", lpThreadId);
     if (ret != NULL)
         disable_sleep_skip();
@@ -175,7 +175,7 @@ HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
 	HANDLE ret = Old_CreateRemoteThread(hProcess, lpThreadAttributes,
         dwStackSize, lpStartAddress, lpParameter, dwCreationFlags,
         lpThreadId);
-    LOQ_nonnull("threading", "3plL", "ProcessHandle", hProcess, "StartRoutine", lpStartAddress,
+    LOQ_nonnull("threading", "4pL", "ProcessHandle", hProcess, "StartRoutine", lpStartAddress,
         "Parameter", lpParameter, "CreationFlags", dwCreationFlags,
         "ThreadId", lpThreadId);
     if (ret != NULL)
