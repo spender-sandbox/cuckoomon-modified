@@ -110,7 +110,7 @@ DWORD pid_from_thread_handle(HANDLE thread_handle)
 	memset(&cid, 0, sizeof(cid));
 
 	BOOL ret = cid_from_thread_handle(thread_handle, &cid);
-	return cid.UniqueProcess;
+	return (DWORD)cid.UniqueProcess;
 }
 
 DWORD tid_from_thread_handle(HANDLE thread_handle)
@@ -119,7 +119,7 @@ DWORD tid_from_thread_handle(HANDLE thread_handle)
 	memset(&cid, 0, sizeof(cid));
 
 	BOOL ret = cid_from_thread_handle(thread_handle, &cid);
-	return cid.UniqueThread;
+	return (DWORD)cid.UniqueThread;
 }
 
 
