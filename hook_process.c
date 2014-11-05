@@ -156,14 +156,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,
 
     if(is_protected_pid(pid)) {
         NTSTATUS ret = STATUS_ACCESS_DENIED;
-        LOQ_ntstatus("process", "ppp", "ProcessHandle", NULL, "DesiredAccess", DesiredAccess,
+        LOQ_ntstatus("process", "ppl", "ProcessHandle", NULL, "DesiredAccess", DesiredAccess,
             "ProcessIdentifier", pid);
         return STATUS_ACCESS_DENIED;
     }
 
     NTSTATUS ret = Old_NtOpenProcess(ProcessHandle, DesiredAccess,
         ObjectAttributes, ClientId);
-    LOQ_ntstatus("process", "Ppp", "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("process", "Ppl", "ProcessHandle", ProcessHandle,
         "DesiredAccess", DesiredAccess,
         "ProcessIdentifier", pid);
     /*
