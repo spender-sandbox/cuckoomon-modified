@@ -46,10 +46,10 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 
     if (hook_info()->depth_count == 1) {
 		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
-	        LOQspecial_ntstatus("system", "lFP", "Flags", Flags, "FileName", library.Buffer,
+	        LOQspecial_ntstatus("system", "pFP", "Flags", Flags, "FileName", library.Buffer,
 		       "BaseAddress", ModuleHandle);
 		else
-			LOQspecial_ntstatus("system", "loP", "Flags", Flags, "FileName", &library,
+			LOQspecial_ntstatus("system", "poP", "Flags", Flags, "FileName", &library,
 				"BaseAddress", ModuleHandle);
 	}
 
