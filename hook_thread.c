@@ -31,12 +31,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueueApcThread,
 	__in_opt PIO_STATUS_BLOCK ApcStatusBlock,
 	__in_opt ULONG ApcReserved
 ) {
-	pipe("PROCESS:%d", pid_from_thread_handle(ThreadHandle));
+	DWORD PID = pid_from_thread_handle(ThreadHandle);
+
+	pipe("PROCESS:%d", PID);
 
 	NTSTATUS ret = Old_NtQueueApcThread(ThreadHandle, ApcRoutine,
 		ApcRoutineContext, ApcStatusBlock, ApcReserved);
 
-	LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
+	LOQ_ntstatus("threading", "lp", "ProcessId", PID, "ThreadHandle", ThreadHandle);
 
 	if (NT_SUCCESS(ret))
 		disable_sleep_skip();
