@@ -24,6 +24,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "misc.h"
 #include "hook_sleep.h"
 
+HOOKDEF(NTSTATUS, WINAPI, NtQueueApcThread,
+	__in HANDLE ThreadHandle,
+	__in PIO_APC_ROUTINE ApcRoutine,
+	__in_opt PVOID ApcRoutineContext,
+	__in_opt PIO_STATUS_BLOCK ApcStatusBlock,
+	__in_opt ULONG ApcReserved
+) {
+	pipe("PROCESS:%d", pid_from_thread_handle(ThreadHandle));
+
+	NTSTATUS ret = Old_NtQueueApcThread(ThreadHandle, ApcRoutine,
+		ApcRoutineContext, ApcStatusBlock, ApcReserved);
+
+	LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
+
+	if (NT_SUCCESS(ret))
+		disable_sleep_skip();
+	return ret;
+}
 
 HOOKDEF(NTSTATUS, WINAPI, NtCreateThread,
     __out     PHANDLE ThreadHandle,
