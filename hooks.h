@@ -628,6 +628,11 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtCreateNamedPipeFile,
 // Process Hooks
 //
 
+extern HOOKDEF(HANDLE, WINAPI, CreateToolhelp32Snapshot,
+	__in DWORD dwFlags,
+	__in DWORD th32ProcessID
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtCreateProcess,
     __out       PHANDLE ProcessHandle,
     __in        ACCESS_MASK DesiredAccess,

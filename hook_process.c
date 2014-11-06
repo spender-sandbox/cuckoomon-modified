@@ -25,6 +25,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ignore.h"
 #include "hook_sleep.h"
 
+HOOKDEF(HANDLE, WINAPI, CreateToolhelp32Snapshot,
+	__in DWORD dwFlags,
+	__in DWORD th32ProcessID
+) {
+	HANDLE ret = Old_CreateToolhelp32Snapshot(dwFlags, th32ProcessID);
+
+	LOQ_handle("process", "pl", "Flags", dwFlags, "ProcessId", th32ProcessID);
+
+	return ret;
+}
+
 
 HOOKDEF(NTSTATUS, WINAPI, NtCreateProcess,
     __out       PHANDLE ProcessHandle,
