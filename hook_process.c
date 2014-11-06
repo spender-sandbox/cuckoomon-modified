@@ -221,8 +221,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateSection,
     NTSTATUS ret = Old_NtCreateSection(SectionHandle, DesiredAccess,
         ObjectAttributes, MaximumSize, SectionPageProtection,
         AllocationAttributes, FileHandle);
-    LOQ_ntstatus("process", "PpOp", "SectionHandle", SectionHandle,
-        "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes,
+    LOQ_ntstatus("process", "Ppop", "SectionHandle", SectionHandle,
+        "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes ? ObjectAttributes->ObjectName : NULL,
         "FileHandle", FileHandle);
     return ret;
 }
