@@ -197,7 +197,9 @@ static hook_t g_hooks[] = {
     //
 
 	HOOK(kernel32, CreateToolhelp32Snapshot),
-    HOOK(ntdll, NtCreateProcess),
+	HOOK(kernel32, Process32FirstW),
+	HOOK(kernel32, Process32NextW),
+	HOOK(ntdll, NtCreateProcess),
     HOOK(ntdll, NtCreateProcessEx),
     HOOK(ntdll, NtCreateUserProcess),
     HOOK(ntdll, RtlCreateUserProcess),

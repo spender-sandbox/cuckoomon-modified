@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <wininet.h>
 #include <mswsock.h>
 #include "ntapi.h"
+#include <TlHelp32.h>
 
 //
 // File Hooks
@@ -631,6 +632,16 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtCreateNamedPipeFile,
 extern HOOKDEF(HANDLE, WINAPI, CreateToolhelp32Snapshot,
 	__in DWORD dwFlags,
 	__in DWORD th32ProcessID
+);
+
+extern HOOKDEF(BOOL, WINAPI, Process32FirstW,
+	__in HANDLE hSnapshot,
+	__out LPPROCESSENTRY32W lppe
+);
+
+extern HOOKDEF(BOOL, WINAPI, Process32NextW,
+	__in HANDLE hSnapshot,
+	__out LPPROCESSENTRY32W lppe
 );
 
 extern HOOKDEF(NTSTATUS, WINAPI, NtCreateProcess,
