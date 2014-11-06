@@ -268,8 +268,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenSection,
 ) {
     NTSTATUS ret = Old_NtOpenSection(SectionHandle, DesiredAccess,
         ObjectAttributes);
-    LOQ_ntstatus("process", "PpO", "SectionHandle", SectionHandle, "DesiredAccess", DesiredAccess,
-        "ObjectAttributes", ObjectAttributes);
+    LOQ_ntstatus("process", "Ppo", "SectionHandle", SectionHandle, "DesiredAccess", DesiredAccess,
+        "ObjectAttributes", ObjectAttributes ? ObjectAttributes->ObjectName : NULL);
     return ret;
 }
 
