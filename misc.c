@@ -317,7 +317,7 @@ uint32_t path_from_handle(HANDLE handle,
 
             // NtQueryInformationFile omits the "C:" part in a
             // filename, apparently
-            wcsncpy(path + 2, name_information->FileName, length);
+            memcpy(path + 2, name_information->FileName, length * sizeof(wchar_t));
 
 			return length + 2;
         }
