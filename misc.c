@@ -258,8 +258,8 @@ uint32_t path_from_handle(HANDLE handle,
 {
 	IO_STATUS_BLOCK status;
 	FILE_FS_VOLUME_INFORMATION volume_information;
-	unsigned char buf[FILE_NAME_INFORMATION_REQUIRED_SIZE];
-	FILE_NAME_INFORMATION *name_information = (FILE_NAME_INFORMATION *)buf;
+	unsigned char *buf;
+	FILE_NAME_INFORMATION *name_information;
 	unsigned long serial_number;
 
 	static NTSTATUS(WINAPI *pNtQueryVolumeInformationFile)(
@@ -300,29 +300,34 @@ uint32_t path_from_handle(HANDLE handle,
     // enumerate all harddisks in order to find the
     // corresponding serial number
     wcscpy(path, L"?:\\");
-    for (path[0] = 'A'; path[0] <= 'Z'; path[0]++) {
-        if(GetVolumeInformationW(path, NULL, 0, &serial_number, NULL,
-                NULL, NULL, 0) == 0 ||
-                serial_number != volume_information.VolumeSerialNumber) {
-            continue;
-        }
+	for (path[0] = L'A'; path[0] <= L'Z'; path[0]++) {
+		if (GetVolumeInformationW(path, NULL, 0, &serial_number, NULL,
+			NULL, NULL, 0) == 0 ||
+			serial_number != volume_information.VolumeSerialNumber) {
+			continue;
+		}
 
-        // obtain the relative path for this filename on the given harddisk
-        if(NT_SUCCESS(pNtQueryInformationFile(handle, &status,
-                name_information, FILE_NAME_INFORMATION_REQUIRED_SIZE,
-                FileNameInformation))) {
+		buf = calloc(1, FILE_NAME_INFORMATION_REQUIRED_SIZE);
+		name_information = (FILE_NAME_INFORMATION *)buf;
 
-            uint32_t length =
-                min(name_information->FileNameLength / sizeof(wchar_t), path_buffer_len - 3);
-
-            // NtQueryInformationFile omits the "C:" part in a
-            // filename, apparently
-            memcpy(path + 2, name_information->FileName, length * sizeof(wchar_t));
-
+		// obtain the relative path for this filename on the given harddisk
+		if (NT_SUCCESS(pNtQueryInformationFile(handle, &status,
+			name_information, FILE_NAME_INFORMATION_REQUIRED_SIZE,
+			FileNameInformation)))
+		{
+			uint32_t length = min(name_information->FileNameLength / sizeof(wchar_t), path_buffer_len - 3);
+			// NtQueryInformationFile omits the "C:" part in a
+			// filename, apparently
+			memcpy(path + 2, name_information->FileName, length * sizeof(wchar_t));
+			free(buf);
 			return length + 2;
-        }
-    }
-    return 0;
+		} else
+			free(buf);
+
+		break;
+	}
+
+	return 0;
 }
 
 uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
@@ -407,6 +412,8 @@ out:
 		memcpy(out, sysnativedir_a, sysnativedir_len);
 	}
 	out[MAX_PATH - 1] = '\0';
+	if (out[1] == ':' && out[2] == '\\')
+		out[0] = toupper(out[0]);
 	return out;
 }
 
@@ -534,6 +541,8 @@ out:
 		free(tmpout);
 	if (nonexistent)
 		free(nonexistent);
+	if (out[1] == L':' && out[2] == L'\\')
+		out[0] = toupper(out[0]);
 	return out;
 }
 
