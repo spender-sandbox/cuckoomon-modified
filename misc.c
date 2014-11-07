@@ -313,15 +313,13 @@ uint32_t path_from_handle(HANDLE handle,
                 FileNameInformation))) {
 
             uint32_t length =
-                name_information->FileNameLength / sizeof(wchar_t);
+                min(name_information->FileNameLength / sizeof(wchar_t), path_buffer_len - 3);
 
             // NtQueryInformationFile omits the "C:" part in a
             // filename, apparently
-            wcsncpy(path + 2, name_information->FileName,
-                path_buffer_len - 2);
+            wcsncpy(path + 2, name_information->FileName, length);
 
-            return length + 2 < path_buffer_len ?
-                length + 2 : path_buffer_len - 1;
+			return length + 2;
         }
     }
     return 0;
