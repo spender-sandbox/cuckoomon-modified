@@ -180,9 +180,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 ) {
     NTSTATUS ret = Old_NtReadFile(FileHandle, Event, ApcRoutine, ApcContext,
         IoStatusBlock, Buffer, Length, ByteOffset, Key);
-	LOQ_ntstatus("filesystem", "pbl", "FileHandle", FileHandle,
-		"Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
-    return ret;
+	wchar_t *fname = calloc(32768, sizeof(wchar_t));
+
+	path_from_handle(FileHandle, fname, 32768);
+
+	LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
+		"FileName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
+
+	free(fname);
+
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
@@ -198,9 +205,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
 ) {
     NTSTATUS ret = Old_NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext,
         IoStatusBlock, Buffer, Length, ByteOffset, Key);
-	LOQ_ntstatus("filesystem", "pbl", "FileHandle", FileHandle,
-		"Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
-    if(NT_SUCCESS(ret)) {
+	wchar_t *fname = calloc(32768, sizeof(wchar_t));
+
+	path_from_handle(FileHandle, fname, 32768);
+
+	LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
+		"FileName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
+
+	free(fname);
+	
+	if(NT_SUCCESS(ret)) {
         file_write(FileHandle);
     }
     return ret;
