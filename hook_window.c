@@ -100,3 +100,59 @@ HOOKDEF(BOOL, WINAPI, EnumWindows,
     LOQ_bool("windows", "");
     return ret;
 }
+
+HOOKDEF(HWND, WINAPI, CreateWindowExA,
+	__in DWORD dwExStyle,
+	__in_opt LPCSTR lpClassName,
+	__in_opt LPCSTR lpWindowName,
+	__in DWORD dwStyle,
+	__in int x,
+	__in int y,
+	__in int nWidth,
+	__in int nHeight,
+	__in_opt HWND hWndParent,
+	__in_opt HMENU hMenu,
+	__in_opt HINSTANCE hInstance,
+	__in_opt LPVOID lpParam
+) {
+	HWND ret = Old_CreateWindowExA(dwExStyle, lpClassName,
+		lpWindowName, dwStyle, x, y, nWidth, nHeight,
+		hWndParent, hMenu, hInstance, lpParam);
+	// lpClassName can be one of the predefined window controls.. which lay in
+	// the 0..ffff range
+	if (((DWORD_PTR)lpClassName & 0xffff) == (DWORD_PTR)lpClassName) {
+		LOQ_nonnull("windows", "ls", "ClassName", lpClassName, "WindowName", lpWindowName);
+	}
+	else {
+		LOQ_nonnull("windows", "ss", "ClassName", lpClassName, "WindowName", lpWindowName);
+	}
+	return ret;
+}
+
+HOOKDEF(HWND, WINAPI, CreateWindowExW,
+	__in DWORD dwExStyle,
+	__in_opt LPWSTR lpClassName,
+	__in_opt LPWSTR lpWindowName,
+	__in DWORD dwStyle,
+	__in int x,
+	__in int y,
+	__in int nWidth,
+	__in int nHeight,
+	__in_opt HWND hWndParent,
+	__in_opt HMENU hMenu,
+	__in_opt HINSTANCE hInstance,
+	__in_opt LPVOID lpParam
+) {
+	HWND ret = Old_CreateWindowExW(dwExStyle, lpClassName,
+		lpWindowName, dwStyle, x, y, nWidth, nHeight,
+		hWndParent, hMenu, hInstance, lpParam);
+	// lpClassName can be one of the predefined window controls.. which lay in
+	// the 0..ffff range
+	if (((DWORD_PTR)lpClassName & 0xffff) == (DWORD_PTR)lpClassName) {
+		LOQ_nonnull("windows", "lu", "ClassName", lpClassName, "WindowName", lpWindowName);
+	}
+	else {
+		LOQ_nonnull("windows", "uu", "ClassName", lpClassName, "WindowName", lpWindowName);
+	}
+	return ret;
+}

@@ -178,6 +178,8 @@ static hook_t g_hooks[] = {
     // Window Hooks
     //
 
+	HOOK(user32, CreateWindowExA),
+	HOOK(user32, CreateWindowExW),
     HOOK(user32, FindWindowA),
     HOOK(user32, FindWindowW),
     HOOK(user32, FindWindowExA),
