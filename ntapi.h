@@ -468,6 +468,22 @@ typedef struct _KEY_NAME_INFORMATION {
 	WCHAR KeyName[1];
 } KEY_NAME_INFORMATION, *PKEY_NAME_INFORMATION;
 
+typedef struct _OBJECT_NAME_INFORMATION {
+	UNICODE_STRING Name;
+	WCHAR NameBuffer[1];
+} OBJECT_NAME_INFORMATION, *POBJECT_NAME_INFORMATION;
+
+#define OBJECT_NAME_INFORMATION_REQUIRED_SIZE \
+    sizeof(OBJECT_NAME_INFORMATION) + sizeof(wchar_t) * 32768
+
+typedef enum {
+	ObjectBasicInformation,
+	ObjectNameInformation,
+	ObjectTypeInformation,
+	ObjectAllInformation,
+	ObjectDataInformation
+} OBJECT_INFORMATION_CLASS;
+
 typedef enum  {
     FileFsVolumeInformation       = 1,
     FileFsLabelInformation        = 2,

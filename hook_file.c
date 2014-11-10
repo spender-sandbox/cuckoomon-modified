@@ -185,7 +185,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 	path_from_handle(FileHandle, fname, 32768);
 
 	LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
-		"FileName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
+		"HandleName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
 
 	free(fname);
 
@@ -210,7 +210,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
 	path_from_handle(FileHandle, fname, 32768);
 
 	LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
-		"FileName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
+		"HandleName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
 
 	free(fname);
 	
