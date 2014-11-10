@@ -387,11 +387,11 @@ static hook_t g_hooks[] = {
 // error testing with hook_jmp_direct only
 #define HOOKTYPE HOOK_JMP_DIRECT
 
-void set_hooks_dll(const wchar_t *library, int len)
+void set_hooks_dll(const wchar_t *library)
 {
     for (int i = 0; i < ARRAYSIZE(g_hooks); i++) {
-        if(!wcsnicmp(g_hooks[i].library, library, len)) {
-            hook_api(&g_hooks[i], HOOKTYPE);
+        if(!wcsicmp(g_hooks[i].library, library)) {
+			hook_api(&g_hooks[i], HOOKTYPE);
         }
     }
 }

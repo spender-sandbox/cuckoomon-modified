@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hook_sleep.h"
 #include "misc.h"
 
-void set_hooks_dll(const wchar_t *library, int len);
+void set_hooks_dll(const wchar_t *library);
 
 HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
@@ -61,7 +61,12 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     if(NT_SUCCESS(ret)) {
 		// unoptimized, but easy
 		add_all_dlls_to_dll_ranges();
-        set_hooks_dll(library.Buffer, library.Length >> 1);
+		// we ensure null termination via the COPY_UNICODE_STRING macro above, so we don't need a length
+		// first strip off the .dll
+		PWCHAR end = wcsrchr(library.Buffer, L'.');
+		if (end && !wcsicmp(end, L".dll"))
+			*end = L'\0';
+        set_hooks_dll(library.Buffer);
     }
 
     return ret;
