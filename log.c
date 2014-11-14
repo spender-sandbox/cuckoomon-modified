@@ -638,5 +638,6 @@ void log_free()
     DeleteCriticalSection(&g_mutex);
     if(g_sock != INVALID_SOCKET) {
         closesocket(g_sock);
+		g_sock = INVALID_SOCKET;
     }
 }
