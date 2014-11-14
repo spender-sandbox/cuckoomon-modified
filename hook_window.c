@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "log.h"
 
-
 HOOKDEF(HWND, WINAPI, FindWindowA,
     __in_opt  LPCTSTR lpClassName,
     __in_opt  LPCTSTR lpWindowName

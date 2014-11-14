@@ -24,31 +24,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "misc.h"
 #include "config.h"
 
+static _NtQueryInformationProcess pNtQueryInformationProcess;
+static _NtQueryInformationThread pNtQueryInformationThread;
+static _RtlGenRandom pRtlGenRandom;
+static _NtQueryAttributesFile pNtQueryAttributesFile;
+static _NtQueryObject pNtQueryObject;
+static _NtQueryKey pNtQueryKey;
+
+void resolve_runtime_apis(void)
+{
+	HMODULE ntdllbase = GetModuleHandle("ntdll");
+
+	*(FARPROC *)&pNtQueryInformationProcess = GetProcAddress(ntdllbase, "NtQueryInformationProcess");
+	*(FARPROC *)&pNtQueryInformationThread = GetProcAddress(ntdllbase, "NtQueryInformationThread");
+	*(FARPROC *)&pNtQueryObject = GetProcAddress(ntdllbase, "NtQueryObject");
+	*(FARPROC *)&pNtQueryKey = GetProcAddress(ntdllbase, "NtQueryKey");
+	*(FARPROC *)&pNtQueryAttributesFile = GetProcAddress(ntdllbase, "NtQueryAttributesFile");
+	*(FARPROC *)&pRtlGenRandom = GetProcAddress(GetModuleHandle("advapi32"), "SystemFunction036");
+}
+
 ULONG_PTR parent_process_id() // By Napalm @ NetCore2K (rohitab.com)
 {
     ULONG_PTR pbi[6]; ULONG ulSize = 0;
-    LONG (WINAPI *NtQueryInformationProcess)(HANDLE ProcessHandle,
-        ULONG ProcessInformationClass, PVOID ProcessInformation,
-        ULONG ProcessInformationLength, PULONG ReturnLength);
 
-    *(FARPROC *) &NtQueryInformationProcess = GetProcAddress(
-        GetModuleHandle("ntdll"), "NtQueryInformationProcess");
-
-    if(NtQueryInformationProcess != NULL && NtQueryInformationProcess(
-            GetCurrentProcess(), 0, &pbi, sizeof(pbi), &ulSize) >= 0 &&
-            ulSize == sizeof(pbi)) {
+    if(pNtQueryInformationProcess(GetCurrentProcess(), 0, &pbi, sizeof(pbi), &ulSize) >= 0 && ulSize == sizeof(pbi))
         return pbi[5];
-    }
-    return 0;
+
+	return 0;
 }
 
 DWORD pid_from_process_handle(HANDLE process_handle)
 {
 	PROCESS_BASIC_INFORMATION pbi;
 	ULONG ulSize;
-    LONG (WINAPI *NtQueryInformationProcess)(HANDLE ProcessHandle,
-        ULONG ProcessInformationClass, PVOID ProcessInformation,
-        ULONG ProcessInformationLength, PULONG ReturnLength);
 	HANDLE dup_handle = process_handle;
 	DWORD PID = 0;
 	BOOL duped;
@@ -57,14 +65,8 @@ DWORD pid_from_process_handle(HANDLE process_handle)
 	
 	duped = DuplicateHandle(GetCurrentProcess(), process_handle, GetCurrentProcess(), &dup_handle, PROCESS_QUERY_INFORMATION, FALSE, 0);
 
-	*(FARPROC *)&NtQueryInformationProcess = GetProcAddress(
-        GetModuleHandle("ntdll"), "NtQueryInformationProcess");
-
-    if(NtQueryInformationProcess != NULL && NtQueryInformationProcess(
-            dup_handle, 0, &pbi, sizeof(pbi), &ulSize) >= 0 &&
-            ulSize == sizeof(pbi)) {
+    if(pNtQueryInformationProcess(dup_handle, 0, &pbi, sizeof(pbi), &ulSize) >= 0 && ulSize == sizeof(pbi))
         PID = pbi.UniqueProcessId;
-    }
 
 	if (duped)
 		CloseHandle(dup_handle);
@@ -76,24 +78,15 @@ static BOOL cid_from_thread_handle(HANDLE thread_handle, PCLIENT_ID cid)
 {
 	THREAD_BASIC_INFORMATION tbi;
 	ULONG ulSize;
-    LONG (WINAPI *NtQueryInformationThread)(HANDLE ThreadHandle,
-        ULONG ThreadInformationClass, PVOID ThreadInformation,
-        ULONG ThreadInformationLength, PULONG ReturnLength);
 	HANDLE dup_handle = thread_handle;
-	DWORD PID = 0;
 	BOOL duped;
 	BOOL ret = FALSE;
 
 	memset(&tbi, 0, sizeof(tbi));
 
-    *(FARPROC *) &NtQueryInformationThread = GetProcAddress(
-        GetModuleHandle("ntdll"), "NtQueryInformationThread");
-
 	duped = DuplicateHandle(GetCurrentProcess(), thread_handle, GetCurrentProcess(), &dup_handle, THREAD_QUERY_INFORMATION, FALSE, 0);
 	
-	if(NtQueryInformationThread != NULL && NtQueryInformationThread(
-            dup_handle, 0, &tbi, sizeof(tbi), &ulSize) >= 0 &&
-            ulSize == sizeof(tbi)) {
+	if(pNtQueryInformationThread(dup_handle, 0, &tbi, sizeof(tbi), &ulSize) >= 0 && ulSize == sizeof(tbi)) {
 		memcpy(cid, &tbi.ClientId, sizeof(CLIENT_ID));
 		ret = TRUE;
     }
@@ -125,14 +118,6 @@ DWORD tid_from_thread_handle(HANDLE thread_handle)
 
 DWORD random()
 {
-    static BOOLEAN (WINAPI *pRtlGenRandom)(PVOID RandomBuffer,
-        ULONG RandomBufferLength);
-
-    if(pRtlGenRandom == NULL) {
-        *(FARPROC *) &pRtlGenRandom = GetProcAddress(
-            GetModuleHandle("advapi32"), "SystemFunction036");
-    }
-
     DWORD ret;
     return pRtlGenRandom(&ret, sizeof(ret)) ? ret : rand();
 }
@@ -144,16 +129,6 @@ DWORD randint(DWORD min, DWORD max)
 
 BOOL is_directory_objattr(const OBJECT_ATTRIBUTES *obj)
 {
-    static NTSTATUS (WINAPI *pNtQueryAttributesFile)(
-        _In_   const OBJECT_ATTRIBUTES *ObjectAttributes,
-        _Out_  PFILE_BASIC_INFORMATION FileInformation
-    );
-
-    if(pNtQueryAttributesFile == NULL) {
-        *(FARPROC *) &pNtQueryAttributesFile = GetProcAddress(
-            GetModuleHandle("ntdll"), "NtQueryAttributesFile");
-    }
-
     FILE_BASIC_INFORMATION basic_information;
     if(NT_SUCCESS(pNtQueryAttributesFile(obj, &basic_information))) {
         return basic_information.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
@@ -260,20 +235,7 @@ uint32_t path_from_handle(HANDLE handle,
 	ULONG returnLength;
 	NTSTATUS status;
 	uint32_t length = 0;
-
-	static NTSTATUS(WINAPI *pNtQueryObject)(
-		_In_opt_   HANDLE Handle,
-		_In_  OBJECT_INFORMATION_CLASS ObjectInformationClass,
-		_Out_opt_  PVOID ObjectInformation,
-		_In_   ULONG ObjectInformationLength,
-		_Out_opt_   PULONG ReturnLength
-		);
 	
-    if (pNtQueryObject == NULL) {
-        *(FARPROC *) &pNtQueryObject = GetProcAddress(
-            GetModuleHandle("ntdll"), "NtQueryObject");
-    }
-
 	resolvedName = (POBJECT_NAME_INFORMATION)calloc(1, OBJECT_NAME_INFORMATION_REQUIRED_SIZE);
 
 	status = pNtQueryObject(handle, ObjectNameInformation,
@@ -602,12 +564,6 @@ wchar_t *get_full_key_pathW(HKEY registry, const wchar_t *in, PKEY_NAME_INFORMAT
 
 wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {
-	static NTSTATUS(WINAPI *pNtQueryKey)(
-		HANDLE  KeyHandle,
-		int KeyInformationClass,
-		PVOID  KeyInformation,
-		ULONG  Length,
-		PULONG  ResultLength);
 	NTSTATUS status;
 	ULONG reslen;
 	unsigned int maxlen = len - sizeof(KEY_NAME_INFORMATION);
@@ -624,11 +580,6 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 		keybuf->KeyName[keybuf->KeyNameLength / sizeof(WCHAR)] = 0;
 		goto normal;
 	}
-
-	if (pNtQueryKey == NULL)
-		*(FARPROC *)&pNtQueryKey = GetProcAddress(GetModuleHandle("ntdll"), "NtQueryKey");
-	if (pNtQueryKey == NULL)
-		goto error;
 
 	keybuf->KeyName[0] = L'\0';
 	keybuf->KeyNameLength = 0;

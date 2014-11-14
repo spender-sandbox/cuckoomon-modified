@@ -135,28 +135,45 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
             sprintf(s, "%x", va_arg(args, int));
             ret += _pipe_ascii(&out, s, strlen(s));
         }
+		else if (*fmt == 'p') {
+			char s[18];
+			sprintf(s, "%p", va_arg(args, void *));
+			ret += _pipe_ascii(&out, s, strlen(s));
+		}
         fmt++;
     }
     return ret;
 }
 
+// reminder: %s doesn't follow sprintf semantics, use %z instead
 int pipe(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
     int len = _pipe_sprintf(NULL, fmt, args);
-    if(len > 0) {
-        char *buf = alloca(len + 1);
+	int ret = -1;
+    if (len > 0) {
+        char *buf = calloc(1, len + 1);
         _pipe_sprintf(buf, fmt, args);
         va_end(args);
 
-        if(CallNamedPipe(g_pipe_name, buf, len, buf, len,
-                (unsigned long *) &len, NMPWAIT_WAIT_FOREVER) == 0) {
-            return -1;
-        }
-        return 0;
+#ifdef CUCKOODBG
+		char filename[64];
+		snprintf(filename, sizeof(filename), "c:\\pipe%u.log", GetCurrentProcessId());
+		FILE *f = fopen(filename, "ab");
+		if (f) {
+			fwrite(buf, len, 1, f);
+			fclose(f);
+			ret = 0;
+		}
+#else
+		if (CallNamedPipe(g_pipe_name, buf, len, buf, len,
+			(unsigned long *)&len, NMPWAIT_WAIT_FOREVER) != 0)
+			ret = 0;
+#endif
+		free(buf);
     }
-    return -1;
+    return ret;
 }
 
 int pipe2(void *out, int *outlen, const char *fmt, ...)
@@ -164,16 +181,16 @@ int pipe2(void *out, int *outlen, const char *fmt, ...)
     va_list args;
     va_start(args, fmt);
     int len = _pipe_sprintf(NULL, fmt, args);
+	int ret = -1;
     if(len > 0) {
-        char *buf = alloca(len + 1);
+        char *buf = calloc(1, len + 1);
         _pipe_sprintf(buf, fmt, args);
         va_end(args);
 
         if(CallNamedPipe(g_pipe_name, buf, len, out, *outlen,
-                (DWORD *) outlen, NMPWAIT_WAIT_FOREVER) == 0) {
-            return -1;
-        }
-        return 0;
+                (DWORD *) outlen, NMPWAIT_WAIT_FOREVER) != 0)
+            ret = 0;
+		free(buf);
     }
-    return -1;
+    return ret;
 }

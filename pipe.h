@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // O  -> (OBJECT_ATTRIBUTES *) -> wrapper around unicode string
 // d  -> (int) -> integer
 // x  -> (int) -> hexadecimal integer
-//
+// p  -> (void *) -> pointer as hex
 
 int pipe(const char *fmt, ...);
 int pipe2(void *out, int *outlen, const char *fmt, ...);

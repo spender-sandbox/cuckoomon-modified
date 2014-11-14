@@ -156,7 +156,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryValueKey,
 
     NTSTATUS ret = Old_NtQueryValueKey(KeyHandle, ValueName,
         KeyValueInformationClass, KeyValueInformation, Length, ResultLength);
-    if(NT_SUCCESS(ret) &&
+    if(NT_SUCCESS(ret) && KeyValueInformation && 
             *ResultLength >= sizeof(ULONG) * 3) {
         ULONG Type, DataLength = 0; UCHAR *Data = NULL;
 
@@ -226,12 +226,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtLoadKey,
     __in  POBJECT_ATTRIBUTES SourceFile
 ) {
 	unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
-	PKEY_NAME_INFORMATION keybuf = _alloca(allocsize);
+	PKEY_NAME_INFORMATION keybuf = calloc(1, allocsize);
 	NTSTATUS ret = Old_NtLoadKey(TargetKey, SourceFile);
     LOQ_ntstatus("registry", "pouO","TargetKeyHandle", handle_from_objattr(TargetKey),
 		"TargetKeyName", unistr_from_objattr(TargetKey),
 		"TargetKey", get_key_path(TargetKey, keybuf, allocsize),
 		"SourceFile", SourceFile);
+	free(keybuf);
     return ret;
 }
 

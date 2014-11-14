@@ -36,9 +36,18 @@ HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
         dwReserved, lpfnCB);
     LOQ_hresult("network", "uF", "URL", szURL, "FileName", szFileName);
     if(ret == S_OK) {
-        pipe("FILE_NEW:%S", szFileName);
+        pipe("FILE_NEW:%S", -1, szFileName);
     }
     return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, InternetGetConnectedState,
+	_Out_ LPDWORD lpdwFlags,
+	_In_ DWORD dwReserved
+) {
+	BOOL ret = Old_InternetGetConnectedState(lpdwFlags, dwReserved);
+	LOQ_bool("network", "");
+	return ret;
 }
 
 HOOKDEF(HINTERNET, WINAPI, InternetOpenA,
@@ -153,7 +162,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
 ) {
     HINTERNET ret = Old_HttpOpenRequestA(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ_nonnull("network", "psl", "InternetHandle", hConnect, "Path", lpszObjectName,
+    LOQ_nonnull("network", "psp", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
     return ret;
 }
@@ -170,7 +179,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
 ) {
     HINTERNET ret = Old_HttpOpenRequestW(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ_nonnull("network", "pul", "InternetHandle", hConnect, "Path", lpszObjectName,
+    LOQ_nonnull("network", "pup", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
     return ret;
 }
@@ -250,7 +259,7 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_A,
 ) {
     DNS_STATUS ret = Old_DnsQuery_A(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("network", "sil", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("network", "sip", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -264,7 +273,7 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_UTF8,
 ) {
     DNS_STATUS ret = Old_DnsQuery_UTF8(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("network", "sil", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("network", "sip", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -278,7 +287,7 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_W,
 ) {
     DNS_STATUS ret = Old_DnsQuery_W(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("network", "uil", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("network", "uip", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 

@@ -1144,6 +1144,11 @@ extern HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
     LPVOID lpfnCB
 );
 
+extern HOOKDEF(BOOL, WINAPI, InternetGetConnectedState,
+	_Out_ LPDWORD lpdwFlags,
+	_In_ DWORD dwReserved
+);
+
 extern HOOKDEF(HINTERNET, WINAPI, InternetOpenA,
     _In_  LPCTSTR lpszAgent,
     _In_  DWORD dwAccessType,
@@ -1616,6 +1621,22 @@ extern HOOKDEF(BOOL, PASCAL, TransmitFile,
 //
 // Crypto Hooks
 //
+
+extern HOOKDEF(BOOL, WINAPI, CryptAcquireContextA,
+	_Out_	  HCRYPTPROV *phProv,
+	_In_	  LPCSTR pszContainer,
+	_In_	  LPCSTR pszProvider,
+	_In_	  DWORD dwProvType,
+	_In_	  DWORD dwFlags
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptAcquireContextW,
+	_Out_	  HCRYPTPROV *phProv,
+	_In_	  LPCWSTR pszContainer,
+	_In_	  LPCWSTR pszProvider,
+	_In_	  DWORD dwProvType,
+	_In_	  DWORD dwFlags
+);
 
 extern HOOKDEF(BOOL, WINAPI, CryptProtectData,
     _In_      DATA_BLOB *pDataIn,

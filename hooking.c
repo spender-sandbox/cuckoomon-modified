@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ignore.h"
 #include "unhook.h"
 #include "misc.h"
+#include "pipe.h"
 
 // this number can be changed if required to do so
 #define TLS_HOOK_INFO 0x44
@@ -61,9 +62,15 @@ int lde(void *addr)
     return ret;
 }
 
+// need to be very careful about what we call in here, as it can be called in the context of any hook
+// including those that hold the loader lock
 static int is_interesting_backtrace(unsigned int _ebp)
 {
 	hook_info_t *hookinfo = hook_info();
+
+	hookinfo->backtrace_disable = 1;
+	//pipe("INFO:called is_interesting_backtrace %p, tid %d", *(unsigned int *)hookinfo->retaddr_esp, GetCurrentThreadId());
+	hookinfo->backtrace_disable = 0;
 
 	// only perform this function when the retaddr-check is enabled, otherwise
     // return true in all cases (if retaddr-check is disabled, then every
@@ -88,7 +95,7 @@ static int is_interesting_backtrace(unsigned int _ebp)
 		return 1;
 	}
 
-	while (_ebp >= bottom && _ebp < top && count-- != 0) {
+	while (_ebp >= bottom && _ebp <= (top - 8) && count-- != 0) {
 
         // obtain the return address and the next value of ebp
 		ULONG_PTR addr = *(unsigned int *)(_ebp + 4);
@@ -127,22 +134,30 @@ static int hook_create_trampoline(unsigned char *addr, int len,
     // return address in our trampoline. When we reach the trampoline, we make
     // a backup of the Last Error Code and jmp to the real return address.
 
-    unsigned char pre_backup[] = {
-        // push eax
-        0x50,
+	unsigned char pre_backup1[] = {
+		// push eax
+		0x50,
 
-        // mov eax, fs:[TLS_HOOK_INFO]
-        0x64, 0xa1, TLS_HOOK_INFO, 0x00, 0x00, 0x00,
-        // test eax, eax
-        0x85, 0xc0,
-        // jnz $+0d
-        0x75, 0x0d,
-            // pushad
-            0x60,
-            // call ensure_valid_hook_info
-            0xe8, 0x00, 0x00, 0x00, 0x00,
+		// mov eax, fs:[TLS_HOOK_INFO]
+		0x64, 0xa1, TLS_HOOK_INFO, 0x00, 0x00, 0x00,
+		// test eax, eax
+		0x85, 0xc0,
+		// jnz $+10
+		0x75, 0x10,
+			// pushf
+			0x9c,
+			// cld
+			0xfc,
+			// pushad
+			0x60,
+			// call ensure_valid_hook_info
+			0xe8, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_backup2[] = {
             // popad
             0x61,
+			// popf
+			0x9d,
             // mov eax, fs:[TLS_HOOK_INFO]
             0x64, 0xa1, TLS_HOOK_INFO, 0x00, 0x00, 0x00,
 
@@ -187,11 +202,13 @@ static int hook_create_trampoline(unsigned char *addr, int len,
         0xc3,
     };
 
-    *(unsigned int *)(pre_backup + 13) =
-        (unsigned char *) &ensure_valid_hook_info - tramp - 12 - 5;
+    *(unsigned int *)(pre_backup1 + sizeof(pre_backup1) - sizeof(unsigned int)) =
+        (unsigned char *)&ensure_valid_hook_info - tramp - sizeof(pre_backup1);
 
-    memcpy(tramp, pre_backup, sizeof(pre_backup));
-    tramp += sizeof(pre_backup);
+    memcpy(tramp, pre_backup1, sizeof(pre_backup1));
+    tramp += sizeof(pre_backup1);
+	memcpy(tramp, pre_backup2, sizeof(pre_backup2));
+	tramp += sizeof(pre_backup2);
 
     unsigned char **pre_backup_addr = (unsigned char **)(tramp - 5);
 
@@ -231,7 +248,7 @@ static int hook_create_trampoline(unsigned char *addr, int len,
             // calculated address, so that's our target address as well.
             // (note that `addr' is already increased by one or two, so the
             // 4 represents the 32bit offset of this particular instruction)
-            unsigned long jmp_addr = *(unsigned long *) addr + 4 +
+            unsigned long jmp_addr = *(int *) addr + 4 +
                 (unsigned long) addr;
             addr += 4;
 
@@ -344,8 +361,12 @@ static void hook_create_pre_tramp(hook_t *h, uint8_t is_special_hook)
 		0x64, 0xa1, TLS_HOOK_INFO, 0x00, 0x00, 0x00,
 		// test eax, eax
 		0x85, 0xc0,
-		// jnz $+0d
-		0x75, 0x0d,
+		// jnz $+10
+		0x75, 0x10,
+			// pushf
+			0x9c,
+			// cld
+			0xfc,
 			// pushad
 			0x60,
 			// call ensure_valid_hook_info
@@ -354,6 +375,8 @@ static void hook_create_pre_tramp(hook_t *h, uint8_t is_special_hook)
 	unsigned char pre_tramp2[] = {
 			// popad
 			0x61,
+			// popf
+			0x9d,
 			// mov eax, fs:[TLS_HOOK_INFO]
 			0x64, 0xa1, TLS_HOOK_INFO, 0x00, 0x00, 0x00,
 
@@ -372,10 +395,18 @@ static void hook_create_pre_tramp(hook_t *h, uint8_t is_special_hook)
 		0xc7, 0x44, 0xe4, 0x08, 0x00, 0x00, 0x00, 0x00
 	};
 	unsigned char pre_tramp3[] = {
+		// pushf
+		0x9c,
+		// cld
+		0xfc,
 		// pushad
 		0x60,
 		// push ebp
 		0x55,
+		// cmp dword [eax+hook_info_t.backtrace_disable], 1
+		0x83, 0x78, offsetof(hook_info_t, backtrace_disable), 0x01,
+		// jz $+0x5
+		0x74, 0x05,
 		// call is_interesting_backtrace, we're ignoring the return value now
 		0xe8, 0x00, 0x00, 0x00, 0x00
 	};
@@ -386,6 +417,8 @@ static void hook_create_pre_tramp(hook_t *h, uint8_t is_special_hook)
 		0x58,
 		// popad
 		0x61,
+		// popf
+		0x9d,
 
 		// special hook support
 		// mov ebx, 1
@@ -689,6 +722,15 @@ static int hook_api_special_jmp(hook_t *h, unsigned char *from,
     return hook_api_jmp_direct(h, from, to);
 }
 
+static int hook_api_native_jmp_indirect(hook_t *h, unsigned char *from,
+	unsigned char *to)
+{
+	// hook used for Native API functions where the first instruction specifies the syscall number
+	// we'll leave in that mov instruction and repeat it before calling the original function
+	from += 5;
+	return hook_api_jmp_indirect(h, from, to);
+}
+
 int hook_api(hook_t *h, int type)
 {
     // table with all possible hooking types
@@ -712,6 +754,7 @@ int hook_api(hook_t *h, int type)
         /* HOOK_PUSH_FPU_RETN */ {&hook_api_push_fpu_retn, 11},
 #endif
         /* HOOK_SPECIAL_JMP */ {&hook_api_special_jmp, 7},
+		/* HOOK_NATIVE_JMP_INDIRECT */ {&hook_api_native_jmp_indirect, 11 },
     };
 
     // is this address already hooked?
@@ -732,101 +775,116 @@ int hook_api(hook_t *h, int type)
 
 	int ret = -1;
 
-    // check if this is a valid hook type
-    if(type >= 0 && type < ARRAYSIZE(hook_types)) {
+	// determine whether we're running under win7, if so, we might have to
+	// follow a short relative jmp and an indirect jump before reaching
+	// the real address
+	OSVERSIONINFO os_info = { sizeof(OSVERSIONINFO) };
+	if (GetVersionEx(&os_info) && os_info.dwMajorVersion == 6 &&
+		os_info.dwMinorVersion == 1) {
+		// windows 7 has a DLL called kernelbase.dll which basically acts
+		// as a layer between the program and kernel32 (and related?) it
+		// allows easy hotpatching of a set of functions which is why
+		// there's a short relative jump and an indirect jump. we want to
+		// resolve the address of the real function, so we follow these
+		// two jumps.
+		if (!memcmp(addr, "\xeb\x05", 2) &&
+			!memcmp(addr + 7, "\xff\x25", 2)) {
 
-        // determine whether we're running under win7, if so, we might have to
-        // follow a short relative jmp and an indirect jump before reaching
-        // the real address
-        OSVERSIONINFO os_info = {sizeof(OSVERSIONINFO)};
-        if(GetVersionEx(&os_info) && os_info.dwMajorVersion == 6 &&
-                os_info.dwMinorVersion == 1) {
-            // windows 7 has a DLL called kernelbase.dll which basically acts
-            // as a layer between the program and kernel32 (and related?) it
-            // allows easy hotpatching of a set of functions which is why
-            // there's a short relative jump and an indirect jump. we want to
-            // resolve the address of the real function, so we follow these
-            // two jumps.
-            if(!memcmp(addr, "\xeb\x05", 2) &&
-                    !memcmp(addr + 7, "\xff\x25", 2)) {
+			// Add unhook detection for this region.
+			unhook_detect_add_region(h->funcname,
+				addr, addr, addr, 7 + 6);
 
-                // Add unhook detection for this region.
-                unhook_detect_add_region(h->funcname,
-                    addr, addr, addr, 7 + 6);
+			addr = **(unsigned char ***)(addr + 9);
+		}
 
-                addr = **(unsigned char ***)(addr + 9);
-            }
+		// Some functions don't just have the short jump and indirect
+		// jump, but also an empty function prolog
+		// ("mov edi, edi ; push ebp ; mov ebp, esp ; pop ebp"). Other
+		// than that, this edge case is equivalent to the case above.
+		else if (!memcmp(addr, "\x8b\xff\x55\x8b\xec\x5d\xeb\x05", 8) &&
+			!memcmp(addr + 13, "\xff\x25", 2)) {
+			addr = **(unsigned char ***)(addr + 15);
+		}
 
-            // Some functions don't just have the short jump and indirect
-            // jump, but also an empty function prolog
-            // ("mov edi, edi ; push ebp ; mov ebp, esp ; pop ebp"). Other
-            // than that, this edge case is equivalent to the case above.
-            else if(!memcmp(addr, "\x8b\xff\x55\x8b\xec\x5d\xeb\x05", 8) &&
-                    !memcmp(addr + 13, "\xff\x25", 2)) {
-                addr = **(unsigned char ***)(addr + 15);
-            }
+		// the following applies for "inlined" functions on windows 7,
+		// some functions are inlined into kernelbase.dll, rather than
+		// kernelbase.dll jumping to e.g. kernel32.dll. for these
+		// functions there is a short relative jump, followed by the
+		// inlined function.
+		if (!memcmp(addr, "\xeb\x02", 2) &&
+			!memcmp(addr - 5, "\xcc\xcc\xcc\xcc\xcc", 5)) {
 
-            // the following applies for "inlined" functions on windows 7,
-            // some functions are inlined into kernelbase.dll, rather than
-            // kernelbase.dll jumping to e.g. kernel32.dll. for these
-            // functions there is a short relative jump, followed by the
-            // inlined function.
-            if(!memcmp(addr, "\xeb\x02", 2) &&
-                    !memcmp(addr - 5, "\xcc\xcc\xcc\xcc\xcc", 5)) {
+			// Add unhook detection for this region.
+			unhook_detect_add_region(h->funcname,
+				addr - 5, addr - 5, addr - 5, 5 + 2);
 
-                // Add unhook detection for this region.
-                unhook_detect_add_region(h->funcname,
-                    addr - 5, addr - 5, addr - 5, 5 + 2);
+			// step over the short jump and the relative offset
+			addr += 4;
+		}
+		if (!wcscmp(h->library, L"ntdll") && addr[0] == '\xb8') {
+			// hooking a native API, leave in the mov eax, <syscall nr> instruction
+			// as some malware depends on this for direct syscalls
+			// missing a few syscalls is better than crashing and getting no information
+			// at all
+			type = HOOK_NATIVE_JMP_INDIRECT;
+		}
+	}
 
-                // step over the short jump and the relative offset
-                addr += 4;
-            }
-        }
+	// check if this is a valid hook type
+	if (type < 0 && type >= ARRAYSIZE(hook_types)) {
+		pipe("WARNING: Provided invalid hook type: %d", type);
+		return ret;
+	}
 
-        DWORD old_protect;
+	DWORD old_protect;
 
-        // make the address writable
-        if(VirtualProtect(addr, hook_types[type].len, PAGE_EXECUTE_READWRITE,
-                &old_protect)) {
+	// make the address writable
+	if (VirtualProtect(addr, hook_types[type].len, PAGE_EXECUTE_READWRITE,
+		&old_protect)) {
 
-            if(hook_create_trampoline(addr, hook_types[type].len, h->tramp)) {
+		if (hook_create_trampoline(addr, hook_types[type].len, h->tramp)) {
 
-                hook_store_exception_info(h);
+			hook_store_exception_info(h);
 
-                uint8_t special = 0;
+			uint8_t special = 0;
 
-                if(h->allow_hook_recursion == 1) {
-                    special = 1;
-                }
+			if (h->allow_hook_recursion == 1) {
+				special = 1;
+			}
 
-                uint8_t orig[16];
-                memcpy(orig, addr, 16);
+			uint8_t orig[16];
+			memcpy(orig, addr, 16);
 
-                hook_create_pre_tramp(h, special);
+			hook_create_pre_tramp(h, special);
 
-                // insert the hook (jump from the api to the
-                // pre-trampoline)
-                ret = hook_types[type].hook(h, addr, h->pre_tramp);
+			// insert the hook (jump from the api to the
+			// pre-trampoline)
+			ret = hook_types[type].hook(h, addr, h->pre_tramp);
 
-                // Add unhook detection for our newly created hook.
-                // Ensure any changes behind our hook are also catched by
-                // making the buffersize 16.
-                unhook_detect_add_region(h->funcname, addr, orig, addr, 16);
+			// Add unhook detection for our newly created hook.
+			// Ensure any changes behind our hook are also catched by
+			// making the buffersize 16.
+			unhook_detect_add_region(h->funcname, addr, orig, addr, 16);
 
-                // if successful, assign the trampoline address to *old_func
-                if(ret == 0) {
-                    *h->old_func = h->tramp;
+			// if successful, assign the trampoline address to *old_func
+			if (ret == 0) {
+				*h->old_func = h->tramp;
 
-                    // successful hook is successful
-                    h->is_hooked = 1;
-                }
-            }
+				// successful hook is successful
+				h->is_hooked = 1;
+			}
+		}
+		else {
+			pipe("WARNING:Unable to place hook on %z", h->funcname);
+		}
 
-            // restore the old protection
-            VirtualProtect(addr, hook_types[type].len, old_protect,
-                &old_protect);
-        }
-    }
+		// restore the old protection
+		VirtualProtect(addr, hook_types[type].len, old_protect,
+			&old_protect);
+	}
+	else {
+		pipe("WARNING:Unable to change protection for hook on %z", h->funcname);
+	}
 
     return ret;
 }
@@ -838,7 +896,7 @@ hook_info_t *hook_info()
 
 static void ensure_valid_hook_info()
 {
-    if(hook_info() == NULL) {
+	if(hook_info() == NULL) {
 		// this wizardry allows us to hook NtAllocateVirtualMemory -- otherwise we'd crash from infinite
 		// recursion if NtAllocateVirtualMemory was the first API we saw on a new thread
 		char dummybuf[sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE + sizeof(unsigned int)] = { 0 };
@@ -848,9 +906,9 @@ static void ensure_valid_hook_info()
 		__writefsdword(TLS_HOOK_INFO, (unsigned int)info);
 
 		// now allocate the memory we need for the hook info struct without calling our hooks
-		hook_disable();
+		hook_info()->depth_count++;
 		info = (hook_info_t *)calloc(1, sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE + sizeof(unsigned int));
-		hook_enable();
+		hook_info()->depth_count--;
 
 		info->retaddr_esp = (unsigned int)info + sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE;
 		__writefsdword(TLS_HOOK_INFO, (unsigned int)info);

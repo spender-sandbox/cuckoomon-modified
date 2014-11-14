@@ -46,4 +46,4 @@ struct {
     unsigned short host_port;
 } g_config;
 
-void read_config();
+int read_config(void);

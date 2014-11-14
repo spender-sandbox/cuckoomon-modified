@@ -20,66 +20,68 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ntapi.h"
 #include "config.h"
 
-void read_config()
+int read_config(void)
 {
     // TODO unicode support
     char buf[512], config_fname[MAX_PATH];
-    sprintf(config_fname, "%s\\%ld.ini",
-        getenv("TEMP"), GetCurrentProcessId());
+    sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
 
     FILE *fp = fopen(config_fname, "r");
-    if(fp != NULL) {
-        while (fgets(buf, sizeof(buf), fp) != NULL) {
-            // cut off the newline
-            char *p = strchr(buf, '\r');
-            if(p != NULL) *p = 0;
-            p = strchr(buf, '\n');
-            if(p != NULL) *p = 0;
+	if (fp == NULL)
+		return 0;
 
-            // split key=value
-            p = strchr(buf, '=');
-            if(p != NULL) {
-                *p = 0;
+	while (fgets(buf, sizeof(buf), fp) != NULL)
+	{
+        // cut off the newline
+        char *p = strchr(buf, '\r');
+        if(p != NULL) *p = 0;
+        p = strchr(buf, '\n');
+        if(p != NULL) *p = 0;
 
-                const char *key = buf, *value = p + 1;
+        // split key=value
+        p = strchr(buf, '=');
+        if(p != NULL) {
+            *p = 0;
 
-                if(!strcmp(key, "pipe")) {
-                    strncpy(g_config.pipe_name, value,
-                        ARRAYSIZE(g_config.pipe_name));
-                }
-                else if(!strcmp(key, "results")) {
-                    strncpy(g_config.results, value,
-                        ARRAYSIZE(g_config.results));
-                }
-                else if(!strcmp(key, "analyzer")) {
-                    strncpy(g_config.analyzer, value,
-                        ARRAYSIZE(g_config.analyzer));
-                }
-                else if(!strcmp(key, "shutdown-mutex")) {
-                    strncpy(g_config.shutdown_mutex, value,
-                        ARRAYSIZE(g_config.shutdown_mutex));
-                }
-                else if(!strcmp(key, "first-process")) {
-                    g_config.first_process = value[0] == '1';
-                }
-                else if(!strcmp(key, "startup-time")) {
-                    g_config.startup_time = atoi(value);
-                }
-                else if(!strcmp(key, "retaddr-check")) {
-                    g_config.retaddr_check = value[0] == '1';
-                }
-                else if(!strcmp(key, "host-ip")) {
-                    g_config.host_ip = inet_addr(value);
-                }
-                else if(!strcmp(key, "host-port")) {
-                    g_config.host_port = atoi(value);
-                }
-                else if(!strcmp(key, "force-sleepskip")) {
-                    g_config.force_sleepskip = value[0] == '1';
-                }
+            const char *key = buf, *value = p + 1;
+
+            if(!strcmp(key, "pipe")) {
+                strncpy(g_config.pipe_name, value,
+                    ARRAYSIZE(g_config.pipe_name));
+            }
+            else if(!strcmp(key, "results")) {
+                strncpy(g_config.results, value,
+                    ARRAYSIZE(g_config.results));
+            }
+            else if(!strcmp(key, "analyzer")) {
+                strncpy(g_config.analyzer, value,
+                    ARRAYSIZE(g_config.analyzer));
+            }
+            else if(!strcmp(key, "shutdown-mutex")) {
+                strncpy(g_config.shutdown_mutex, value,
+                    ARRAYSIZE(g_config.shutdown_mutex));
+            }
+            else if(!strcmp(key, "first-process")) {
+                g_config.first_process = value[0] == '1';
+            }
+            else if(!strcmp(key, "startup-time")) {
+                g_config.startup_time = atoi(value);
+            }
+            else if(!strcmp(key, "retaddr-check")) {
+                g_config.retaddr_check = value[0] == '1';
+            }
+            else if(!strcmp(key, "host-ip")) {
+                g_config.host_ip = inet_addr(value);
+            }
+            else if(!strcmp(key, "host-port")) {
+                g_config.host_port = atoi(value);
+            }
+            else if(!strcmp(key, "force-sleepskip")) {
+                g_config.force_sleepskip = value[0] == '1';
             }
         }
-        fclose(fp);
-        DeleteFile(config_fname);
     }
+    fclose(fp);
+    DeleteFile(config_fname);
+	return 1;
 }

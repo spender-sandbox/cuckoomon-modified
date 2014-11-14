@@ -32,13 +32,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueueApcThread,
 	__in_opt ULONG ApcReserved
 ) {
 	DWORD PID = pid_from_thread_handle(ThreadHandle);
+	DWORD TID = tid_from_thread_handle(ThreadHandle);
 
-	pipe("PROCESS:%d", PID);
+	pipe("PROCESS:%d,%d", PID, TID);
 
 	NTSTATUS ret = Old_NtQueueApcThread(ThreadHandle, ApcRoutine,
 		ApcRoutineContext, ApcStatusBlock, ApcReserved);
 
-	LOQ_ntstatus("threading", "lp", "ProcessId", PID, "ThreadHandle", ThreadHandle);
+	LOQ_ntstatus("threading", "llp", "ProcessId", PID, "ThreadId", TID, "ThreadHandle", ThreadHandle);
 
 	if (NT_SUCCESS(ret))
 		disable_sleep_skip();
@@ -114,9 +115,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenThread,
 		LOQ_ntstatus("threading", "PpO", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
 			"ObjectAttributes", ObjectAttributes);
 	}
-    if (NT_SUCCESS(ret)) {
-		pipe("PROCESS:%d,%d", PID, TID);
-    }
+    //if (NT_SUCCESS(ret)) {
+	//	pipe("PROCESS:%d,%d", PID, TID);
+    //}
     return ret;
 }
 
@@ -133,10 +134,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetContextThread,
     __in  HANDLE ThreadHandle,
     __in  const CONTEXT *Context
 ) {
-    NTSTATUS ret = Old_NtSetContextThread(ThreadHandle, Context);
-    LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
-
+	NTSTATUS ret;
+	
 	pipe("PROCESS:%d,%d", pid_from_thread_handle(ThreadHandle), tid_from_thread_handle(ThreadHandle));
+
+	ret = Old_NtSetContextThread(ThreadHandle, Context);
+    LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
 
     return ret;
 }
@@ -236,16 +239,18 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 ) {
     ENSURE_CLIENT_ID(ClientId);
 
-    NTSTATUS ret = Old_RtlCreateUserThread(ProcessHandle, SecurityDescriptor,
+	pipe("PROCESS:%d", pid_from_process_handle(ProcessHandle));
+	
+	NTSTATUS ret = Old_RtlCreateUserThread(ProcessHandle, SecurityDescriptor,
         CreateSuspended, StackZeroBits, StackReserved, StackCommit,
         StartAddress, StartParameter, ThreadHandle, ClientId);
     LOQ_ntstatus("threading", "plppPl", "ProcessHandle", ProcessHandle,
         "CreateSuspended", CreateSuspended, "StartAddress", StartAddress,
         "StartParameter", StartParameter, "ThreadHandle", ThreadHandle,
         "ThreadIdentifier", ClientId->UniqueThread);
-    if(NT_SUCCESS(ret)) {
-        pipe("PROCESS:0,%d", ClientId->UniqueThread);
-        disable_sleep_skip();
-    }
-    return ret;
+
+	if (NT_SUCCESS(ret))
+		disable_sleep_skip();
+
+	return ret;
 }

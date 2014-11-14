@@ -178,8 +178,8 @@ static hook_t g_hooks[] = {
     // Window Hooks
     //
 
-	HOOK(user32, CreateWindowExA),
-	HOOK(user32, CreateWindowExW),
+	//HOOK(user32, CreateWindowExA),
+	//HOOK(user32, CreateWindowExW),
     HOOK(user32, FindWindowA),
     HOOK(user32, FindWindowW),
     HOOK(user32, FindWindowExA),
@@ -281,6 +281,7 @@ static hook_t g_hooks[] = {
     //
 
     HOOK(urlmon, URLDownloadToFileW),
+	HOOK(wininet, InternetGetConnectedState),
     HOOK(wininet, InternetOpenA),
     HOOK(wininet, InternetOpenW),
     HOOK(wininet, InternetConnectA),
@@ -368,6 +369,8 @@ static hook_t g_hooks[] = {
     // Crypto Functions
     //
 
+	HOOK(advapi32, CryptAcquireContextA),
+	HOOK(advapi32, CryptAcquireContextW),
     HOOK(advapi32, CryptProtectData),
     HOOK(advapi32, CryptUnprotectData),
     HOOK(advapi32, CryptProtectMemory),
@@ -387,7 +390,7 @@ static hook_t g_hooks[] = {
 // get a random hooking method, except for hook_jmp_direct
 //#define HOOKTYPE randint(HOOK_NOP_JMP_DIRECT, HOOK_MOV_EAX_INDIRECT_PUSH_RETN)
 // error testing with hook_jmp_direct only
-#define HOOKTYPE HOOK_JMP_DIRECT
+#define HOOKTYPE HOOK_JMP_INDIRECT
 
 void set_hooks_dll(const wchar_t *library)
 {
@@ -405,19 +408,48 @@ void set_hooks()
     VirtualProtect(g_hooks, sizeof(g_hooks), PAGE_EXECUTE_READWRITE,
         &old_protect);
 
-    hook_disable();
+	// before modifying any DLLs, let's first freeze all other threads in our process
+	// otherwise our racy modifications can cause the task to crash prematurely
+	// This code itself is racy as additional threads could be created while we're
+	// processing the list, but the risk is at least greatly reduced
+	PHANDLE suspended_threads = (PHANDLE)calloc(4096, sizeof(HANDLE));
+	DWORD num_suspended_threads = 0;
+	DWORD i;
+	HANDLE hSnapShot;
+	THREADENTRY32 threadInfo;
+	DWORD our_tid = GetCurrentThreadId();
+	DWORD our_pid = GetCurrentProcessId();
+	memset(&threadInfo, 0, sizeof(threadInfo));
+	threadInfo.dwSize = sizeof(threadInfo);
+
+	hook_disable();
+
+	hSnapShot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+	Thread32First(hSnapShot, &threadInfo);
+	do {
+		if (threadInfo.th32OwnerProcessID != our_pid || threadInfo.th32ThreadID == our_tid || num_suspended_threads >= 4096)
+			continue;
+		suspended_threads[num_suspended_threads] = OpenThread(THREAD_SUSPEND_RESUME, FALSE, threadInfo.th32ThreadID);
+		if (suspended_threads[num_suspended_threads]) {
+			SuspendThread(suspended_threads[num_suspended_threads]);
+			num_suspended_threads++;
+		}
+	} while (Thread32Next(hSnapShot, &threadInfo));
 
     // now, hook each api :)
     for (int i = 0; i < ARRAYSIZE(g_hooks); i++) {
-        if(g_hooks[i].allow_hook_recursion != FALSE) {
-            hook_api(&g_hooks[i], HOOKTYPE);
-        }
-        else {
-            hook_api(&g_hooks[i], HOOKTYPE);
-        }
+		//pipe("INFO:Hooking %z", g_hooks[i].funcname);
+        hook_api(&g_hooks[i], HOOKTYPE);
     }
 
-    hook_enable();
+	for (i = 0; i < num_suspended_threads; i++) {
+		ResumeThread(suspended_threads[i]);
+		CloseHandle(suspended_threads[i]);
+	}
+
+	free(suspended_threads);
+
+	hook_enable();
 }
 
 #if REPORT_EXCEPTIONS
@@ -449,8 +481,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 	unsigned int length = sizeof(pids);
 
     if(dwReason == DLL_PROCESS_ATTACH) {
-        // make sure advapi32 is loaded
-        LoadLibrary("advapi32");
+		resolve_runtime_apis();
 
         // there's a small list of processes which we don't want to inject
         if(is_ignored_process()) {
@@ -472,7 +503,13 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         file_init();
 
         // read the config settings
-        read_config();
+		if (!read_config())
+#ifdef CUCKOODBG
+			;
+#else
+			// if we're not debugging, then failure to read the cuckoomon config should be a critical error
+			return TRUE;
+#endif
         g_pipe_name = g_config.pipe_name;
 
         // obtain all protected pids
@@ -505,7 +542,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
         // notify analyzer.py that we've loaded
         char name[64];
-        sprintf(name, "CuckooEvent%ld", GetCurrentProcessId());
+        sprintf(name, "CuckooEvent%u", GetCurrentProcessId());
         HANDLE event_handle = OpenEvent(EVENT_ALL_ACCESS, FALSE, name);
         if(event_handle != NULL) {
             SetEvent(event_handle);

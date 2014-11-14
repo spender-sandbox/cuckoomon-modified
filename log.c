@@ -53,7 +53,17 @@ int g_log_index = 10;  // index must start after the special IDs (see defines)
 //
 
 static void log_raw_direct(const char *buf, size_t length) {
-    if(g_sock == INVALID_SOCKET) return;
+	if (g_sock == INVALID_SOCKET) {
+		char filename[64];
+		snprintf(filename, sizeof(filename), "c:\\debug%u.log", GetCurrentProcessId());
+		// will happen when we're in debug mode
+		FILE *f = fopen(filename, "ab");
+		if (f) {
+			fwrite(buf, length, 1, f);
+			fclose(f);
+		}
+		return;
+	}
     size_t sent = 0;
     int r;
     while (sent < length) {

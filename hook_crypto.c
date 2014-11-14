@@ -57,6 +57,30 @@ static char *get_alg_name(char *buf, ALG_ID AlgId)
 	}
 }
 
+HOOKDEF(BOOL, WINAPI, CryptAcquireContextA,
+	_Out_	  HCRYPTPROV *phProv,
+	_In_	  LPCSTR pszContainer,
+	_In_	  LPCSTR pszProvider,
+	_In_	  DWORD dwProvType,
+	_In_	  DWORD dwFlags
+) {
+	BOOL ret = Old_CryptAcquireContextA(phProv, pszContainer, pszProvider, dwProvType, dwFlags);
+	LOQ_bool("crypto", "ssp", "Container", pszContainer, "Provider", pszProvider, "Flags", dwFlags);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, CryptAcquireContextW,
+	_Out_	  HCRYPTPROV *phProv,
+	_In_	  LPCWSTR pszContainer,
+	_In_	  LPCWSTR pszProvider,
+	_In_	  DWORD dwProvType,
+	_In_	  DWORD dwFlags
+) {
+	BOOL ret = Old_CryptAcquireContextW(phProv, pszContainer, pszProvider, dwProvType, dwFlags);
+	LOQ_bool("crypto", "uup", "Container", pszContainer, "Provider", pszProvider, "Flags", dwFlags);
+	return ret;
+}
+
 HOOKDEF(BOOL, WINAPI, CryptProtectData,
     _In_      DATA_BLOB *pDataIn,
     _In_      LPCWSTR szDataDescr,

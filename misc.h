@@ -16,6 +16,32 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+typedef LONG(WINAPI *_NtQueryInformationProcess)(HANDLE ProcessHandle,
+	ULONG ProcessInformationClass, PVOID ProcessInformation,
+	ULONG ProcessInformationLength, PULONG ReturnLength);
+typedef LONG(WINAPI *_NtQueryInformationThread)(HANDLE ThreadHandle,
+	ULONG ThreadInformationClass, PVOID ThreadInformation,
+	ULONG ThreadInformationLength, PULONG ReturnLength);
+typedef BOOLEAN(WINAPI *_RtlGenRandom)(PVOID RandomBuffer,
+	ULONG RandomBufferLength);
+typedef NTSTATUS(WINAPI *_NtQueryAttributesFile)(
+	_In_   const OBJECT_ATTRIBUTES *ObjectAttributes,
+	_Out_  PFILE_BASIC_INFORMATION FileInformation);
+typedef NTSTATUS(WINAPI *_NtQueryObject)(
+	_In_opt_   HANDLE Handle,
+	_In_  OBJECT_INFORMATION_CLASS ObjectInformationClass,
+	_Out_opt_  PVOID ObjectInformation,
+	_In_   ULONG ObjectInformationLength,
+	_Out_opt_   PULONG ReturnLength);
+typedef NTSTATUS(WINAPI *_NtQueryKey)(
+	HANDLE  KeyHandle,
+	int KeyInformationClass,
+	PVOID  KeyInformation,
+	ULONG  Length,
+	PULONG  ResultLength);
+
+void resolve_runtime_apis(void);
+
 ULONG_PTR parent_process_id(); // By Napalm @ NetCore2K (rohitab.com)
 DWORD pid_from_process_handle(HANDLE process_handle);
 DWORD pid_from_thread_handle(HANDLE thread_handle);

@@ -358,10 +358,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtUnmapViewOfSection,
         map_size = mbi.RegionSize;
     }
     NTSTATUS ret = Old_NtUnmapViewOfSection(ProcessHandle, BaseAddress);
-    if(NT_SUCCESS(ret)) {
-        pipe("UNMAP:%d,%x,%x", pid_from_process_handle(ProcessHandle),
-            BaseAddress, map_size);
-    }
+    //if(NT_SUCCESS(ret)) {
+    //    pipe("UNMAP:%d,%x,%x", pid_from_process_handle(ProcessHandle),
+    //        BaseAddress, map_size);
+    //}
     return ret;
 }
 
@@ -471,7 +471,7 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
     __in   DWORD flNewProtect,
     __out  PDWORD lpflOldProtect
 ) {
-    BOOL ret = Old_VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect,
+	BOOL ret = Old_VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect,
         lpflOldProtect);
     LOQ_bool("process", "pppp", "ProcessHandle", hProcess, "Address", lpAddress,
         "Size", dwSize, "Protection", flNewProtect);

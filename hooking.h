@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct _hook_info_t {
     unsigned int depth_count;
-
+	unsigned int backtrace_disable;
     unsigned int hook_count;
     unsigned int retaddr_esp;
 
@@ -101,6 +101,7 @@ enum {
     HOOK_PUSH_FPU_RETN,
 #endif
     HOOK_SPECIAL_JMP,
+	HOOK_NATIVE_JMP_INDIRECT,
     HOOK_TECHNIQUE_MAXTYPE,
 };
 

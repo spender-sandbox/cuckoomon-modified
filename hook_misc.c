@@ -86,6 +86,7 @@ HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
     return ret;
 }
 
+// Called with the loader lock held
 HOOKDEF(NTSTATUS, WINAPI, LdrGetDllHandle,
     __in_opt    PWORD pwPath,
     __in_opt    PVOID Unused,
@@ -246,7 +247,7 @@ HOOKDEF(BOOL, WINAPI, GetCursorPos,
 }
 
 HOOKDEF(BOOL, WINAPI, GetComputerNameA,
-    _Out_    PCTSTR lpBuffer,
+    _Out_    LPSTR lpBuffer,
     _Inout_  LPDWORD lpnSize
 ) {
     BOOL ret = Old_GetComputerNameA(lpBuffer, lpnSize);
@@ -255,7 +256,7 @@ HOOKDEF(BOOL, WINAPI, GetComputerNameA,
 }
 
 HOOKDEF(BOOL, WINAPI, GetComputerNameW,
-    _Out_    PCWSTR lpBuffer,
+    _Out_    LPWSTR lpBuffer,
     _Inout_  LPDWORD lpnSize
 ) {
     BOOL ret = Old_GetComputerNameW(lpBuffer, lpnSize);
@@ -264,7 +265,7 @@ HOOKDEF(BOOL, WINAPI, GetComputerNameW,
 }
 
 HOOKDEF(BOOL, WINAPI, GetUserNameA,
-    _Out_    PCTSTR lpBuffer,
+	_Out_    LPSTR lpBuffer,
     _Inout_  LPDWORD lpnSize
 ) {
     BOOL ret = Old_GetUserNameA(lpBuffer, lpnSize);
@@ -273,7 +274,7 @@ HOOKDEF(BOOL, WINAPI, GetUserNameA,
 }
 
 HOOKDEF(BOOL, WINAPI, GetUserNameW,
-    _Out_    PCWSTR lpBuffer,
+	_Out_    LPWSTR lpBuffer,
     _Inout_  LPDWORD lpnSize
 ) {
     BOOL ret = Old_GetUserNameW(lpBuffer, lpnSize);
