@@ -770,7 +770,8 @@ int hook_api(hook_t *h, int type)
             h->funcname);
     }
     if(addr == NULL) {
-        return -1;
+		// function doesn't exist in this DLL, not a critical error
+		return 0;
     }
 
 	int ret = -1;

@@ -114,9 +114,10 @@ HOOKDEF(HWND, WINAPI, CreateWindowExA,
 	__in_opt HINSTANCE hInstance,
 	__in_opt LPVOID lpParam
 ) {
-	HWND ret = Old_CreateWindowExA(dwExStyle, lpClassName,
-		lpWindowName, dwStyle, x, y, nWidth, nHeight,
-		hWndParent, hMenu, hInstance, lpParam);
+	HWND ret = (HWND)1;
+	// We have to log first as this function may not return, this unfortunately means
+	// faking the return value as well
+
 	// lpClassName can be one of the predefined window controls.. which lay in
 	// the 0..ffff range
 	if (((DWORD_PTR)lpClassName & 0xffff) == (DWORD_PTR)lpClassName) {
@@ -125,6 +126,11 @@ HOOKDEF(HWND, WINAPI, CreateWindowExA,
 	else {
 		LOQ_nonnull("windows", "ss", "ClassName", lpClassName, "WindowName", lpWindowName);
 	}
+
+	ret = Old_CreateWindowExA(dwExStyle, lpClassName,
+		lpWindowName, dwStyle, x, y, nWidth, nHeight,
+		hWndParent, hMenu, hInstance, lpParam);
+
 	return ret;
 }
 
@@ -142,9 +148,10 @@ HOOKDEF(HWND, WINAPI, CreateWindowExW,
 	__in_opt HINSTANCE hInstance,
 	__in_opt LPVOID lpParam
 ) {
-	HWND ret = Old_CreateWindowExW(dwExStyle, lpClassName,
-		lpWindowName, dwStyle, x, y, nWidth, nHeight,
-		hWndParent, hMenu, hInstance, lpParam);
+	HWND ret = (HWND)1;
+	// We have to log first as this function may not return, this unfortunately means
+	// faking the return value as well
+
 	// lpClassName can be one of the predefined window controls.. which lay in
 	// the 0..ffff range
 	if (((DWORD_PTR)lpClassName & 0xffff) == (DWORD_PTR)lpClassName) {
@@ -153,5 +160,10 @@ HOOKDEF(HWND, WINAPI, CreateWindowExW,
 	else {
 		LOQ_nonnull("windows", "uu", "ClassName", lpClassName, "WindowName", lpWindowName);
 	}
+
+	ret = Old_CreateWindowExW(dwExStyle, lpClassName,
+		lpWindowName, dwStyle, x, y, nWidth, nHeight,
+		hWndParent, hMenu, hInstance, lpParam);
+
 	return ret;
 }

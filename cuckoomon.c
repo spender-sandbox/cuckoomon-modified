@@ -178,8 +178,11 @@ static hook_t g_hooks[] = {
     // Window Hooks
     //
 
-	//HOOK(user32, CreateWindowExA),
-	//HOOK(user32, CreateWindowExW),
+	/* can't use these until we come up with a fool-proof method of logging them,
+	   as they might not return as in the upatre downloader
+	 */
+	//HOOK(user32, CreateWindowExA, TRUE),
+	//HOOK(user32, CreateWindowExW, TRUE),
     HOOK(user32, FindWindowA),
     HOOK(user32, FindWindowW),
     HOOK(user32, FindWindowExA),
@@ -396,7 +399,8 @@ void set_hooks_dll(const wchar_t *library)
 {
     for (int i = 0; i < ARRAYSIZE(g_hooks); i++) {
         if(!wcsicmp(g_hooks[i].library, library)) {
-			hook_api(&g_hooks[i], HOOKTYPE);
+			if (hook_api(&g_hooks[i], HOOKTYPE) < 0)
+				pipe("WARN:Unable to hook %z", g_hooks[i].funcname);
         }
     }
 }
@@ -439,7 +443,8 @@ void set_hooks()
     // now, hook each api :)
     for (int i = 0; i < ARRAYSIZE(g_hooks); i++) {
 		//pipe("INFO:Hooking %z", g_hooks[i].funcname);
-        hook_api(&g_hooks[i], HOOKTYPE);
+		if (hook_api(&g_hooks[i], HOOKTYPE) < 0)
+			pipe("WARN:Unable to hook %z", g_hooks[i].funcname);
     }
 
 	for (i = 0; i < num_suspended_threads; i++) {
