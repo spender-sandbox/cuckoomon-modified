@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static int sleep_skip_active = 1;
 
 // the amount of time skipped, in 100-nanosecond
-static LARGE_INTEGER time_skipped;
+LARGE_INTEGER time_skipped;
 static LARGE_INTEGER time_start;
 
 static int num_skipped = 0;

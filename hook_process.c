@@ -47,7 +47,7 @@ HOOKDEF(BOOL, WINAPI, Process32NextW,
 
 	/* skip returning protected processes */
 	while (ret && lppe && is_protected_pid(lppe->th32ProcessID)) {
-		ret = Old_Process32NextW(hSnapshot, lppe);
+		ret = Process32NextW(hSnapshot, lppe);
 		LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
 	}
 
@@ -64,7 +64,7 @@ HOOKDEF(BOOL, WINAPI, Process32FirstW,
 
 	/* skip returning protected processes */
 	while (ret && lppe && is_protected_pid(lppe->th32ProcessID)) {
-		ret = Old_Process32NextW(hSnapshot, lppe);
+		ret = Process32NextW(hSnapshot, lppe);
 		LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
 	}
 

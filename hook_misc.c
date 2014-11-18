@@ -246,9 +246,25 @@ HOOKDEF(BOOL, WINAPI, GetCursorPos,
     _Out_ LPPOINT lpPoint
 ) {
     BOOL ret = Old_GetCursorPos(lpPoint);
-    LOQ_bool("misc", "ll", "x", lpPoint != NULL ? lpPoint->x : 0,
+	static LARGE_INTEGER last_skipped = { 0, 0 };
+
+	/* work around the fact that skipping sleeps prevents the human module from making the system look active */
+	if (lpPoint && time_skipped.QuadPart != last_skipped.QuadPart) {
+		int xres, yres;
+		xres = GetSystemMetrics(0);
+		yres = GetSystemMetrics(1);
+		lpPoint->x = random() % xres;
+		lpPoint->y = random() % yres;
+		last_skipped.QuadPart = time_skipped.QuadPart;
+	}
+	else if (last_skipped.QuadPart == 0) {
+		last_skipped.QuadPart = time_skipped.QuadPart;
+	}
+
+	LOQ_bool("misc", "ll", "x", lpPoint != NULL ? lpPoint->x : 0,
         "y", lpPoint != NULL ? lpPoint->y : 0);
-    return ret;
+	
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, GetComputerNameA,

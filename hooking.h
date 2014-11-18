@@ -82,6 +82,8 @@ void hook_set_last_error(unsigned int errcode);
 
 void hook_disable_retaddr_check();
 
+extern LARGE_INTEGER time_skipped;
+
 #define HOOK_BACKTRACE_DEPTH 20
 
 #define HOOK_ENABLE_FPU 0
