@@ -26,6 +26,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // File Hooks
 //
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtQueryAttributesFile,
+	__in   POBJECT_ATTRIBUTES ObjectAttributes,
+	__out  PFILE_BASIC_INFORMATION FileInformation
+);
+
+extern HOOKDEF(NTSTATUS, WINAPI, NtQueryFullAttributesFile,
+	__in   POBJECT_ATTRIBUTES ObjectAttributes,
+	__out  PFILE_NETWORK_OPEN_INFORMATION FileInformation
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
     __out     PHANDLE FileHandle,
     __in      ACCESS_MASK DesiredAccess,

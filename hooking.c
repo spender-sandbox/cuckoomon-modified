@@ -616,6 +616,16 @@ static int hook_api_jmp_indirect(hook_t *h, unsigned char *from,
     return 0;
 }
 
+static int hook_api_hotpatch_jmp_indirect(hook_t *h, unsigned char *from,
+	unsigned char *to)
+{
+	// mov edi, edi
+	*from++ = 0x8b;
+	*from++ = 0xff;
+
+	return hook_api_jmp_indirect(h, from, to);
+}
+
 static int hook_api_mov_eax_jmp_eax(hook_t *h, unsigned char *from,
     unsigned char *to)
 {
@@ -755,7 +765,8 @@ int hook_api(hook_t *h, int type)
 #endif
         /* HOOK_SPECIAL_JMP */ {&hook_api_special_jmp, 7},
 		/* HOOK_NATIVE_JMP_INDIRECT */ {&hook_api_native_jmp_indirect, 11 },
-    };
+		/* HOOK_HOTPATCH_JMP_INDIRECT */{ &hook_api_hotpatch_jmp_indirect, 8 },
+	};
 
     // is this address already hooked?
     if(h->is_hooked != 0) {

@@ -270,10 +270,21 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExA,
         lpData, lpcbData);
     if(ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {
-        LOQ_zero("registry", "psrv", "Handle", hKey, "ValueName", lpValueName,
-            "Data", *lpType, *lpcbData, lpData,
-			"FullName", hKey, lpValueName);
-    }
+		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+		wchar_t *keypath = get_full_keyvalue_pathA(hKey, lpValueName, keybuf, allocsize);
+
+		LOQ_zero("registry", "psru", "Handle", hKey, "ValueName", lpValueName,
+			"Data", *lpType, *lpcbData, lpData,
+			"FullName", keypath);
+
+		// fake the vendor name
+		if (keypath && *lpcbData >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(lpData, "QEMU HARDDISK", 13)) {
+			memcpy(lpData, "DELL", 4);
+		}
+
+		free(keybuf);
+	}
     else if (ret == ERROR_MORE_DATA) {
         LOQ_zero("registry", "psPLv", "Handle", hKey, "ValueName", lpValueName,
             "Type", lpType, "DataLength", lpcbData,
@@ -299,9 +310,20 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExW,
         lpData, lpcbData);
     if (ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {
-        LOQ_zero("registry", "puRV", "Handle", hKey, "ValueName", lpValueName,
+		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+		wchar_t *keypath = get_full_keyvalue_pathW(hKey, lpValueName, keybuf, allocsize);
+		
+		LOQ_zero("registry", "puRu", "Handle", hKey, "ValueName", lpValueName,
             "Data", *lpType, *lpcbData, lpData,
-			"FullName", hKey, lpValueName);
+			"FullName", keypath);
+
+		// fake the vendor name
+		if (keypath && *lpcbData >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(lpData, "QEMU HARDDISK", 13)) {
+			memcpy(lpData, "DELL", 4);
+		}
+
+		free(keybuf);
 	}
     else if (ret == ERROR_MORE_DATA) {
         LOQ_zero("registry", "puPLV", "Handle", hKey, "ValueName", lpValueName,

@@ -70,7 +70,9 @@ static hook_t g_hooks[] = {
     // File Hooks
     //
 
-    HOOK(ntdll, NtCreateFile),
+	HOOK(ntdll, NtQueryAttributesFile),
+	HOOK(ntdll, NtQueryFullAttributesFile),
+	HOOK(ntdll, NtCreateFile),
     HOOK(ntdll, NtOpenFile),
     HOOK(ntdll, NtReadFile),
     HOOK(ntdll, NtWriteFile),
@@ -393,7 +395,7 @@ static hook_t g_hooks[] = {
 // get a random hooking method, except for hook_jmp_direct
 //#define HOOKTYPE randint(HOOK_NOP_JMP_DIRECT, HOOK_MOV_EAX_INDIRECT_PUSH_RETN)
 // error testing with hook_jmp_direct only
-#define HOOKTYPE HOOK_JMP_INDIRECT
+#define HOOKTYPE HOOK_HOTPATCH_JMP_INDIRECT
 
 void set_hooks_dll(const wchar_t *library)
 {

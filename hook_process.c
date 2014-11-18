@@ -37,17 +37,6 @@ HOOKDEF(HANDLE, WINAPI, CreateToolhelp32Snapshot,
 	return ret;
 }
 
-HOOKDEF(BOOL, WINAPI, Process32FirstW,
-	__in HANDLE hSnapshot,
-	__out LPPROCESSENTRY32W lppe
-) {
-	BOOL ret = Old_Process32FirstW(hSnapshot, lppe);
-
-	LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
-
-	return ret;
-}
-
 HOOKDEF(BOOL, WINAPI, Process32NextW,
 	__in HANDLE hSnapshot,
 	__out LPPROCESSENTRY32W lppe
@@ -56,9 +45,31 @@ HOOKDEF(BOOL, WINAPI, Process32NextW,
 
 	LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
 
+	/* skip returning protected processes */
+	while (ret && lppe && is_protected_pid(lppe->th32ProcessID)) {
+		ret = Old_Process32NextW(hSnapshot, lppe);
+		LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
+	}
+
 	return ret;
 }
 
+HOOKDEF(BOOL, WINAPI, Process32FirstW,
+	__in HANDLE hSnapshot,
+	__out LPPROCESSENTRY32W lppe
+	) {
+	BOOL ret = Old_Process32FirstW(hSnapshot, lppe);
+
+	LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
+
+	/* skip returning protected processes */
+	while (ret && lppe && is_protected_pid(lppe->th32ProcessID)) {
+		ret = Old_Process32NextW(hSnapshot, lppe);
+		LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
+	}
+
+	return ret;
+}
 
 HOOKDEF(NTSTATUS, WINAPI, NtCreateProcess,
     __out       PHANDLE ProcessHandle,
@@ -192,7 +203,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,
         NTSTATUS ret = STATUS_ACCESS_DENIED;
         LOQ_ntstatus("process", "ppl", "ProcessHandle", NULL, "DesiredAccess", DesiredAccess,
             "ProcessIdentifier", pid);
-        return STATUS_ACCESS_DENIED;
+        return ret;
     }
 
     NTSTATUS ret = Old_NtOpenProcess(ProcessHandle, DesiredAccess,

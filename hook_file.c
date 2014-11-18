@@ -250,7 +250,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
 		"IoControlCode", IoControlCode,
         "InputBuffer", InputBufferLength, InputBuffer,
         "OutputBuffer", IoStatusBlock->Information, OutputBuffer);
-    return ret;
+
+	/* Fake harddrive size to 256GB */
+	if (OutputBuffer && OutputBufferLength >= sizeof(GET_LENGTH_INFORMATION) && IoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
+		((PGET_LENGTH_INFORMATION)OutputBuffer)->Length.QuadPart = 256060514304L;
+	}
+
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryFile,
@@ -294,6 +300,24 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryInformationFile,
 	LOQ_ntstatus("filesystem", "pib", "FileHandle", FileHandle, "FileInformationClass", FileInformationClass,
         "FileInformation", IoStatusBlock->Information, FileInformation);
     return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtQueryAttributesFile,
+	__in   POBJECT_ATTRIBUTES ObjectAttributes,
+	__out  PFILE_BASIC_INFORMATION FileInformation
+) {
+	NTSTATUS ret = Old_NtQueryAttributesFile(ObjectAttributes, FileInformation);
+	LOQ_ntstatus("filesystem", "O", "FileName", ObjectAttributes);
+	return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtQueryFullAttributesFile,
+	__in   POBJECT_ATTRIBUTES ObjectAttributes,
+	__out  PFILE_NETWORK_OPEN_INFORMATION FileInformation
+) {
+	NTSTATUS ret = Old_NtQueryFullAttributesFile(ObjectAttributes, FileInformation);
+	LOQ_ntstatus("filesystem", "O", "FileName", ObjectAttributes);
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtSetInformationFile,

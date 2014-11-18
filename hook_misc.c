@@ -124,15 +124,20 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
     __out_opt    LPDWORD lpBytesReturned,
     __inout_opt  LPOVERLAPPED lpOverlapped
 ) {
-
-    BOOL ret = Old_DeviceIoControl(hDevice, dwIoControlCode, lpInBuffer,
-        nInBufferSize, lpOutBuffer, nOutBufferSize, lpBytesReturned,
-        lpOverlapped);
+	BOOL ret = Old_DeviceIoControl(hDevice, dwIoControlCode, lpInBuffer,
+		nInBufferSize, lpOutBuffer, nOutBufferSize, lpBytesReturned,
+		lpOverlapped);
     LOQ_bool("device", "ppbb", "DeviceHandle", hDevice, "IoControlCode", dwIoControlCode,
         "InBuffer", nInBufferSize, lpInBuffer,
         "OutBuffer", lpBytesReturned ? *lpBytesReturned : nOutBufferSize,
             lpOutBuffer);
-    return ret;
+
+	/* Fake harddrive size to 256GB */
+	if (lpOutBuffer && nOutBufferSize >= sizeof(GET_LENGTH_INFORMATION) && dwIoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
+		((PGET_LENGTH_INFORMATION)lpOutBuffer)->Length.QuadPart = 256060514304L;
+	}
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, ExitWindowsEx,

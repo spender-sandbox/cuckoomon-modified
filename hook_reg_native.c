@@ -158,7 +158,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryValueKey,
         KeyValueInformationClass, KeyValueInformation, Length, ResultLength);
     if(NT_SUCCESS(ret) && KeyValueInformation && 
             *ResultLength >= sizeof(ULONG) * 3) {
-        ULONG Type, DataLength = 0; UCHAR *Data = NULL;
+		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+		wchar_t *keypath = get_full_keyvalue_pathUS(KeyHandle, ValueName, keybuf, allocsize);
+		ULONG Type, DataLength = 0; UCHAR *Data = NULL;
 
         // someday add support for Name and NameLength, if there's use for it
 
@@ -176,9 +179,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryValueKey,
             Data = p->Data;
         }
 
-        LOQ_ntstatus("registry", "polRk", "KeyHandle", KeyHandle, "ValueName", ValueName,
+        LOQ_ntstatus("registry", "polRu", "KeyHandle", KeyHandle, "ValueName", ValueName,
             "Type", Type, "Information", Type, DataLength, Data,
-			"FullName", KeyHandle, ValueName);
+			"FullName", keypath);
+
+		// fake the vendor name
+		if (keypath && Data && DataLength >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(Data, "QEMU HARDDISK", 13)) {
+			memcpy(Data, "DELL", 4);
+		}
+
+		free(keybuf);
 	}
     else {
         LOQ_ntstatus("registry", "pok", "KeyHandle", KeyHandle, "ValueName", ValueName,
