@@ -49,6 +49,28 @@ void file_init()
     lookup_init(&g_files);
 }
 
+static void new_file_path_ascii(const char *fname)
+{
+	char *absolutename = malloc(32768);
+	if (absolutename != NULL) {
+		unsigned int len;
+		ensure_absolute_ascii_path(absolutename, fname);
+		len = strlen(absolutename);
+		pipe("FILE_NEW:%s", len, absolutename);
+	}
+}
+
+static void new_file_path_unicode(const wchar_t *fname)
+{
+	wchar_t *absolutename = malloc(32768 * sizeof(wchar_t));
+	if (absolutename != NULL) {
+		unsigned int len;
+		ensure_absolute_unicode_path(absolutename, fname);
+		len = lstrlenW(absolutename);
+		pipe("FILE_NEW:%S", len, absolutename);
+	}
+}
+
 static void new_file(const UNICODE_STRING *obj)
 {
     const wchar_t *str = obj->Buffer;
@@ -463,6 +485,10 @@ HOOKDEF(BOOL, WINAPI, CopyFileA,
         bFailIfExists);
 	LOQ_bool("filesystem", "ff", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName);
+
+	if (ret)
+		new_file_path_ascii(lpNewFileName);
+
     return ret;
 }
 
@@ -475,7 +501,11 @@ HOOKDEF(BOOL, WINAPI, CopyFileW,
         bFailIfExists);
 	LOQ_bool("filesystem", "FF", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName);
-    return ret;
+
+	if (ret)
+		new_file_path_unicode(lpNewFileName);
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, CopyFileExW,
@@ -490,7 +520,11 @@ HOOKDEF(BOOL, WINAPI, CopyFileExW,
         lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
 	LOQ_bool("filesystem", "FFl", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName, "CopyFlags", dwCopyFlags);
-    return ret;
+
+	if (ret)
+		new_file_path_unicode(lpNewFileName);
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, DeleteFileA,
