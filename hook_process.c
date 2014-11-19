@@ -372,11 +372,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtUnmapViewOfSection,
         map_size = mbi.RegionSize;
     }
     NTSTATUS ret = Old_NtUnmapViewOfSection(ProcessHandle, BaseAddress);
-    //if(NT_SUCCESS(ret)) {
-    //    pipe("UNMAP:%d,%x,%x", pid_from_process_handle(ProcessHandle),
-    //        BaseAddress, map_size);
-    //}
-    return ret;
+
+	LOQ_ntstatus("process", "ppp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+		"RegionSize", map_size);
+
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
