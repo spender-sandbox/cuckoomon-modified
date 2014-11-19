@@ -481,13 +481,37 @@ LONG WINAPI cuckoomon_exception_handler(
 }
 #endif
 
+static void notify_successful_load(void)
+{
+	// notify analyzer.py that we've loaded
+	char name[64];
+	sprintf(name, "CuckooEvent%u", GetCurrentProcessId());
+	HANDLE event_handle = OpenEvent(EVENT_ALL_ACCESS, FALSE, name);
+	if (event_handle != NULL) {
+		SetEvent(event_handle);
+		CloseHandle(event_handle);
+	}
+}
+
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
-	unsigned int i;
-	DWORD pids[MAX_PROTECTED_PIDS];
-	unsigned int length = sizeof(pids);
-
     if(dwReason == DLL_PROCESS_ATTACH) {
+		unsigned int i;
+		DWORD pids[MAX_PROTECTED_PIDS];
+		unsigned int length = sizeof(pids);
+
+		/* we can sometimes be injected twice into a process, say if we queued up an APC that we timed out waiting to
+		   complete, and then did a successful createremotethread, so just do a cheap check for our hooks and fake that
+		   we loaded successfully
+		*/
+#if HOOKTYPE != HOOK_HOTPATCH_JMP_INDIRECT
+#error Update hook check
+#endif
+		if (((PUCHAR)ExitProcess)[0] == 0x8b && ((PUCHAR)ExitProcess)[1] == 0xff && ((PUCHAR)ExitProcess)[2] == 0xff && ((PUCHAR)ExitProcess)[3] == 0x25) {
+			notify_successful_load();
+			return TRUE;
+		}
+
 		resolve_runtime_apis();
 
         // there's a small list of processes which we don't want to inject
@@ -547,14 +571,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         // initialize all hooks
         set_hooks();
 
-        // notify analyzer.py that we've loaded
-        char name[64];
-        sprintf(name, "CuckooEvent%u", GetCurrentProcessId());
-        HANDLE event_handle = OpenEvent(EVENT_ALL_ACCESS, FALSE, name);
-        if(event_handle != NULL) {
-            SetEvent(event_handle);
-            CloseHandle(event_handle);
-        }
+		notify_successful_load();
     }
     else if(dwReason == DLL_PROCESS_DETACH) {
         log_free();
