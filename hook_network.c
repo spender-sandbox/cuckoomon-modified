@@ -249,6 +249,28 @@ HOOKDEF(BOOL, WINAPI, InternetCloseHandle,
     return ret;
 }
 
+HOOKDEF(BOOL, WINAPI, InternetCrackUrlA,
+	_In_ LPCSTR lpszUrl,
+	_In_ DWORD dwUrlLength,
+	_In_ DWORD dwFlags,
+	_Inout_ LPURL_COMPONENTSA lpUrlComponents
+) {
+	BOOL ret = Old_InternetCrackUrlA(lpszUrl, dwUrlLength, dwFlags, lpUrlComponents);
+	LOQ_bool("network", "s", "Url", lpszUrl);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, InternetCrackUrlW,
+	_In_ LPCWSTR lpszUrl,
+	_In_ DWORD dwUrlLength,
+	_In_ DWORD dwFlags,
+	_Inout_ LPURL_COMPONENTSW lpUrlComponents
+	) {
+	BOOL ret = Old_InternetCrackUrlW(lpszUrl, dwUrlLength, dwFlags, lpUrlComponents);
+	LOQ_bool("network", "u", "Url", lpszUrl);
+	return ret;
+}
+
 HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_A,
     __in         PCSTR lpstrName,
     __in         WORD wType,

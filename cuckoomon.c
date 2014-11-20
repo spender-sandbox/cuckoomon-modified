@@ -300,6 +300,8 @@ static hook_t g_hooks[] = {
     HOOK(wininet, InternetReadFile),
     HOOK(wininet, InternetWriteFile),
     HOOK(wininet, InternetCloseHandle),
+	HOOK(wininet, InternetCrackUrlA),
+	HOOK(wininet, InternetCrackUrlW),
 
     HOOK(dnsapi, DnsQuery_A),
     HOOK(dnsapi, DnsQuery_UTF8),

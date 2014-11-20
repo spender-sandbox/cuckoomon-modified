@@ -1215,6 +1215,20 @@ extern HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlW,
     __in  DWORD_PTR dwContext
 );
 
+extern HOOKDEF(BOOL, WINAPI, InternetCrackUrlA,
+	_In_ LPCSTR lpszUrl,
+	_In_ DWORD dwUrlLength,
+	_In_ DWORD dwFlags,
+	_Inout_ LPURL_COMPONENTSA lpUrlComponents
+);
+
+extern HOOKDEF(BOOL, WINAPI, InternetCrackUrlW,
+	_In_ LPCWSTR lpszUrl,
+	_In_ DWORD dwUrlLength,
+	_In_ DWORD dwFlags,
+	_Inout_ LPURL_COMPONENTSW lpUrlComponents
+);
+
 extern HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
     __in  HINTERNET hConnect,
     __in  LPCTSTR lpszVerb,
