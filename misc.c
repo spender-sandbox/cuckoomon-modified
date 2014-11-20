@@ -474,14 +474,14 @@ out:
 
 wchar_t *get_full_keyvalue_pathA(HKEY registry, const char *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {
-	if (in && strlen(in))
+	if (in && in[0] != '\0')
 		return get_full_key_pathA(registry, in, keybuf, len);
 	else
 		return get_full_key_pathA(registry, "(Default)", keybuf, len);
 }
 wchar_t *get_full_keyvalue_pathW(HKEY registry, const wchar_t *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {
-	if (in && wcslen(in))
+	if (in && in[0] != L'\0')
 		return get_full_key_pathW(registry, in, keybuf, len);
 	else
 		return get_full_key_pathW(registry, L"(Default)", keybuf, len);
@@ -504,33 +504,24 @@ wchar_t *get_full_keyvalue_pathUS(HKEY registry, const PUNICODE_STRING in, PKEY_
 
 wchar_t *get_full_key_pathA(HKEY registry, const char *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {
-	OBJECT_ATTRIBUTES objattr;
-	UNICODE_STRING keystr;
+	wchar_t *widein = NULL;
 	const char *p;
 	wchar_t *u;
+	unsigned int widelen = 0;
 	wchar_t *ret;
 
-	memset(&objattr, 0, sizeof(objattr));
-
-	keystr.Buffer = malloc(MAX_KEY_BUFLEN);
-	keystr.MaximumLength = MAX_KEY_BUFLEN;
-	objattr.ObjectName = &keystr;
-
 	if (in) {
-		for (p = in, u = objattr.ObjectName->Buffer; *p; p++, u++) {
+		widelen = (strlen(in) + 1) * sizeof(wchar_t);
+		widein = calloc(1, widelen);
+		for (u = widein, p = in; *p; p++, u++)
 			*u = (wchar_t)(unsigned short)*p;
-		}
-		keystr.Length = (unsigned short)(p - in) * sizeof(wchar_t);
-	}
-	else {
-		keystr.Buffer[0] = L'\0';
-		keystr.Length = 0;
 	}
 
-	objattr.RootDirectory = registry;
+	ret = get_full_key_pathW(registry, widein, keybuf, len);
 
-	ret = get_key_path(&objattr, keybuf, len);
-	free(keystr.Buffer);
+	if (widein)
+		free(widein);
+
 	return ret;
 }
 
@@ -538,17 +529,27 @@ wchar_t *get_full_key_pathW(HKEY registry, const wchar_t *in, PKEY_NAME_INFORMAT
 {
 	OBJECT_ATTRIBUTES objattr;
 	UNICODE_STRING keystr;
+	const wchar_t *p;
+	wchar_t *u;
 	wchar_t *ret;
+	unsigned short idx = 0;
 
 	memset(&objattr, 0, sizeof(objattr));
 
-	keystr.Buffer = malloc(MAX_KEY_BUFLEN);
+	keystr.Buffer = calloc(1, MAX_KEY_BUFLEN);
 	keystr.MaximumLength = MAX_KEY_BUFLEN;
 	objattr.ObjectName = &keystr;
 
 	if (in) {
-		wcscpy(keystr.Buffer, in);
-		keystr.Length = lstrlenW(keystr.Buffer) * sizeof(wchar_t);
+		for (p = in, u = keystr.Buffer; *p && idx < (MAX_KEY_BUFLEN / sizeof(wchar_t) - 1); p++, u++, idx++) {
+			*u = *p;
+			// normalize duplicate backslashes in the user-provided string as the registry APIs will use them without error
+			if (*p == L'\\') {
+				while (*(p + 1) == L'\\')
+					p++;
+			}
+		}
+		keystr.Length = idx * sizeof(wchar_t);
 	}
 	else {
 		keystr.Buffer[0] = L'\0';
