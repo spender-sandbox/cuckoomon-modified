@@ -254,6 +254,12 @@ extern HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceW,
     _Out_  LPDWORD lpTotalNumberOfClusters
 );
 
+extern HOOKDEF(BOOL, WINAPI, GetVolumeNameForVolumeMountPointW,
+	_In_ LPCWSTR lpszVolumeMountPoint,
+	_Out_ LPWSTR lpszVolumeName,
+	_In_ DWORD cchBufferLength
+);
+
 //
 // Registry Hooks
 //

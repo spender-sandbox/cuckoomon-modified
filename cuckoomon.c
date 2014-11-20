@@ -112,6 +112,8 @@ static hook_t g_hooks[] = {
     HOOK(kernel32, GetDiskFreeSpaceA),
     HOOK(kernel32, GetDiskFreeSpaceW),
 
+	HOOK(kernel32, GetVolumeNameForVolumeMountPointW),
+
     //
     // Registry Hooks
     //

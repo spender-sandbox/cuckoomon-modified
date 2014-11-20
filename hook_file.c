@@ -609,3 +609,13 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceW,
 	LOQ_bool("filesystem", "u", "RootPathName", lpRootPathName);
     return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, GetVolumeNameForVolumeMountPointW,
+	_In_ LPCWSTR lpszVolumeMountPoint,
+	_Out_ LPWSTR lpszVolumeName,
+	_In_ DWORD cchBufferLength
+) {
+	BOOL ret = Old_GetVolumeNameForVolumeMountPointW(lpszVolumeMountPoint, lpszVolumeName, cchBufferLength);
+	LOQ_bool("filesystem", "uu", "VolumeMountPoint", lpszVolumeMountPoint, "VolumeName", lpszVolumeName);
+	return ret;
+}
