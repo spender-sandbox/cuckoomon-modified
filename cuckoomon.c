@@ -218,7 +218,7 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtMakePermanentObject),
     HOOK(ntdll, NtOpenSection),
     //HOOK(kernel32, CreateProcessInternalW),
-    HOOK(ntdll, ZwMapViewOfSection),
+    HOOK(ntdll, NtMapViewOfSection),
     HOOK(kernel32, ExitProcess),
 
     // all variants of ShellExecute end up in ShellExecuteExW

@@ -208,7 +208,7 @@ HOOKDEF(BOOL, WINAPI, WriteConsoleW,
     return ret;
 }
 
-HOOKDEF(NTSTATUS, WINAPI, ZwMapViewOfSection,
+HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
     _In_     HANDLE SectionHandle,
     _In_     HANDLE ProcessHandle,
     __inout  PVOID *BaseAddress,
@@ -220,7 +220,7 @@ HOOKDEF(NTSTATUS, WINAPI, ZwMapViewOfSection,
     __in     ULONG AllocationType,
     __in     ULONG Win32Protect
 ) {
-    NTSTATUS ret = Old_ZwMapViewOfSection(SectionHandle, ProcessHandle,
+    NTSTATUS ret = Old_NtMapViewOfSection(SectionHandle, ProcessHandle,
         BaseAddress, ZeroBits, CommitSize, SectionOffset, ViewSize,
         InheritDisposition, AllocationType, Win32Protect);
     LOQ_ntstatus("process", "ppPpPp", "SectionHandle", SectionHandle,
