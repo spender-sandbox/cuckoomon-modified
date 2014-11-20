@@ -24,6 +24,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "pipe.h"
 
+HOOKDEF(HRESULT, WINAPI, ObtainUserAgentString,
+	_In_ DWORD dwOption,
+	_Out_ LPCSTR *pcszUAOut,
+	_Out_ DWORD *cbSize
+) {
+	HRESULT ret = Old_ObtainUserAgentString(dwOption, pcszUAOut, cbSize);
+	LOQ_hresult("network", "s", "UserAgent", pcszUAOut ? *pcszUAOut : "");
+	return ret;
+}
 
 HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
     LPUNKNOWN pCaller,

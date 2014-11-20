@@ -114,6 +114,8 @@ static hook_t g_hooks[] = {
 
 	HOOK(kernel32, GetVolumeNameForVolumeMountPointW),
 
+	HOOK(shell32, SHGetFolderPathW),
+
     //
     // Registry Hooks
     //
@@ -288,6 +290,7 @@ static hook_t g_hooks[] = {
     //
 
     HOOK(urlmon, URLDownloadToFileW),
+	HOOK(urlmon, ObtainUserAgentString),
 	HOOK(wininet, InternetGetConnectedState),
     HOOK(wininet, InternetOpenA),
     HOOK(wininet, InternetOpenW),

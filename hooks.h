@@ -260,6 +260,14 @@ extern HOOKDEF(BOOL, WINAPI, GetVolumeNameForVolumeMountPointW,
 	_In_ DWORD cchBufferLength
 );
 
+extern HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
+	_In_ HWND hwndOwner,
+	_In_ int nFolder,
+	_In_ HANDLE hToken,
+	_In_ DWORD dwFlags,
+	_Out_ LPWSTR pszPath
+);
+
 //
 // Registry Hooks
 //
@@ -1151,6 +1159,12 @@ extern HOOKDEF(BOOL, WINAPI, GetUserNameW,
 //
 // Network Hooks
 //
+
+extern HOOKDEF(HRESULT, WINAPI, ObtainUserAgentString,
+	_In_ DWORD dwOption,
+	_Out_ LPCSTR *pcszUAOut,
+	_Out_ DWORD *cbSize
+);
 
 extern HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
     LPUNKNOWN pCaller,

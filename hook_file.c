@@ -619,3 +619,15 @@ HOOKDEF(BOOL, WINAPI, GetVolumeNameForVolumeMountPointW,
 	LOQ_bool("filesystem", "uu", "VolumeMountPoint", lpszVolumeMountPoint, "VolumeName", lpszVolumeName);
 	return ret;
 }
+
+HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
+	_In_ HWND hwndOwner,
+	_In_ int nFolder,
+	_In_ HANDLE hToken,
+	_In_ DWORD dwFlags,
+	_Out_ LPWSTR pszPath
+) {
+	HRESULT ret = Old_SHGetFolderPathW(hwndOwner, nFolder, hToken, dwFlags, pszPath);
+	LOQ_hresult("filesystem", "pu", "Folder", nFolder, "Path", pszPath);
+	return ret;
+}

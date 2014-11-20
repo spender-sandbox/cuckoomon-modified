@@ -22,41 +22,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "log.h"
 
-static char *get_alg_name(char *buf, ALG_ID AlgId)
-{
-	switch (AlgId) {
-	case CALG_MD2:
-		return "MD2";
-	case CALG_MD5:
-		return "MD5";
-	case CALG_SHA1:
-		return "SHA1";
-	case CALG_MAC:
-		return "MAC";
-	case CALG_HMAC:
-		return "HMAC";
-	case CALG_SSL3_SHAMD5:
-		return "SSL3 Client Authentication";
-	case CALG_RSA_SIGN:
-		return "RSA Public Key Signature";
-	case CALG_RSA_KEYX:
-		return "RSA Public Key Exchange";
-	case CALG_RC2:
-		return "RC2";
-	case CALG_RC4:
-		return "RC4";
-	case CALG_DES:
-		return "DES";
-	case CALG_3DES:
-		return "3DES";
-	case CALG_3DES_112:
-		return "Two-key 3DES";
-	default:
-		sprintf(buf, "0x%08X", AlgId);
-		return buf;
-	}
-}
-
 HOOKDEF(BOOL, WINAPI, CryptAcquireContextA,
 	_Out_	  HCRYPTPROV *phProv,
 	_In_	  LPCSTR pszContainer,
@@ -287,9 +252,8 @@ HOOKDEF(BOOL, WINAPI, CryptGenKey,
 	_In_   DWORD dwFlags,
 	_Out_  HCRYPTKEY *phKey
 ) {
-	char algname[11];
 	BOOL ret = Old_CryptGenKey(hProv, Algid, dwFlags, phKey);
-	LOQ_bool("crypto", "s", "Algid", get_alg_name(algname, Algid));
+	LOQ_bool("crypto", "p", "Algid", Algid);
 	return ret;
 }
 
@@ -300,8 +264,7 @@ HOOKDEF(BOOL, WINAPI, CryptCreateHash,
 	_In_   DWORD dwFlags,
 	_Out_  HCRYPTHASH *phHash
 ) {
-	char algname[11];
 	BOOL ret = Old_CryptCreateHash(hProv, Algid, hKey, dwFlags, phHash);
-	LOQ_bool("crypto", "s", "Algid", get_alg_name(algname, Algid));
+	LOQ_bool("crypto", "p", "Algid", Algid);
 	return ret;
 }
