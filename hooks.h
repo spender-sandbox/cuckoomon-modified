@@ -1162,7 +1162,7 @@ extern HOOKDEF(BOOL, WINAPI, GetUserNameW,
 
 extern HOOKDEF(HRESULT, WINAPI, ObtainUserAgentString,
 	_In_ DWORD dwOption,
-	_Out_ LPCSTR *pcszUAOut,
+	_Out_ LPSTR pcszUAOut,
 	_Out_ DWORD *cbSize
 );
 

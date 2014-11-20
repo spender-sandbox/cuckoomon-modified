@@ -26,11 +26,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 HOOKDEF(HRESULT, WINAPI, ObtainUserAgentString,
 	_In_ DWORD dwOption,
-	_Out_ LPCSTR *pcszUAOut,
+	_Out_ LPSTR pcszUAOut,
 	_Out_ DWORD *cbSize
 ) {
 	HRESULT ret = Old_ObtainUserAgentString(dwOption, pcszUAOut, cbSize);
-	LOQ_hresult("network", "s", "UserAgent", pcszUAOut ? *pcszUAOut : "");
+	LOQ_hresult("network", "s", "UserAgent", pcszUAOut);
 	return ret;
 }
 
