@@ -82,7 +82,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     __in        DWORD dwCreationFlags,
     __in_opt    LPVOID lpEnvironment,
     __in_opt    LPWSTR lpCurrentDirectory,
-    __in        LPSTARTUPINFO lpStartupInfo,
+    __in        LPSTARTUPINFOW lpStartupInfo,
     __out       LPPROCESS_INFORMATION lpProcessInformation,
     __in_opt    LPVOID lpUnknown2
 ) {
@@ -106,12 +106,31 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     }
 
     if (hook_info()->depth_count == 1) {
-        LOQspecial_bool("process", "uupllpp", "ApplicationName", lpApplicationName,
-            "CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
-            "ProcessId", lpProcessInformation->dwProcessId,
-            "ThreadId", lpProcessInformation->dwThreadId,
-            "ProcessHandle", lpProcessInformation->hProcess,
-            "ThreadHandle", lpProcessInformation->hThread);
+		if (dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT) {
+			HANDLE ParentHandle = (HANDLE)0xffffffff;
+			unsigned int i;
+			LPSTARTUPINFOEXW lpExtStartupInfo = (LPSTARTUPINFOEXW)lpStartupInfo;
+			if (lpExtStartupInfo->lpAttributeList) {
+				for (i = 0; i < lpExtStartupInfo->lpAttributeList->Count; i++)
+					if (lpExtStartupInfo->lpAttributeList->Entries[i].Attribute & PARENT_PROCESS)
+						ParentHandle = *(HANDLE *)lpExtStartupInfo->lpAttributeList->Entries[i].lpValue;
+			}
+			LOQspecial_bool("process", "uupllppp", "ApplicationName", lpApplicationName,
+				"CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
+				"ProcessId", lpProcessInformation->dwProcessId,
+				"ThreadId", lpProcessInformation->dwThreadId,
+				"ParentHandle", ParentHandle,
+				"ProcessHandle", lpProcessInformation->hProcess,
+				"ThreadHandle", lpProcessInformation->hThread);
+		}
+		else {
+			LOQspecial_bool("process", "uupllpp", "ApplicationName", lpApplicationName,
+				"CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
+				"ProcessId", lpProcessInformation->dwProcessId,
+				"ThreadId", lpProcessInformation->dwThreadId,
+				"ProcessHandle", lpProcessInformation->hProcess,
+				"ThreadHandle", lpProcessInformation->hThread);
+		}
     }
 
     return ret;
