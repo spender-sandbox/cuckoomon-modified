@@ -84,7 +84,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateProcess,
     NTSTATUS ret = Old_NtCreateProcess(ProcessHandle, DesiredAccess,
         ObjectAttributes, ParentProcess, InheritObjectTable, SectionHandle,
         DebugPort, ExceptionPort);
-    LOQ_ntstatus("process", "PpO", "ProcessHandle", ProcessHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("process", "PppO", "ProcessHandle", ProcessHandle, "ParentHandle", ParentProcess, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes);
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d", pid_from_process_handle(*ProcessHandle));
@@ -107,7 +107,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateProcessEx,
     NTSTATUS ret = Old_NtCreateProcessEx(ProcessHandle, DesiredAccess,
         ObjectAttributes, ParentProcess, Flags, SectionHandle, DebugPort,
         ExceptionPort, InJob);
-    LOQ_ntstatus("process", "PpO", "ProcessHandle", ProcessHandle, "DesiredAccess", DesiredAccess,
+	LOQ_ntstatus("process", "PppO", "ProcessHandle", ProcessHandle, "ParentHandle", ParentProcess, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes);
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d", pid_from_process_handle(*ProcessHandle));
