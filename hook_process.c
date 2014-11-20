@@ -175,7 +175,7 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserProcess,
         ThreadSecurityDescriptor, ParentProcess, InheritHandles, DebugPort,
         ExceptionPort, ProcessInformation);
     LOQ_ntstatus("process", "opp", "ImagePath", ImagePath, "ObjectAttributes", ObjectAttributes,
-        "ParentProcess", ParentProcess);
+        "ParentHandle", ParentProcess);
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d,%d",
             pid_from_process_handle(ProcessInformation->ProcessHandle),
