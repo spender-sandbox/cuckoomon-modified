@@ -1315,6 +1315,13 @@ extern HOOKDEF(BOOL, WINAPI, InternetCloseHandle,
     _In_  HINTERNET hInternet
 );
 
+extern HOOKDEF(BOOL, WINAPI, InternetSetOptionA,
+	_In_ HINTERNET hInternet,
+	_In_ DWORD dwOption,
+	_In_ LPVOID lpBuffer,
+	_In_ DWORD dwBufferLength
+);
+
 extern HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_A,
     __in         PCSTR lpstrName,
     __in         WORD wType,

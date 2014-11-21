@@ -274,9 +274,21 @@ HOOKDEF(BOOL, WINAPI, InternetCrackUrlW,
 	_In_ DWORD dwUrlLength,
 	_In_ DWORD dwFlags,
 	_Inout_ LPURL_COMPONENTSW lpUrlComponents
-	) {
+) {
 	BOOL ret = Old_InternetCrackUrlW(lpszUrl, dwUrlLength, dwFlags, lpUrlComponents);
 	LOQ_bool("network", "u", "Url", lpszUrl);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, InternetSetOptionA,
+	_In_ HINTERNET hInternet,
+	_In_ DWORD dwOption,
+	_In_ LPVOID lpBuffer,
+	_In_ DWORD dwBufferLength
+) {
+	BOOL ret = Old_InternetSetOptionA(hInternet, dwOption, lpBuffer, dwBufferLength);
+	// when logging the buffer, remember the special handling of dwBufferLength when lpBuffer holds a string vs other content
+	LOQ_bool("network", "pp", "InternetHandle", hInternet, "Option", dwOption);
 	return ret;
 }
 
