@@ -43,13 +43,14 @@ HOOKDEF(BOOL, WINAPI, Process32NextW,
 	) {
 	BOOL ret = Old_Process32NextW(hSnapshot, lppe);
 
-	LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
-
 	/* skip returning protected processes */
-	while (ret && lppe && is_protected_pid(lppe->th32ProcessID)) {
-		ret = Process32NextW(hSnapshot, lppe);
+	while (ret && lppe && is_protected_pid(lppe->th32ProcessID))
+		ret = Old_Process32NextW(hSnapshot, lppe);
+
+	if (ret)
 		LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
-	}
+	else
+		LOQ_bool("process", "");
 
 	return ret;
 }
@@ -60,13 +61,14 @@ HOOKDEF(BOOL, WINAPI, Process32FirstW,
 	) {
 	BOOL ret = Old_Process32FirstW(hSnapshot, lppe);
 
-	LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
-
 	/* skip returning protected processes */
-	while (ret && lppe && is_protected_pid(lppe->th32ProcessID)) {
-		ret = Process32NextW(hSnapshot, lppe);
+	while (ret && lppe && is_protected_pid(lppe->th32ProcessID))
+		ret = Old_Process32NextW(hSnapshot, lppe);
+
+	if (ret)
 		LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
-	}
+	else
+		LOQ_bool("process", "");
 
 	return ret;
 }
@@ -523,4 +525,60 @@ HOOKDEF(int, CDECL, system,
     int ret = Old_system(command);
     LOQ_nonnegone("process", "s", "Command", command);
     return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, WaitForDebugEvent,
+	__out LPDEBUG_EVENT lpDebugEvent,
+	__in DWORD dwMilliseconds
+) {
+	BOOL ret = Old_WaitForDebugEvent(lpDebugEvent, dwMilliseconds);
+
+	if (!ret)
+		return ret;
+
+	switch (lpDebugEvent->dwDebugEventCode) {
+	case CREATE_THREAD_DEBUG_EVENT:
+		LOQ_bool("process", "lllp", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "StartAddress", lpDebugEvent->u.CreateThread.lpStartAddress);
+		break;
+	case LOAD_DLL_DEBUG_EVENT:
+		// we could continue ourselves here and skip notification to the malware of cuckoomon loading
+		if (lpDebugEvent->u.LoadDll.fUnicode)
+			LOQ_bool("process", "lllu", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "DllPath", lpDebugEvent->u.LoadDll.lpImageName);
+		else
+			LOQ_bool("process", "llls", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "DllPath", lpDebugEvent->u.LoadDll.lpImageName);
+		break;
+	default:
+		LOQ_bool("process", "lll", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId);
+	}
+
+	return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, DbgUiWaitStateChange,
+	__out PDBGUI_WAIT_STATE_CHANGE StateChange,
+	__in_opt PLARGE_INTEGER Timeout)
+{
+	NTSTATUS ret = Old_DbgUiWaitStateChange(StateChange, Timeout);
+
+	if (NT_SUCCESS(ret)) {
+		switch (StateChange->NewState) {
+		case DbgCreateThreadStateChange:
+			LOQ_ntstatus("process", "lllp", "NewState", StateChange->NewState, "ProcessId", pid_from_process_handle(StateChange->AppClientId.UniqueProcess), "ThreadId", tid_from_thread_handle(StateChange->AppClientId.UniqueThread), "StartAddress", StateChange->StateInfo.CreateThread.NewThread.StartAddress);
+			break;
+		case DbgLoadDllStateChange:
+			{
+				wchar_t *fname = calloc(32768, sizeof(wchar_t));
+
+				path_from_handle(StateChange->StateInfo.LoadDll.FileHandle, fname, 32768);
+				// we could continue ourselves here and skip notification to the malware of cuckoomon loading
+				LOQ_ntstatus("process", "lllF", "NewState", StateChange->NewState, "ProcessId", pid_from_process_handle(StateChange->AppClientId.UniqueProcess), "ThreadId", tid_from_thread_handle(StateChange->AppClientId.UniqueThread), "DllPath", fname);
+				free(fname);
+			}
+			break;
+		default:
+			LOQ_ntstatus("process", "lll", "NewState", StateChange->NewState, "ProcessId", pid_from_process_handle(StateChange->AppClientId.UniqueProcess), "ThreadId", tid_from_thread_handle(StateChange->AppClientId.UniqueThread));
+		}
+	}
+
+	return ret;
 }

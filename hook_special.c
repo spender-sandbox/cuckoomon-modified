@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "pipe.h"
 #include "hook_sleep.h"
 #include "misc.h"
+#include "config.h"
 
 void set_hooks_dll(const wchar_t *library);
 
@@ -44,7 +45,11 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     NTSTATUS ret = Old2_LdrLoadDll(PathToFile, Flags, ModuleFileName,
         ModuleHandle);
 
-    if (hook_info()->depth_count == 1) {
+	/* Workaround for the case where we're being loaded twice in the same process
+	Logging the load could confuse a novice analyst into thinking there's unusual
+	activity when there's not, so hide it
+	*/
+	if (hook_info()->depth_count == 1 && wcsncmp(library.Buffer, g_config.dllpath, wcslen(g_config.dllpath))) {
 		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
 	        LOQspecial_ntstatus("system", "pFP", "Flags", Flags, "FileName", library.Buffer,
 		       "BaseAddress", ModuleHandle);

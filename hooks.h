@@ -828,6 +828,16 @@ extern HOOKDEF(VOID, WINAPI, ExitProcess,
     __in  UINT uExitCode
 );
 
+extern HOOKDEF(BOOL, WINAPI, WaitForDebugEvent,
+	__out LPDEBUG_EVENT lpDebugEvent,
+	__in DWORD dwMilliseconds
+);
+
+extern HOOKDEF(NTSTATUS, WINAPI, DbgUiWaitStateChange,
+	__out PDBGUI_WAIT_STATE_CHANGE StateChange,
+	__in_opt PLARGE_INTEGER Timeout
+);
+
 extern HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     __inout  SHELLEXECUTEINFOW *pExecInfo
 );

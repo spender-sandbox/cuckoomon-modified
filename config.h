@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-struct {
+struct _g_config {
     // name of the pipe to communicate with cuckoo
     char pipe_name[MAX_PATH];
 
@@ -26,7 +26,10 @@ struct {
     // analyzer directory, has to be hidden
     char analyzer[MAX_PATH];
 
-    // if this mutex exists then we're shutting down
+	// cuckoomon DLL directory
+	wchar_t dllpath[MAX_PATH];
+	
+	// if this mutex exists then we're shutting down
     char shutdown_mutex[MAX_PATH];
 
     // is this the first process or not?
@@ -44,6 +47,8 @@ struct {
     // server ip and port
     unsigned int host_ip;
     unsigned short host_port;
-} g_config;
+};
+
+extern struct _g_config g_config;
 
 int read_config(void);
