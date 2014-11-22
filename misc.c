@@ -490,14 +490,30 @@ wchar_t *get_full_keyvalue_pathUS(HKEY registry, const PUNICODE_STRING in, PKEY_
 {
 	wchar_t *ret;
 	if (in && in->Length) {
-		wchar_t *incpy = malloc(in->Length + (1 * sizeof(wchar_t)));
-		memcpy(incpy, in->Buffer, in->Length);
+		unsigned int numnulls = 0;
+		unsigned int i, x;
+
+		for (i = 0; i < in->Length / sizeof(wchar_t); i++) {
+			if (in->Buffer[i] == L'\0')
+				numnulls++;
+		}
+		wchar_t *incpy = malloc(in->Length + (numnulls * 4 * sizeof(wchar_t)) + (1 * sizeof(wchar_t)));
+		for (i = 0, x = 0; i < in->Length / sizeof(wchar_t); i++) {
+			if (in->Buffer[i] == L'\0') {
+				incpy[x++] = L'\\';
+				incpy[x++] = L'x';
+				incpy[x++] = L'0';
+				incpy[x++] = L'0';
+			}
+			else
+				incpy[x++] = in->Buffer[i];
+		}
 		incpy[in->Length / sizeof(wchar_t)] = L'\0';
 		ret = get_full_key_pathW(registry, incpy, keybuf, len);
 		free(incpy);
 	}
 	else {
-		ret = get_full_key_pathW(registry, L"(Null)", keybuf, len);
+		ret = get_full_key_pathW(registry, L"(Default)", keybuf, len);
 	}
 	return ret;
 }
