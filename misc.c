@@ -497,7 +497,7 @@ wchar_t *get_full_keyvalue_pathUS(HKEY registry, const PUNICODE_STRING in, PKEY_
 		free(incpy);
 	}
 	else {
-		ret = get_full_key_pathW(registry, L"(Default)", keybuf, len);
+		ret = get_full_key_pathW(registry, L"(Null)", keybuf, len);
 	}
 	return ret;
 }
