@@ -514,6 +514,18 @@ typedef struct _DBGUI_WAIT_STATE_CHANGE
 	} StateInfo;
 } DBGUI_WAIT_STATE_CHANGE, *PDBGUI_WAIT_STATE_CHANGE;
 
+#ifndef _MSC_VER
+typedef struct _STARTUPINFOEXA {
+	STARTUPINFOA StartupInfo;
+	LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList;
+} STARTUPINFOEXA, *LPSTARTUPINFOEXA;
+
+typedef struct _STARTUPINFOEXW {
+	STARTUPINFOW StartupInfo;
+	LPPROC_THREAD_ATTRIBUTE_LIST lpAttributeList;
+} STARTUPINFOEXW, *LPSTARTUPINFOEXW;
+#endif
+
 #if 0
 static inline unsigned int __readfsdword(unsigned int index)
 {
@@ -526,6 +538,10 @@ static inline void __writefsdword(unsigned int index, unsigned int value)
 {
     __asm__("movl %0, %%fs:(%1)" :: "r" (value), "r" (index));
 }
+#endif
+
+#ifndef HKEY_CURRENT_USER_LOCAL_SETTINGS
+(( HKEY ) (ULONG_PTR)((LONG)0x80000007) )
 #endif
 
 typedef struct _SECTION_IMAGE_INFORMATION {

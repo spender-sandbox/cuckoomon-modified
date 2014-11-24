@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include "ntapi.h"
-#include <MSWSock.h>
+#include <mswsock.h>
 #include "hooking.h"
 #include "log.h"
 

@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <ctype.h>
 #include "ntapi.h"
 #include <shlwapi.h>
-#include <Sddl.h>
+#include <sddl.h>
 #include "misc.h"
 #include "config.h"
 
@@ -601,6 +601,7 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 	unsigned int maxlen_chars = maxlen / sizeof(WCHAR);
 	unsigned int remaining;
 	unsigned int curlen;
+	HKEY rootkey;
 
 	if (ObjectAttributes == NULL || ObjectAttributes->ObjectName == NULL)
 		goto error;
@@ -614,38 +615,29 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 
 	keybuf->KeyName[0] = L'\0';
 	keybuf->KeyNameLength = 0;
-	switch ((ULONG_PTR)ObjectAttributes->RootDirectory) {
-	case HKEY_CLASSES_ROOT:
+
+	/* mingw doesn't like case statements with pointer values */
+	rootkey = (HKEY)ObjectAttributes->RootDirectory;
+	if (rootkey == HKEY_CLASSES_ROOT)
 		wcscpy(keybuf->KeyName, L"HKEY_CLASSES_ROOT");
-		break;
-	case HKEY_CURRENT_USER:
+	else if (rootkey == HKEY_CURRENT_USER)
 		wcscpy(keybuf->KeyName, L"HKEY_CURRENT_USER");
-		break;
-	case HKEY_LOCAL_MACHINE:
+	else if (rootkey == HKEY_LOCAL_MACHINE)
 		wcscpy(keybuf->KeyName, L"HKEY_LOCAL_MACHINE");
-		break;
-	case HKEY_USERS:
+	else if (rootkey == HKEY_USERS)
 		wcscpy(keybuf->KeyName, L"HKEY_USERS");
-		break;
-	case HKEY_PERFORMANCE_DATA:
+	else if (rootkey == HKEY_PERFORMANCE_DATA)
 		wcscpy(keybuf->KeyName, L"HKEY_PERFORMANCE_DATA");
-		break;
-	case HKEY_PERFORMANCE_TEXT:
+	else if (rootkey == HKEY_PERFORMANCE_TEXT)
 		wcscpy(keybuf->KeyName, L"HKEY_PERFORMANCE_TEXT");
-		break;
-	case HKEY_PERFORMANCE_NLSTEXT:
+	else if (rootkey == HKEY_PERFORMANCE_NLSTEXT)
 		wcscpy(keybuf->KeyName, L"HKEY_PERFORMANCE_NLSTEXT");
-		break;
-	case HKEY_CURRENT_CONFIG:
+	else if (rootkey == HKEY_CURRENT_CONFIG)
 		wcscpy(keybuf->KeyName, L"HKEY_CURRENT_CONFIG");
-		break;
-	case HKEY_DYN_DATA:
+	else if (rootkey == HKEY_DYN_DATA)
 		wcscpy(keybuf->KeyName, L"HKEY_DYN_DATA");
-		break;
-	case HKEY_CURRENT_USER_LOCAL_SETTINGS:
+	else if (rootkey == HKEY_CURRENT_USER_LOCAL_SETTINGS)
 		wcscpy(keybuf->KeyName, L"HKEY_CURRENT_USER_LOCAL_SETTINGS");
-		break;
-	}
 
 	keybuf->KeyNameLength = lstrlenW(keybuf->KeyName) * sizeof(wchar_t);
 	if (!keybuf->KeyNameLength) {
