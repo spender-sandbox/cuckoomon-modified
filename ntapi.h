@@ -514,7 +514,7 @@ typedef struct _DBGUI_WAIT_STATE_CHANGE
 	} StateInfo;
 } DBGUI_WAIT_STATE_CHANGE, *PDBGUI_WAIT_STATE_CHANGE;
 
-#ifndef _MSC_VER
+#if 0
 static inline unsigned int __readfsdword(unsigned int index)
 {
     unsigned int ret;

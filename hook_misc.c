@@ -246,7 +246,7 @@ HOOKDEF(BOOL, WINAPI, GetCursorPos,
     _Out_ LPPOINT lpPoint
 ) {
     BOOL ret = Old_GetCursorPos(lpPoint);
-	static LARGE_INTEGER last_skipped = { 0, 0 };
+	static LARGE_INTEGER last_skipped = { .QuadPart = 0ULL };
 
 	/* work around the fact that skipping sleeps prevents the human module from making the system look active */
 	if (lpPoint && time_skipped.QuadPart != last_skipped.QuadPart) {

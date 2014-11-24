@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <wininet.h>
 #include <mswsock.h>
 #include "ntapi.h"
-#include <TlHelp32.h>
+#include <tlhelp32.h>
 
 //
 // File Hooks

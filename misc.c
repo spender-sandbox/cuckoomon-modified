@@ -472,6 +472,36 @@ out:
 	return out;
 }
 
+static unsigned int get_encoded_unicode_string_len(const wchar_t *buf, USHORT len)
+{
+	unsigned int numnulls = 0;
+	unsigned int i;
+
+	for (i = 0; i < len / sizeof(wchar_t); i++) {
+		if (buf[i] == L'\0')
+			numnulls++;
+	}
+
+	return len + (numnulls * 4 * sizeof(wchar_t));
+}
+
+static void copy_encoded_unicode_string(wchar_t *out, const wchar_t *in, unsigned int origlen, unsigned int newlen)
+{
+	unsigned int i, x;
+
+	for (i = 0, x = 0; i < origlen / sizeof(wchar_t); i++) {
+		if (in[i] == L'\0') {
+			out[x++] = L'\\';
+			out[x++] = L'x';
+			out[x++] = L'0';
+			out[x++] = L'0';
+		}
+		else
+			out[x++] = in[i];
+	}
+	out[newlen / sizeof(wchar_t)] = L'\0';
+}
+
 wchar_t *get_full_keyvalue_pathA(HKEY registry, const char *in, PKEY_NAME_INFORMATION keybuf, unsigned int len)
 {
 	if (in && in[0] != '\0')
@@ -490,25 +520,9 @@ wchar_t *get_full_keyvalue_pathUS(HKEY registry, const PUNICODE_STRING in, PKEY_
 {
 	wchar_t *ret;
 	if (in && in->Length) {
-		unsigned int numnulls = 0;
-		unsigned int i, x;
-
-		for (i = 0; i < in->Length / sizeof(wchar_t); i++) {
-			if (in->Buffer[i] == L'\0')
-				numnulls++;
-		}
-		wchar_t *incpy = malloc(in->Length + (numnulls * 4 * sizeof(wchar_t)) + (1 * sizeof(wchar_t)));
-		for (i = 0, x = 0; i < in->Length / sizeof(wchar_t); i++) {
-			if (in->Buffer[i] == L'\0') {
-				incpy[x++] = L'\\';
-				incpy[x++] = L'x';
-				incpy[x++] = L'0';
-				incpy[x++] = L'0';
-			}
-			else
-				incpy[x++] = in->Buffer[i];
-		}
-		incpy[in->Length / sizeof(wchar_t)] = L'\0';
+		unsigned int newlen = get_encoded_unicode_string_len(in->Buffer, in->Length);
+		wchar_t *incpy = malloc(newlen + (1 * sizeof(wchar_t)));
+		copy_encoded_unicode_string(incpy, in->Buffer, in->Length, newlen);
 		ret = get_full_key_pathW(registry, incpy, keybuf, len);
 		free(incpy);
 	}
@@ -592,9 +606,9 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 		goto error;
 	if (ObjectAttributes->RootDirectory == NULL) {
 		unsigned int copylen = min(maxlen, ObjectAttributes->ObjectName->Length);
-		memcpy(keybuf->KeyName, ObjectAttributes->ObjectName->Buffer, copylen);
-		keybuf->KeyNameLength = copylen;
-		keybuf->KeyName[keybuf->KeyNameLength / sizeof(WCHAR)] = 0;
+		unsigned int newlen = get_encoded_unicode_string_len(ObjectAttributes->ObjectName->Buffer, copylen);
+		copy_encoded_unicode_string(keybuf->KeyName, ObjectAttributes->ObjectName->Buffer, copylen, newlen);
+		keybuf->KeyNameLength = newlen;
 		goto normal;
 	}
 
@@ -652,13 +666,14 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 		keybuf->KeyNameLength = (curlen + 9) * sizeof(WCHAR);
 	}
 	else {
-		if ((remaining * sizeof(WCHAR)) < ObjectAttributes->ObjectName->Length + (1 * sizeof(WCHAR)))
+		unsigned int newlen = get_encoded_unicode_string_len(ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
+
+		if ((remaining * sizeof(WCHAR)) < newlen + (1 * sizeof(WCHAR)))
 			goto error;
 
 		keybuf->KeyName[curlen++] = L'\\';
-		memcpy(keybuf->KeyName + curlen, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length);
-		keybuf->KeyName[curlen + (ObjectAttributes->ObjectName->Length / sizeof(WCHAR))] = L'\0';
-		keybuf->KeyNameLength = curlen * sizeof(WCHAR) + ObjectAttributes->ObjectName->Length;
+		copy_encoded_unicode_string(keybuf->KeyName + curlen, ObjectAttributes->ObjectName->Buffer, ObjectAttributes->ObjectName->Length, newlen);
+		keybuf->KeyNameLength = curlen * sizeof(WCHAR) + newlen;
 	}
 
 normal:

@@ -123,7 +123,7 @@ enum {
 #define COPY_UNICODE_STRING(local_name, param_name) \
     UNICODE_STRING local_name = {0}; wchar_t local_name##_buf[260] = {0}; \
     local_name.Buffer = local_name##_buf; \
-    if(param_name != NULL && param_name->MaximumLength < 520) { \
+    if (param_name != NULL && param_name->MaximumLength < 520) { \
         local_name.Length = param_name->Length; \
         local_name.MaximumLength = param_name->MaximumLength; \
         memcpy(local_name.Buffer, param_name->Buffer, \
