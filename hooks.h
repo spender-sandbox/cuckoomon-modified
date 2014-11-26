@@ -1170,6 +1170,30 @@ extern HOOKDEF(BOOL, WINAPI, GetUserNameW,
 // Network Hooks
 //
 
+extern HOOKDEF(BOOL, WINAPI, WinHttpSendRequest,
+	_In_      HINTERNET hRequest,
+	_In_opt_  LPCWSTR pwszHeaders,
+	_In_      DWORD dwHeadersLength,
+	_In_opt_  LPVOID lpOptional,
+	_In_      DWORD dwOptionalLength,
+	_In_      DWORD dwTotalLength,
+	_In_      DWORD_PTR dwContext
+);
+
+extern HOOKDEF(BOOL, WINAPI, WinHttpReceiveResponse,
+	_In_        HINTERNET hRequest,
+	_Reserved_  LPVOID lpReserved
+);
+
+extern HOOKDEF(BOOL, WINAPI, WinHttpQueryHeaders,
+	_In_      HINTERNET hRequest,
+	_In_      DWORD dwInfoLevel,
+	_In_opt_  LPCWSTR pwszName,
+	_Out_     LPVOID lpBuffer,
+	_Inout_   LPDWORD lpdwBufferLength,
+	_Inout_   LPDWORD lpdwIndex
+);
+
 extern HOOKDEF(HINTERNET, WINAPI, WinHttpOpen,
 	_In_opt_ LPCWSTR pwszUserAgent,
 	_In_ DWORD dwAccessType,

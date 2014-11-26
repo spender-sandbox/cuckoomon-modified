@@ -103,6 +103,46 @@ HOOKDEF(BOOL, WINAPI, WinHttpSetTimeouts,
 	return ret;
 }
 
+HOOKDEF(BOOL, WINAPI, WinHttpSendRequest,
+	_In_      HINTERNET hRequest,
+	_In_opt_  LPCWSTR pwszHeaders,
+	_In_      DWORD dwHeadersLength,
+	_In_opt_  LPVOID lpOptional,
+	_In_      DWORD dwOptionalLength,
+	_In_      DWORD dwTotalLength,
+	_In_      DWORD_PTR dwContext
+) {
+	BOOL ret = Old_WinHttpSendRequest(hRequest, pwszHeaders, dwHeadersLength, lpOptional, dwOptionalLength, dwTotalLength, dwContext);
+	if (dwHeadersLength == -1)
+		LOQ_bool("network", "pub", "InternetHandle", hRequest, "Headers", pwszHeaders, "Optional", dwOptionalLength, lpOptional);
+	else
+		LOQ_bool("network", "pbb", "InternetHandle", hRequest, "Headers", dwHeadersLength, pwszHeaders, "Optional", dwOptionalLength, lpOptional);
+
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, WinHttpReceiveResponse,
+	_In_        HINTERNET hRequest,
+	_Reserved_  LPVOID lpReserved
+) {
+	BOOL ret = Old_WinHttpReceiveResponse(hRequest, lpReserved);
+	LOQ_bool("network", "p", "InternetHandle", hRequest);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, WinHttpQueryHeaders,
+	_In_      HINTERNET hRequest,
+	_In_      DWORD dwInfoLevel,
+	_In_opt_  LPCWSTR pwszName,
+	_Out_     LPVOID lpBuffer,
+	_Inout_   LPDWORD lpdwBufferLength,
+	_Inout_   LPDWORD lpdwIndex
+) {
+	BOOL ret = Old_WinHttpQueryHeaders(hRequest, dwInfoLevel, pwszName, lpBuffer, lpdwBufferLength, lpdwIndex);
+	LOQ_bool("network", "p", "InternetHandle", hRequest);
+	return ret;
+}
+
 /* if servername is NULL, then this isn't network related, but for simplicity sake we'll log it as such */
 HOOKDEF(DWORD, WINAPI, NetUserGetInfo,
 	_In_ LPCWSTR servername,

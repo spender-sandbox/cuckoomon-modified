@@ -317,6 +317,9 @@ static hook_t g_hooks[] = {
 	HOOK(winhttp, WinHttpConnect),
 	HOOK(winhttp, WinHttpOpenRequest),
 	HOOK(winhttp, WinHttpSetTimeouts),
+	HOOK(winhttp, WinHttpQueryHeaders),
+	HOOK(winhttp, WinHttpSendRequest),
+	HOOK(winhttp, WinHttpReceiveResponse),
 
     HOOK(dnsapi, DnsQuery_A),
     HOOK(dnsapi, DnsQuery_UTF8),
