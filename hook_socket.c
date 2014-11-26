@@ -195,7 +195,7 @@ HOOKDEF(int, WSAAPI, setsockopt,
     __in  int optlen
 ) {
     int ret = Old_setsockopt(s, level, optname, optval, optlen);
-    LOQ_sockerr("network", "illb", "socket", s, "level", level, "optname", optname,
+    LOQ_sockerr("network", "ippb", "socket", s, "level", level, "optname", optname,
         "optval", optlen, optval);
     return ret;
 }
@@ -206,7 +206,7 @@ HOOKDEF(int, WSAAPI, ioctlsocket,
     __inout  u_long *argp
 ) {
     int ret = Old_ioctlsocket(s, cmd, argp);
-    LOQ_sockerr("network", "il", "socket", s, "command", cmd);
+    LOQ_sockerr("network", "ip", "socket", s, "command", cmd);
     return ret;
 }
 

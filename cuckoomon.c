@@ -30,8 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "unhook.h"
 
-#define REPORT_EXCEPTIONS 0
-
 // Allow debug mode to be turned on at compilation time.
 #ifdef CUCKOODBG
 #undef CUCKOODBG
@@ -342,6 +340,7 @@ static hook_t g_hooks[] = {
 	HOOK(kernel32, GetSystemTimeAsFileTime),
 	HOOK(kernel32, GetTickCount),
     HOOK(ntdll, NtQuerySystemTime),
+	HOOK(user32, GetLastInputInfo),
 
     //
     // Socket Hooks

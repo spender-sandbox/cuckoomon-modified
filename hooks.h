@@ -1449,6 +1449,10 @@ extern HOOKDEF(BOOL, WINAPI, DeleteService,
 // Sleep Hooks
 //
 
+extern HOOKDEF(BOOL, WINAPI, GetLastInputInfo,
+	_Out_ PLASTINPUTINFO plii
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    BOOLEAN Alertable,
     __in    PLARGE_INTEGER DelayInterval

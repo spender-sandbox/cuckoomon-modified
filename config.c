@@ -30,6 +30,7 @@ int read_config(void)
 	if (fp == NULL)
 		return 0;
 
+	g_config.force_sleepskip = -1;
 	while (fgets(buf, sizeof(buf), fp) != NULL)
 	{
         // cut off the newline

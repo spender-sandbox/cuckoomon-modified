@@ -66,8 +66,12 @@ HOOKDEF(LPTOP_LEVEL_EXCEPTION_FILTER, WINAPI, SetUnhandledExceptionFilter,
     BOOL ret = 1;
     LPTOP_LEVEL_EXCEPTION_FILTER res;
 
-    res = Old_SetUnhandledExceptionFilter(lpTopLevelExceptionFilter);
-    LOQ_bool("hooking", "");
+#if REPORT_EXCEPTIONS
+	res = NULL;
+#else
+	res = Old_SetUnhandledExceptionFilter(lpTopLevelExceptionFilter);
+#endif
+	LOQ_bool("hooking", "");
     return res;
 }
 

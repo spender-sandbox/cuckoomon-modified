@@ -37,6 +37,14 @@ static LARGE_INTEGER time_start;
 static int num_skipped = 0;
 static int num_small = 0;
 
+void disable_sleep_skip()
+{
+	if (sleep_skip_active && g_config.force_sleepskip < 1) {
+		pipe("INFO:Disabling sleep skipping.");
+		sleep_skip_active = 0;
+	}
+}
+
 HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    BOOLEAN Alertable,
     __in    PLARGE_INTEGER DelayInterval
@@ -46,14 +54,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 	unsigned long milli = (unsigned long)(interval / 10000);
 
     // do we want to skip this sleep?
-    if(sleep_skip_active != 0 && interval >= 0LL) {
+    if(interval >= 0LL) {
         FILETIME ft; LARGE_INTEGER li;
         GetSystemTimeAsFileTime(&ft);
         li.HighPart = ft.dwHighDateTime;
         li.LowPart = ft.dwLowDateTime;
 
         // check if we're still within the hardcoded limit
-        if(li.QuadPart < time_start.QuadPart + MAX_SLEEP_SKIP_DIFF * 10000) {
+        if(sleep_skip_active && (li.QuadPart < time_start.QuadPart + MAX_SLEEP_SKIP_DIFF * 10000)) {
             time_skipped.QuadPart += interval;
 
 			if (num_skipped < 20) {
@@ -66,9 +74,22 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 				num_skipped++;
 			}
             return ret;
-        }
+		}
+		/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
+		else if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
+			LARGE_INTEGER newint;
+			newint.QuadPart = -(10000 * 10000);
+			time_skipped.QuadPart -= interval - (10000 * 10000);
+			LOQ_ntstatus("system", "ls", "Milliseconds", milli, "Status", "Skipped");
+			return Old_NtDelayExecution(Alertable, &newint);
+		}
+		else if (g_config.force_sleepskip > 0) {
+			time_skipped.QuadPart += interval;
+			LOQ_ntstatus("system", "ls", "Milliseconds", milli, "Status", "Skipped");
+			return ret;
+		}
         else {
-            sleep_skip_active = 0;
+            disable_sleep_skip();
         }
     }
 	if (milli <= 10) {
@@ -156,12 +177,18 @@ HOOKDEF(void, WINAPI, GetSystemTimeAsFileTime,
 	return;
 }
 
-void disable_sleep_skip()
-{
-    if (sleep_skip_active && !g_config.force_sleepskip) {
-        pipe("INFO:Disabling sleep skipping.");
-        sleep_skip_active = 0;
-    }
+HOOKDEF(BOOL, WINAPI, GetLastInputInfo,
+	_Out_ PLASTINPUTINFO plii
+) {
+	BOOL ret = Old_GetLastInputInfo(plii);
+
+	LOQ_bool("system", "");
+
+	/* fake recent user activity */
+	if (plii && plii->cbSize == 8)
+		plii->dwTime = GetTickCount() + (DWORD)(time_skipped.QuadPart / 10000);
+
+	return ret;
 }
 
 void init_sleep_skip(int first_process)

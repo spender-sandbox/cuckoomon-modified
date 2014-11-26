@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "pipe.h"
 
 // this number can be changed if required to do so
-#define TLS_HOOK_INFO 0x44
+#define TLS_HOOK_INFO 0x4c
 
 // do not change this number
 #define TLS_LAST_ERROR 0x34

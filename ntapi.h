@@ -647,4 +647,6 @@ static __inline HANDLE handle_from_objattr(OBJECT_ATTRIBUTES *obj)
 	return obj != NULL ? obj->RootDirectory : (HANDLE)NULL;
 }
 
+#define REPORT_EXCEPTIONS 0
+
 #endif
