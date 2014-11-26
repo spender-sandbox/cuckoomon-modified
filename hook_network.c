@@ -24,6 +24,85 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "pipe.h"
 
+HOOKDEF(HINTERNET, WINAPI, WinHttpOpen,
+	_In_opt_ LPCWSTR pwszUserAgent,
+	_In_ DWORD dwAccessType,
+	_In_ LPCWSTR pwszProxyName,
+	_In_ LPCWSTR pwszProxyBypass,
+	_In_ DWORD dwFlags
+) {
+	HINTERNET ret = Old_WinHttpOpen(pwszUserAgent, dwAccessType, pwszProxyName, pwszProxyBypass, dwFlags);
+	LOQ_nonnull("network", "uuupp", "UserAgent", pwszUserAgent, "ProxyName", pwszProxyName, "ProxyBypass", pwszProxyBypass, "AccessType", dwAccessType, "Flags", dwFlags);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, WinHttpGetIEProxyConfigForCurrentUser,
+	_Inout_ LPVOID pProxyConfig // WINHTTP_CURRENT_USER_IE_PROXY_CONFIG *
+) {
+	BOOL ret = Old_WinHttpGetIEProxyConfigForCurrentUser(pProxyConfig);
+	LOQ_bool("network", "");
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, WinHttpGetProxyForUrl,
+	_In_ HINTERNET hSession,
+	_In_ LPCWSTR lpcwszUrl,
+	_In_ LPVOID pAutoProxyOptions, // WINHTTP_AUTOPROXY_OPTIONS *
+	_Out_ LPVOID pProxyInfo // WINHTTP_PROXY_INFO *
+) {
+	BOOL ret = Old_WinHttpGetProxyForUrl(hSession, lpcwszUrl, pAutoProxyOptions, pProxyInfo);
+	LOQ_bool("network", "pu", "SessionHandle", hSession, "Url", lpcwszUrl);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, WinHttpSetOption,
+	_In_ HINTERNET hInternet,
+	_In_ DWORD dwOption,
+	_In_ LPVOID lpBuffer,
+	_In_ DWORD dwBufferLength
+) {
+	BOOL ret = Old_WinHttpSetOption(hInternet, dwOption, lpBuffer, dwBufferLength);
+	LOQ_bool("network", "ppb", "InternetHandle", hInternet, "Option", dwOption, "Buffer", dwBufferLength, lpBuffer);
+	return ret;
+}
+
+HOOKDEF(HINTERNET, WINAPI, WinHttpConnect,
+	_In_ HINTERNET hSession,
+	_In_ LPCWSTR pswzServerName,
+	_In_ INTERNET_PORT nServerPort,
+	_Reserved_ DWORD dwReserved
+) {
+	HINTERNET ret = Old_WinHttpConnect(hSession, pswzServerName, nServerPort, dwReserved);
+	LOQ_nonnull("network", "pul", "SessionHandle", hSession, "ServerName", pswzServerName, "ServerPort", nServerPort);
+	return ret;
+}
+
+HOOKDEF(HINTERNET, WINAPI, WinHttpOpenRequest,
+	_In_  HINTERNET hConnect,
+	_In_  LPCWSTR pwszVerb,
+	_In_  LPCWSTR pwszObjectName,
+	_In_  LPCWSTR pwszVersion,
+	_In_  LPCWSTR pwszReferrer,
+	_In_  LPCWSTR *ppwszAcceptTypes,
+	_In_  DWORD dwFlags
+) {
+	HINTERNET ret = Old_WinHttpOpenRequest(hConnect, pwszVerb, pwszObjectName, pwszVersion, pwszReferrer, ppwszAcceptTypes, dwFlags);
+	LOQ_nonnull("network", "puuuup", "InternetHandle", hConnect, "Verb", pwszVerb, "ObjectName", pwszObjectName, "Version", pwszVersion, "Referrer", pwszReferrer, "Flags", dwFlags);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, WinHttpSetTimeouts,
+	_In_  HINTERNET hInternet,
+	_In_  int dwResolveTimeout,
+	_In_  int dwConnectTimeout,
+	_In_  int dwSendTimeout,
+	_In_  int dwReceiveTimeout
+) {
+	BOOL ret = Old_WinHttpSetTimeouts(hInternet, dwResolveTimeout, dwConnectTimeout, dwSendTimeout, dwReceiveTimeout);
+	LOQ_bool("network", "piiii", "InternetHandle", hInternet, "ResolveTimeout", dwResolveTimeout, "ConnectTimeout", dwConnectTimeout, "SendTimeout", dwSendTimeout, "ReceiveTimeout", dwReceiveTimeout);
+	return ret;
+}
+
 /* if servername is NULL, then this isn't network related, but for simplicity sake we'll log it as such */
 HOOKDEF(DWORD, WINAPI, NetUserGetInfo,
 	_In_ LPCWSTR servername,
@@ -35,7 +114,6 @@ HOOKDEF(DWORD, WINAPI, NetUserGetInfo,
 	LOQ_zero("network", "uul", "ServerName", servername, "UserName", username, "Level", level);
 	return ret;
 }
-
 
 HOOKDEF(HRESULT, WINAPI, ObtainUserAgentString,
 	_In_ DWORD dwOption,

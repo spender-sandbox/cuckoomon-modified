@@ -310,6 +310,14 @@ static hook_t g_hooks[] = {
 	HOOK(wininet, InternetCrackUrlW),
 	HOOK(wininet, InternetSetOptionA),
 
+	HOOK(winhttp, WinHttpOpen),
+	HOOK(winhttp, WinHttpGetIEProxyConfigForCurrentUser),
+	HOOK(winhttp, WinHttpGetProxyForUrl),
+	HOOK(winhttp, WinHttpSetOption),
+	HOOK(winhttp, WinHttpConnect),
+	HOOK(winhttp, WinHttpOpenRequest),
+	HOOK(winhttp, WinHttpSetTimeouts),
+
     HOOK(dnsapi, DnsQuery_A),
     HOOK(dnsapi, DnsQuery_UTF8),
     HOOK(dnsapi, DnsQuery_W),

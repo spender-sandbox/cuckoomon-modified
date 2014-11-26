@@ -1170,6 +1170,57 @@ extern HOOKDEF(BOOL, WINAPI, GetUserNameW,
 // Network Hooks
 //
 
+extern HOOKDEF(HINTERNET, WINAPI, WinHttpOpen,
+	_In_opt_ LPCWSTR pwszUserAgent,
+	_In_ DWORD dwAccessType,
+	_In_ LPCWSTR pwszProxyName,
+	_In_ LPCWSTR pwszProxyBypass,
+	_In_ DWORD dwFlags
+);
+
+extern HOOKDEF(BOOL, WINAPI, WinHttpGetIEProxyConfigForCurrentUser,
+	_Inout_ LPVOID pProxyConfig // WINHTTP_CURRENT_USER_IE_PROXY_CONFIG *
+);
+
+extern HOOKDEF(BOOL, WINAPI, WinHttpGetProxyForUrl,
+	_In_ HINTERNET hSession,
+	_In_ LPCWSTR lpcwszUrl,
+	_In_ LPVOID pAutoProxyOptions, // WINHTTP_AUTOPROXY_OPTIONS *
+	_Out_ LPVOID pProxyInfo // WINHTTP_PROXY_INFO *
+);
+
+extern HOOKDEF(BOOL, WINAPI, WinHttpSetOption,
+	_In_ HINTERNET hInternet,
+	_In_ DWORD dwOption,
+	_In_ LPVOID lpBuffer,
+	_In_ DWORD dwBufferLength
+);
+
+extern HOOKDEF(HINTERNET, WINAPI, WinHttpConnect,
+	_In_ HINTERNET hSession,
+	_In_ LPCWSTR pswzServerName,
+	_In_ INTERNET_PORT nServerPort,
+	_Reserved_ DWORD dwReserved
+);
+
+extern HOOKDEF(HINTERNET, WINAPI, WinHttpOpenRequest,
+	_In_  HINTERNET hConnect,
+	_In_  LPCWSTR pwszVerb,
+	_In_  LPCWSTR pwszObjectName,
+	_In_  LPCWSTR pwszVersion,
+	_In_  LPCWSTR pwszReferrer,
+	_In_  LPCWSTR *ppwszAcceptTypes,
+	_In_  DWORD dwFlags
+);
+
+extern HOOKDEF(BOOL, WINAPI, WinHttpSetTimeouts,
+	_In_  HINTERNET hInternet,
+	_In_  int dwResolveTimeout,
+	_In_  int dwConnectTimeout,
+	_In_  int dwSendTimeout,
+	_In_  int dwReceiveTimeout
+);
+
 extern HOOKDEF(DWORD, WINAPI, NetUserGetInfo,
 	_In_ LPCWSTR servername,
 	_In_ LPCWSTR username,
