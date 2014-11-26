@@ -177,6 +177,8 @@ HOOKDEF(void, WINAPI, GetSystemTimeAsFileTime,
 	return;
 }
 
+static int lastinput_called;
+
 HOOKDEF(BOOL, WINAPI, GetLastInputInfo,
 	_Out_ PLASTINPUTINFO plii
 ) {
@@ -184,8 +186,10 @@ HOOKDEF(BOOL, WINAPI, GetLastInputInfo,
 
 	LOQ_bool("system", "");
 
+	lastinput_called++;
+
 	/* fake recent user activity */
-	if (plii && plii->cbSize == 8)
+	if (lastinput_called > 2 && plii && plii->cbSize == 8)
 		plii->dwTime = GetTickCount() + (DWORD)(time_skipped.QuadPart / 10000);
 
 	return ret;
