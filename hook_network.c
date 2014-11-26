@@ -24,6 +24,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "pipe.h"
 
+/* if servername is NULL, then this isn't network related, but for simplicity sake we'll log it as such */
+HOOKDEF(DWORD, WINAPI, NetUserGetInfo,
+	_In_ LPCWSTR servername,
+	_In_ LPCWSTR username,
+	_In_ DWORD level,
+	_Out_ LPBYTE *bufptr
+) {
+	DWORD ret = Old_NetUserGetInfo(servername, username, level, bufptr);
+	LOQ_zero("network", "uul", "ServerName", servername, "UserName", username, "Level", level);
+	return ret;
+}
+
+
 HOOKDEF(HRESULT, WINAPI, ObtainUserAgentString,
 	_In_ DWORD dwOption,
 	_Out_ LPSTR pcszUAOut,

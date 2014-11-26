@@ -1170,6 +1170,13 @@ extern HOOKDEF(BOOL, WINAPI, GetUserNameW,
 // Network Hooks
 //
 
+extern HOOKDEF(DWORD, WINAPI, NetUserGetInfo,
+	_In_ LPCWSTR servername,
+	_In_ LPCWSTR username,
+	_In_ DWORD level,
+	_Out_ LPBYTE *bufptr
+);
+
 extern HOOKDEF(HRESULT, WINAPI, ObtainUserAgentString,
 	_In_ DWORD dwOption,
 	_Out_ LPSTR pcszUAOut,
