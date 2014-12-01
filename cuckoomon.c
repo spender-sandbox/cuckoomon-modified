@@ -101,7 +101,7 @@ static hook_t g_hooks[] = {
     HOOK(kernel32, CopyFileW),
     HOOK(kernel32, CopyFileExW),
 
-    // Covered by NtSetInformationFile() but still grap this information
+    // Covered by NtSetInformationFile() but still grab this information
     HOOK(kernel32, DeleteFileA),
     HOOK(kernel32, DeleteFileW),
 
@@ -493,6 +493,8 @@ LONG WINAPI cuckoomon_exception_handler(
 	if (ExceptionInfo->ExceptionRecord->ExceptionCode < 0xc0000000)
 		return EXCEPTION_CONTINUE_SEARCH;
 
+	hook_disable();
+
 	dllname = convert_address_to_dll_name_and_offset((ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress, &offset);
 	strcpy(msg, "Exception Caught! EIP:");
 	if (dllname)
@@ -501,6 +503,9 @@ LONG WINAPI cuckoomon_exception_handler(
 		ExceptionInfo->ExceptionRecord->ExceptionAddress, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], ExceptionInfo->ExceptionRecord->ExceptionCode,
 		teb[2], teb[1], stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
 	debug_message(msg);
+
+	hook_enable();
+
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 #endif

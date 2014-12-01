@@ -23,18 +23,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 int utf8_encode(unsigned short c, unsigned char *out)
 {
     if(c < 0x80) {
-        *out = c & 0x7f;
+        *out = c & 0x7F;
         return 1;
     }
     else if(c < 0x800) {
-        *out = 0xc0 + ((c >> 8) << 2) + (c >> 6);
-        out[1] = 0x80 + (c & 0x3f);
+		*out = 0xc0 | ((c >> 6) & 0x1F);
+        out[1] = 0x80 | (c & 0x3f);
         return 2;
     }
     else {
-        *out = 0xe0 + (c >> 12);
-        out[1] = 0x80 + (((c >> 8) & 0x1f) << 2) + ((c >> 6) & 0x3);
-        out[2] = 0x80 + (c & 0x3f);
+        *out = 0xe0 | ((c >> 12) & 0x0F);
+        out[1] = 0x80 | ((c >> 6) & 0x3F);
+        out[2] = 0x80 | (c & 0x3f);
         return 3;
     }
 }
