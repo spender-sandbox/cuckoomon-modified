@@ -23,6 +23,7 @@ typedef struct _hook_info_t {
     unsigned int retaddr_esp;
 
 	ULONG_PTR main_caller_retaddr;
+	ULONG_PTR parent_caller_retaddr;
 
     unsigned int last_error;
     unsigned int ret_last_error;
@@ -84,7 +85,7 @@ void hook_disable_retaddr_check();
 
 extern LARGE_INTEGER time_skipped;
 
-#define HOOK_BACKTRACE_DEPTH 20
+#define HOOK_BACKTRACE_DEPTH 40
 
 #define HOOK_ENABLE_FPU 0
 

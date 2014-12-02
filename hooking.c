@@ -89,11 +89,10 @@ static int is_interesting_backtrace(unsigned int _ebp)
 		return 1;
 
 	hookinfo->main_caller_retaddr = 0;
+	hookinfo->parent_caller_retaddr = 0;
 
-	if (!is_in_dll_range((ULONG_PTR)*(DWORD *)hookinfo->retaddr_esp)) {
+	if (!is_in_dll_range((ULONG_PTR)*(DWORD *)hookinfo->retaddr_esp))
 		hookinfo->main_caller_retaddr = (ULONG_PTR)*(DWORD *)hookinfo->retaddr_esp;
-		return 1;
-	}
 
 	while (_ebp >= bottom && _ebp <= (top - 8) && count-- != 0) {
 
@@ -102,8 +101,12 @@ static int is_interesting_backtrace(unsigned int _ebp)
 		_ebp = *(unsigned int *)_ebp;
 
 		if (!is_in_dll_range(addr)) {
-			hookinfo->main_caller_retaddr = addr;
-			return 1;
+			if (hookinfo->main_caller_retaddr == 0)
+				hookinfo->main_caller_retaddr = addr;
+			else {
+				hookinfo->parent_caller_retaddr = addr;
+				return 1;
+			}
 		}
 			// if this return address is *not* to be ignored, then it's
         // interesting
