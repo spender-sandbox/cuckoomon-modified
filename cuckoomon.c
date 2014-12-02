@@ -114,6 +114,9 @@ static hook_t g_hooks[] = {
 
 	HOOK(shell32, SHGetFolderPathW),
 
+	HOOK(version, GetFileVersionInfoW),
+	HOOK(version, GetFileVersionInfoSizeW),
+
     //
     // Registry Hooks
     //

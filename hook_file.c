@@ -410,7 +410,7 @@ HOOKDEF(BOOL, WINAPI, CreateDirectoryExW,
 }
 
 HOOKDEF(BOOL, WINAPI, RemoveDirectoryA,
-    __in  LPCTSTR lpPathName
+    __in  LPCSTR lpPathName
 ) {
     BOOL ret = Old_RemoveDirectoryA(lpPathName);
 	LOQ_bool("filesystem", "f", "DirectoryName", lpPathName);
@@ -449,7 +449,7 @@ HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
 }
 
 HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
-    __in        LPCTSTR lpFileName,
+    __in        LPCSTR lpFileName,
     __in        FINDEX_INFO_LEVELS fInfoLevelId,
     __out       LPVOID lpFindFileData,
     __in        FINDEX_SEARCH_OPS fSearchOp,
@@ -477,8 +477,8 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
 }
 
 HOOKDEF(BOOL, WINAPI, CopyFileA,
-    __in  LPCTSTR lpExistingFileName,
-    __in  LPCTSTR lpNewFileName,
+    __in  LPCSTR lpExistingFileName,
+    __in  LPCSTR lpNewFileName,
     __in  BOOL bFailIfExists
 ) {
     BOOL ret = Old_CopyFileA(lpExistingFileName, lpNewFileName,
@@ -565,7 +565,7 @@ HOOKDEF(BOOL, WINAPI, DeleteFileW,
 }
 
 HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceExA,
-    _In_opt_   PCTSTR lpDirectoryName,
+    _In_opt_   PCSTR lpDirectoryName,
     _Out_opt_  PULARGE_INTEGER lpFreeBytesAvailable,
     _Out_opt_  PULARGE_INTEGER lpTotalNumberOfBytes,
     _Out_opt_  PULARGE_INTEGER lpTotalNumberOfFreeBytes
@@ -587,7 +587,7 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceExW,
 }
 
 HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceA,
-    _In_   PCTSTR lpRootPathName,
+    _In_   PCSTR lpRootPathName,
     _Out_  LPDWORD lpSectorsPerCluster,
     _Out_  LPDWORD lpBytesPerSector,
     _Out_  LPDWORD lpNumberOfFreeClusters,
@@ -629,5 +629,29 @@ HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
 ) {
 	HRESULT ret = Old_SHGetFolderPathW(hwndOwner, nFolder, hToken, dwFlags, pszPath);
 	LOQ_hresult("filesystem", "pu", "Folder", nFolder, "Path", pszPath);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, GetFileVersionInfoW,
+	_In_        LPCWSTR lptstrFilename,
+	_Reserved_  DWORD dwHandle,
+	_In_        DWORD dwLen,
+	_Out_       LPVOID lpData
+) {
+	BOOL ret = Old_GetFileVersionInfoW(lptstrFilename, dwHandle, dwLen, lpData);
+
+	LOQ_bool("filesystem", "F", "FileName", lptstrFilename);
+
+	return ret;
+}
+
+HOOKDEF(DWORD, WINAPI, GetFileVersionInfoSizeW,
+	_In_       LPCWSTR lptstrFilename,
+	_Out_opt_  LPDWORD lpdwHandle
+) {
+	DWORD ret = Old_GetFileVersionInfoSizeW(lptstrFilename, lpdwHandle);
+
+	LOQ_nonzero("filesystem", "F", "FileName", lptstrFilename);
+
 	return ret;
 }

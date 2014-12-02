@@ -268,6 +268,18 @@ extern HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
 	_Out_ LPWSTR pszPath
 );
 
+extern HOOKDEF(BOOL, WINAPI, GetFileVersionInfoW,
+	_In_        LPCWSTR lptstrFilename,
+	_Reserved_  DWORD dwHandle,
+	_In_        DWORD dwLen,
+	_Out_       LPVOID lpData
+);
+
+extern HOOKDEF(DWORD, WINAPI, GetFileVersionInfoSizeW,
+	_In_       LPCWSTR lptstrFilename,
+	_Out_opt_  LPDWORD lpdwHandle
+);
+
 //
 // Registry Hooks
 //
