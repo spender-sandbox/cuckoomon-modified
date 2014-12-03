@@ -161,7 +161,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
 ) {
     NTSTATUS ret = Old_NtCreateFile(FileHandle, DesiredAccess,
         ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes,
-        ShareAccess, CreateDisposition, CreateOptions, EaBuffer, EaLength);
+        ShareAccess | FILE_SHARE_READ, CreateDisposition, CreateOptions, EaBuffer, EaLength);
     LOQ_ntstatus("filesystem", "PpOllp", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "CreateDisposition", CreateDisposition,
         "ShareAccess", ShareAccess, "FileAttributes", FileAttributes);
@@ -180,7 +180,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
     __in   ULONG OpenOptions
 ) {
     NTSTATUS ret = Old_NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes,
-        IoStatusBlock, ShareAccess, OpenOptions);
+		IoStatusBlock, ShareAccess | FILE_SHARE_READ, OpenOptions);
 	LOQ_ntstatus("filesystem", "PpOl", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "ShareAccess", ShareAccess);
     if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {

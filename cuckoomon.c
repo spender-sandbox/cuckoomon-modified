@@ -493,8 +493,10 @@ LONG WINAPI cuckoomon_exception_handler(
 	DWORD *teb = (DWORD *)__readfsdword(0x18);
 	DWORD *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
 
+#if REPORT_ALL_EXCEPTIONS == 0
 	if (ExceptionInfo->ExceptionRecord->ExceptionCode < 0xc0000000)
 		return EXCEPTION_CONTINUE_SEARCH;
+#endif
 
 	hook_disable();
 

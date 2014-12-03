@@ -648,5 +648,6 @@ static __inline HANDLE handle_from_objattr(OBJECT_ATTRIBUTES *obj)
 }
 
 #define REPORT_EXCEPTIONS 0
+#define REPORT_ALL_EXCEPTIONS 0
 
 #endif
