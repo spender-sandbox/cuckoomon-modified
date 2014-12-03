@@ -342,7 +342,7 @@ HOOKDEF(VOID, WINAPI, ExitProcess,
     __in  UINT uExitCode
 ) {
     int ret = 0;
-    LOQ_void("process", "l", "ExitCode", uExitCode);
+    LOQ_void("process", "p", "ExitCode", uExitCode);
 	process_shutting_down = 1;
 	log_free();
     Old_ExitProcess(uExitCode);
