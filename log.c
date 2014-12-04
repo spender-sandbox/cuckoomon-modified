@@ -180,7 +180,7 @@ void loq(int index, const char *category, const char *name,
     int argnum = 2;
     int count = 1; char key = 0;
 
-	if (g_config.suspend_logging)
+	if (index < LOG_ID_ANOMALY && g_config.suspend_logging)
 		return;
 
 	EnterCriticalSection(&g_mutex);
@@ -626,7 +626,7 @@ void log_init(unsigned int ip, unsigned short port, int debug)
         connect(g_sock, (struct sockaddr *) &addr, sizeof(addr));
     }
 
-    announce_netlog();
+	announce_netlog();
     log_new_process();
     log_new_thread();
 }
