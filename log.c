@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utf8.h"
 #include "log.h"
 #include "bson.h"
+#include "config.h"
 
 // the size of the logging buffer
 #define BUFFERSIZE 1024 * 1024
@@ -178,6 +179,9 @@ void loq(int index, const char *category, const char *name,
     const char * fmtbak = fmt;
     int argnum = 2;
     int count = 1; char key = 0;
+
+	if (g_config.suspend_logging)
+		return;
 
 	EnterCriticalSection(&g_mutex);
 
@@ -571,11 +575,6 @@ void announce_netlog()
 
 void log_new_process()
 {
-	wchar_t *module_path = malloc(32768 * sizeof(wchar_t));
-	wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
-
-	GetModuleFileNameW(NULL, module_path, 32768);
-
     g_starttick = GetTickCount();
 
     FILETIME st;
@@ -586,10 +585,7 @@ void log_new_process()
         "TimeHigh", st.dwHighDateTime,
         "ProcessIdentifier", GetCurrentProcessId(),
         "ParentProcessIdentifier", parent_process_id(),
-        "ModulePath", ensure_absolute_unicode_path(absolutepath, module_path));
-
-	free(module_path);
-	free(absolutepath);
+        "ModulePath", our_process_path);
 }
 
 void log_new_thread()

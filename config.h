@@ -28,7 +28,13 @@ struct _g_config {
 
 	// cuckoomon DLL directory
 	wchar_t dllpath[MAX_PATH];
+
+	// file of interest
+	wchar_t *file_of_interest;
 	
+	// URL of interest
+	wchar_t *url_of_interest;
+
 	// if this mutex exists then we're shutting down
     char shutdown_mutex[MAX_PATH];
 
@@ -47,6 +53,8 @@ struct _g_config {
     // server ip and port
     unsigned int host_ip;
     unsigned short host_port;
+
+	BOOLEAN suspend_logging;
 };
 
 extern struct _g_config g_config;

@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "misc.h"
 #include "ignore.h"
 #include "lookup.h"
+#include "config.h"
 
 #define DUMP_FILE_MASK (GENERIC_WRITE | FILE_GENERIC_WRITE | \
     FILE_WRITE_DATA | FILE_APPEND_DATA | STANDARD_RIGHTS_WRITE | \
@@ -116,14 +117,33 @@ static void file_write(HANDLE file_handle)
     }
 }
 
+void check_for_logging_resumption(const OBJECT_ATTRIBUTES *obj)
+{
+	if (g_config.file_of_interest && g_config.suspend_logging) {
+		wchar_t *fname = calloc(1, 32768 * sizeof(wchar_t));
+		wchar_t *absolutename = malloc(32768 * sizeof(wchar_t));
+		BOOLEAN ret = FALSE;
+
+		path_from_object_attributes(obj, fname, 32768);
+
+		ensure_absolute_unicode_path(absolutename, fname);
+
+		if (!wcsicmp(absolutename, g_config.file_of_interest))
+			g_config.suspend_logging = FALSE;
+
+		free(absolutename);
+		free(fname);
+	}
+}
+
 static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 {
     if(is_directory_objattr(obj) == 0) {
 
-        wchar_t fname[MAX_PATH_PLUS_TOLERANCE];
-		wchar_t *absolutename = malloc(32768 * sizeof(wchar_t));
+        wchar_t *fname = calloc(1, 32768 * sizeof(wchar_t));
+		wchar_t *absolutename = calloc(1, 32768 * sizeof(wchar_t));
 
-		path_from_object_attributes(obj, fname, MAX_PATH_PLUS_TOLERANCE);
+		path_from_object_attributes(obj, fname, 32768);
 
 		if (absolutename != NULL) {
 			unsigned int len;
@@ -138,6 +158,8 @@ static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 			if (is_ignored_file_objattr(obj) == 0)
 				cache_file(file_handle, fname, lstrlenW(fname), obj->Attributes);
 		}
+		free(fname);
+
     }
 }
 
@@ -159,7 +181,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
     __in      PVOID EaBuffer,
     __in      ULONG EaLength
 ) {
-    NTSTATUS ret = Old_NtCreateFile(FileHandle, DesiredAccess,
+	NTSTATUS ret;
+
+	check_for_logging_resumption(ObjectAttributes);
+
+    ret = Old_NtCreateFile(FileHandle, DesiredAccess,
         ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes,
         ShareAccess | FILE_SHARE_READ, CreateDisposition, CreateOptions, EaBuffer, EaLength);
     LOQ_ntstatus("filesystem", "PpOllp", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
@@ -179,7 +205,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
     __in   ULONG ShareAccess,
     __in   ULONG OpenOptions
 ) {
-    NTSTATUS ret = Old_NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes,
+	NTSTATUS ret;
+	
+	check_for_logging_resumption(ObjectAttributes);
+
+	ret = Old_NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes,
 		IoStatusBlock, ShareAccess | FILE_SHARE_READ, OpenOptions);
 	LOQ_ntstatus("filesystem", "PpOl", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "ShareAccess", ShareAccess);

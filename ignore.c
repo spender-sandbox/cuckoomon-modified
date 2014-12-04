@@ -98,11 +98,8 @@ static wchar_t *g_ignored_processpaths[] = {
 
 int is_ignored_process()
 {
-    wchar_t process_path[MAX_PATH];
-    GetModuleFileNameW(NULL, process_path, ARRAYSIZE(process_path));
-
     for (int i = 0; i < ARRAYSIZE(g_ignored_processpaths); i++) {
-        if(!wcsicmp(g_ignored_processpaths[i], process_path)) {
+        if(!wcsicmp(g_ignored_processpaths[i], our_process_path)) {
             return 1;
         }
     }

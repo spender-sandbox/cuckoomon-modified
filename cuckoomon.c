@@ -528,6 +528,21 @@ static void notify_successful_load(void)
 }
 
 struct _g_config g_config;
+wchar_t *our_process_path;
+
+void get_our_process_path(void)
+{
+	wchar_t *tmp = calloc(1, 32768 * sizeof(wchar_t));
+	wchar_t *tmp2 = calloc(1, 32768 * sizeof(wchar_t));
+
+	GetModuleFileNameW(NULL, tmp, 32768);
+
+	ensure_absolute_unicode_path(tmp2, tmp);
+
+	our_process_path = tmp2;
+
+	free(tmp);
+}
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
@@ -549,6 +564,8 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		}
 
 		resolve_runtime_apis();
+
+		get_our_process_path();
 
         // there's a small list of processes which we don't want to inject
         if(is_ignored_process()) {

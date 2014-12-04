@@ -109,9 +109,9 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
 
         disable_sleep_skip();
     }
-
+	
     if (hook_info()->depth_count == 1) {
-		if (dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT) {
+		if (dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT && lpStartupInfo->cb == sizeof(STARTUPINFOEXW)) {
 			HANDLE ParentHandle = (HANDLE)0xffffffff;
 			unsigned int i;
 			LPSTARTUPINFOEXW lpExtStartupInfo = (LPSTARTUPINFOEXW)lpStartupInfo;

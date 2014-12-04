@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include "ntapi.h"
 #include "config.h"
+#include "misc.h"
 
 int read_config(void)
 {
@@ -54,7 +55,36 @@ int read_config(void)
                 strncpy(g_config.results, value,
                     ARRAYSIZE(g_config.results));
             }
-            else if(!strcmp(key, "analyzer")) {
+			else if (!strcmp(key, "file-of-interest")) {
+				unsigned len = strlen(value);
+				if (len > 1) {
+					if (value[1] == ':') {
+						// is a file
+						char *tmp = calloc(1, MAX_PATH);
+						wchar_t *utmp = calloc(1, MAX_PATH * sizeof(wchar_t));
+						unsigned int full_len;
+						ensure_absolute_ascii_path(tmp, value);
+						full_len = strlen(tmp);
+						for (unsigned int i = 0; i < full_len; i++)
+							utmp[i] = (wchar_t)(unsigned short)tmp[i];
+						free(tmp);
+
+						g_config.file_of_interest = utmp;
+						// if the file of interest is our own executable, then don't do any special handling
+						if (wcsicmp(our_process_path, utmp))
+							g_config.suspend_logging = TRUE;
+					}
+					else {
+						// is a URL
+						wchar_t *utmp = calloc(1, 512 * sizeof(wchar_t));
+						unsigned int url_len = strlen(value);
+						for (unsigned int i = 0; i < url_len; i++)
+							utmp[i] = (wchar_t)(unsigned short)value[i];
+						g_config.url_of_interest = utmp;
+					}
+				}
+			}
+			else if (!strcmp(key, "analyzer")) {
                 strncpy(g_config.analyzer, value,
                     ARRAYSIZE(g_config.analyzer));
 				for (unsigned int i = 0; i < ARRAYSIZE(g_config.analyzer); i++)
