@@ -64,6 +64,11 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     //
 
     if(NT_SUCCESS(ret)) {
+		// inform the call below not to add this DLL to the list of system DLLs if it's
+		// the DLL of interest
+		if (g_config.file_of_interest && !wcsicmp(library.Buffer, g_config.file_of_interest))
+			set_dll_of_interest((ULONG_PTR)*ModuleHandle);
+
 		// unoptimized, but easy
 		add_all_dlls_to_dll_ranges();
 		// we ensure null termination via the COPY_UNICODE_STRING macro above, so we don't need a length

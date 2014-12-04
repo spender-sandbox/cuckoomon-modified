@@ -100,4 +100,6 @@ void specialname_map_init(void);
 char *convert_address_to_dll_name_and_offset(ULONG_PTR addr, unsigned int *offset);
 int is_wow64_fs_redirection_disabled(void);
 
+void set_dll_of_interest(ULONG_PTR BaseAddress);
+
 extern wchar_t *our_process_path;
