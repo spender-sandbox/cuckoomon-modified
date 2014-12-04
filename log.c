@@ -180,7 +180,7 @@ void loq(int index, const char *category, const char *name,
     int argnum = 2;
     int count = 1; char key = 0;
 
-	if (index < LOG_ID_ANOMALY && g_config.suspend_logging)
+	if (index >= LOG_ID_ANOMALY && g_config.suspend_logging)
 		return;
 
 	EnterCriticalSection(&g_mutex);
