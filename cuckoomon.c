@@ -491,6 +491,8 @@ LONG WINAPI cuckoomon_exception_handler(
 	char *dllname;
 	unsigned int offset;
 	DWORD *teb = (DWORD *)__readfsdword(0x18);
+	ULONG_PTR eip = ExceptionInfo->ExceptionRecord->ExceptionAddress;
+	PUCHAR eipptr = (PUCHAR)eip;
 	DWORD *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
 
 #if REPORT_ALL_EXCEPTIONS == 0
@@ -500,13 +502,21 @@ LONG WINAPI cuckoomon_exception_handler(
 
 	hook_disable();
 
-	dllname = convert_address_to_dll_name_and_offset((ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress, &offset);
+	dllname = convert_address_to_dll_name_and_offset(eip, &offset);
 	strcpy(msg, "Exception Caught! EIP:");
 	if (dllname)
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
-	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %08x, Fault Address: %08x, Exception Code: %08x, Stack Range: %08x->%08x, Stack Dump: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x\n",
-		ExceptionInfo->ExceptionRecord->ExceptionAddress, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], ExceptionInfo->ExceptionRecord->ExceptionCode,
-		teb[2], teb[1], stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
+	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %08x, Fault Address: %08x, Exception Code: %08x, Stack Range: %08x->%08x, ",
+		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], ExceptionInfo->ExceptionRecord->ExceptionCode,
+		teb[2], teb[1]);
+	if (is_valid_address_range((ULONG_PTR)stack, 10 * sizeof(DWORD))) {
+		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Stack Dump: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x, ",
+		stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
+	}
+	if (is_valid_address_range(eip, 16)) {
+		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Bytes at EIP: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+			eipptr[0], eipptr[1], eipptr[2], eipptr[3], eipptr[4], eipptr[5], eipptr[6], eipptr[7], eipptr[8], eipptr[9], eipptr[10], eipptr[11], eipptr[12], eipptr[13], eipptr[14], eipptr[15]);
+	}
 	debug_message(msg);
 
 	hook_enable();

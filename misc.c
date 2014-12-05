@@ -43,6 +43,19 @@ void resolve_runtime_apis(void)
 	*(FARPROC *)&pRtlGenRandom = GetProcAddress(GetModuleHandle("advapi32"), "SystemFunction036");
 }
 
+BOOLEAN is_valid_address_range(ULONG_PTR start, DWORD len)
+{
+	MEMORY_BASIC_INFORMATION meminfo;
+
+	if (!VirtualQuery((LPCVOID)start, &meminfo, sizeof(meminfo)))
+		return FALSE;
+
+	if (start >= (ULONG_PTR)meminfo.AllocationBase && (start + len) <= ((ULONG_PTR)meminfo.AllocationBase + meminfo.RegionSize) && !(meminfo.Protect & PAGE_NOACCESS))
+		return TRUE;
+
+	return FALSE;
+}
+
 ULONG_PTR parent_process_id() // By Napalm @ NetCore2K (rohitab.com)
 {
     ULONG_PTR pbi[6]; ULONG ulSize = 0;

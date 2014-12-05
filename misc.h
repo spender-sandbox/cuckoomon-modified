@@ -103,3 +103,5 @@ int is_wow64_fs_redirection_disabled(void);
 void set_dll_of_interest(ULONG_PTR BaseAddress);
 
 extern wchar_t *our_process_path;
+
+BOOLEAN is_valid_address_range(ULONG_PTR start, DWORD len);
