@@ -506,9 +506,8 @@ LONG WINAPI cuckoomon_exception_handler(
 	strcpy(msg, "Exception Caught! EIP:");
 	if (dllname)
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
-	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %08x, Fault Address: %08x, Exception Code: %08x, Stack Range: %08x->%08x, ",
-		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], ExceptionInfo->ExceptionRecord->ExceptionCode,
-		teb[2], teb[1]);
+	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %08x, Fault Address: %08x, Exception Code: %08x, ",
+		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], ExceptionInfo->ExceptionRecord->ExceptionCode);
 	if (is_valid_address_range((ULONG_PTR)stack, 10 * sizeof(DWORD))) {
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Stack Dump: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x, ",
 		stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
