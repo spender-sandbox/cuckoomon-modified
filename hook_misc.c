@@ -75,6 +75,18 @@ HOOKDEF(LPTOP_LEVEL_EXCEPTION_FILTER, WINAPI, SetUnhandledExceptionFilter,
     return res;
 }
 
+HOOKDEF(UINT, WINAPI, SetErrorMode,
+	_In_ UINT uMode
+) {
+	UINT ret = 0;
+#ifndef REPORT_EXCEPTIONS
+	ret = Old_SetErrorMode(uMode);
+#endif
+	LOQ_void("system", "p", "Mode", uMode);
+	return ret;
+}
+
+
 HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
     __in_opt    ULONG Flags,

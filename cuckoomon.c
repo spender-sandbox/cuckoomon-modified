@@ -271,6 +271,7 @@ static hook_t g_hooks[] = {
     HOOK(user32, SetWindowsHookExW),
     HOOK(user32, UnhookWindowsHookEx),
     HOOK(kernel32, SetUnhandledExceptionFilter),
+	HOOK(kernel32, SetErrorMode),
     //HOOK(ntdll, LdrLoadDll),
     HOOK(ntdll, LdrGetDllHandle),
     HOOK(ntdll, LdrGetProcedureAddress),
@@ -491,7 +492,7 @@ LONG WINAPI cuckoomon_exception_handler(
 	char *dllname;
 	unsigned int offset;
 	DWORD *teb = (DWORD *)__readfsdword(0x18);
-	ULONG_PTR eip = ExceptionInfo->ExceptionRecord->ExceptionAddress;
+	ULONG_PTR eip = (ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
 	PUCHAR eipptr = (PUCHAR)eip;
 	DWORD *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
 
