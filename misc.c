@@ -856,12 +856,18 @@ void specialname_map_init(void)
 
 int is_wow64_fs_redirection_disabled(void)
 {
-	PCHAR teb = (PCHAR)__readfsdword(0x18);
-	PCHAR ptr1 = (PCHAR)(ULONG_PTR)*(DWORD *)(teb + 0xf70);
-	if (ptr1 == NULL)
-		return 0;
-	if (*(DWORD *)(ptr1 + 0x14c0) == 1 && *(DWORD *)(ptr1 + 0x14c4) == 0)
-		return 1;
-	else
-		return 0;
+	if (is_64bit_os) {
+		__try {
+			PCHAR teb = (PCHAR)__readfsdword(0x18);
+			PCHAR ptr1 = (PCHAR)(ULONG_PTR)*(DWORD *)(teb + 0xf70);
+			if (ptr1 == NULL)
+				return 0;
+			if (*(DWORD *)(ptr1 + 0x14c0) == 1 && *(DWORD *)(ptr1 + 0x14c4) == 0)
+				return 1;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			;
+		}
+	}
+	return 0;
 }

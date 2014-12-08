@@ -637,6 +637,8 @@ typedef struct _FILE_FS_VOLUME_INFORMATION {
     WCHAR         VolumeLabel[1];
 } FILE_FS_VOLUME_INFORMATION, *PFILE_FS_VOLUME_INFORMATION;
 
+typedef BOOL(WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
+
 static __inline UNICODE_STRING *unistr_from_objattr(OBJECT_ATTRIBUTES *obj)
 {
     return obj != NULL ? obj->ObjectName : NULL;
@@ -646,6 +648,8 @@ static __inline HANDLE handle_from_objattr(OBJECT_ATTRIBUTES *obj)
 {
 	return obj != NULL ? obj->RootDirectory : (HANDLE)NULL;
 }
+
+extern BOOL is_64bit_os;
 
 #define REPORT_EXCEPTIONS 0
 #define REPORT_ALL_EXCEPTIONS 0

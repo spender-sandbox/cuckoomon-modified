@@ -539,6 +539,7 @@ static void notify_successful_load(void)
 
 struct _g_config g_config;
 wchar_t *our_process_path;
+BOOL is_64bit_os;
 
 void get_our_process_path(void)
 {
@@ -552,6 +553,18 @@ void get_our_process_path(void)
 	our_process_path = tmp2;
 
 	free(tmp);
+}
+
+void set_os_bitness(void)
+{
+	LPFN_ISWOW64PROCESS pIsWow64Process;
+
+	is_64bit_os = FALSE;
+
+	pIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(GetModuleHandleA("kernel32"), "IsWow64Process");
+
+	if (pIsWow64Process)
+		pIsWow64Process(GetCurrentProcess(), &is_64bit_os);
 }
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
@@ -572,6 +585,8 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			notify_successful_load();
 			return TRUE;
 		}
+
+		set_os_bitness();
 
 		resolve_runtime_apis();
 
