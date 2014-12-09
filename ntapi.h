@@ -649,6 +649,8 @@ static __inline HANDLE handle_from_objattr(OBJECT_ATTRIBUTES *obj)
 	return obj != NULL ? obj->RootDirectory : (HANDLE)NULL;
 }
 
+#include "alloc.h"
+
 extern BOOL is_64bit_os;
 
 #define REPORT_EXCEPTIONS 0

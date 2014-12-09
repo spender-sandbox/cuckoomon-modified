@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <windows.h>
+#include "alloc.h"
 #include "utf8.h"
 
 int utf8_encode(unsigned short c, unsigned char *out)

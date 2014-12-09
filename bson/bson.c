@@ -38,8 +38,9 @@ static char bson_shared_empty_data[] = {5,0,0,0,0};
 
 /* Custom standard function pointers. */
 void *( *bson_malloc_func )( size_t ) = malloc;
-void *( *bson_realloc_func )( void *, size_t ) = realloc;
-void  ( *bson_free_func )( void * ) = free;
+void *(*bson_realloc_func)(void *, size_t) = realloc;
+void(*bson_free_func)(void *) = free;
+
 #ifdef R_SAFETY_NET
 bson_printf_func bson_printf;
 #else
@@ -169,6 +170,18 @@ MONGO_EXPORT void bson_set_oid_fuzz( int ( *func )( void ) ) {
 
 MONGO_EXPORT void bson_set_oid_inc( int ( *func )( void ) ) {
     oid_inc_func = func;
+}
+
+MONGO_EXPORT void bson_set_malloc_func(void *(*func)(size_t)) {
+	bson_malloc_func = func;
+}
+
+MONGO_EXPORT void bson_set_realloc_func(void *(*func)(void *, size_t)) {
+	bson_realloc_func = func;
+}
+
+MONGO_EXPORT void bson_set_free_func(void(*func)(void *)) {
+	bson_free_func = func;
 }
 
 MONGO_EXPORT void bson_oid_gen( bson_oid_t *oid ) {

@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hook_sleep.h"
 #include "config.h"
 #include "unhook.h"
+#include "bson.h"
 
 // Allow debug mode to be turned on at compilation time.
 #ifdef CUCKOODBG
@@ -567,6 +568,31 @@ void set_os_bitness(void)
 		pIsWow64Process(GetCurrentProcess(), &is_64bit_os);
 }
 
+HANDLE g_heap;
+
+static void *malloc_func(size_t size)
+{
+	return malloc(size);
+}
+
+static void *realloc_func(void *ptr, size_t size)
+{
+	return realloc(ptr, size);
+}
+
+static void free_func(void *ptr)
+{
+	free(ptr);
+}
+
+void init_private_heap(void)
+{
+	bson_set_malloc_func(malloc_func);
+	bson_set_realloc_func(realloc_func);
+	bson_set_free_func(free_func);
+	g_heap = HeapCreate(0, 16 * 1024 * 1024, 0);
+}
+
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
     if(dwReason == DLL_PROCESS_ATTACH) {
@@ -585,6 +611,8 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			notify_successful_load();
 			return TRUE;
 		}
+
+		init_private_heap();
 
 		set_os_bitness();
 

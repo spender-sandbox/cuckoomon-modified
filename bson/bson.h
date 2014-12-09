@@ -644,6 +644,10 @@ MONGO_EXPORT void bson_set_oid_fuzz( int ( *func )( void ) );
  */
 MONGO_EXPORT void bson_set_oid_inc( int ( *func )( void ) );
 
+MONGO_EXPORT void bson_set_malloc_func(void *(*func)(size_t));
+MONGO_EXPORT void bson_set_realloc_func(void *(*func)(void *, size_t));
+MONGO_EXPORT void bson_set_free_func(void(*func)(void *));
+
 /**
  * Get the time a bson_oid_t was created.
  *

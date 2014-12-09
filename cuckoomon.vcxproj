@@ -221,6 +221,7 @@
     <ClCompile Include="utf8.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="alloc.h" />
     <ClInclude Include="bson\bson.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="hooking.h" />

@@ -209,5 +209,8 @@
     <ClInclude Include="unhook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="alloc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
