@@ -23,9 +23,18 @@ static __inline void cm_free(void *ptr)
 	HeapFree(g_heap, 0, ptr);
 }
 
+static __inline char *cm_strdup(char *ptr)
+{
+	char *buf = cm_alloc(strlen(ptr) + 1);
+	if (buf)
+		strcpy(buf, ptr);
+	return buf;
+}
+
 #define calloc	cm_calloc
 #define malloc	cm_alloc
 #define free	cm_free
 #define realloc	cm_realloc
+#define strdup	cm_strdup
 
 #endif
