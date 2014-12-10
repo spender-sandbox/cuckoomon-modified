@@ -620,7 +620,7 @@ void log_hook_modification(const char *funcname, const char *origbytes, const ch
 		sprintf(p, "%02X ", (unsigned char)newbytes[i]);
 	}
 
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 0, 0, "lsssss",
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "lsssss",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
 		"FunctionName", funcname,
@@ -631,7 +631,7 @@ void log_hook_modification(const char *funcname, const char *origbytes, const ch
 
 void log_hook_removal(const char *funcname)
 {
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 0, 0, "lsss",
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "lsss",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
 		"FunctionName", funcname,
