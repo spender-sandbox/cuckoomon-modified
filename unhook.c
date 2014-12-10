@@ -90,23 +90,23 @@ static DWORD WINAPI _unhook_detect_thread(LPVOID param)
 
 		__try {
 			for (uint32_t idx = 0; idx < g_index; idx++) {
+				int is_modification = 1;
 				// Check whether this memory region still equals what we made it.
 				if (!memcmp(g_addr[idx], g_our[idx], g_length[idx])) {
 					continue;
 				}
 
-				// By default we assume the hook has been modified.
-				const char *msg = "Function hook was modified!";
-
 				// If the memory region matches the original contents, then it
 				// has been restored to its original state.
-				if (!memcmp(g_orig[idx], g_addr[idx], g_length[idx])) {
-					msg = "Function was unhooked/restored!";
-				}
+				if (!memcmp(g_orig[idx], g_addr[idx], g_length[idx]))
+					is_modification = 0;
 
 				if (g_hook_reported[idx] == 0) {
 					if (is_shutting_down() == 0) {
-						log_anomaly("unhook", 1, g_funcname[idx], msg);
+						if (is_modification)
+							log_hook_modification(g_funcname[idx], g_our[idx], g_addr[idx], g_length[idx]);
+						else
+							log_hook_removal(g_funcname[idx]);
 					}
 					g_hook_reported[idx] = 1;
 				}

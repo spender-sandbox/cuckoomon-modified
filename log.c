@@ -604,6 +604,40 @@ void log_anomaly(const char *subcategory, int success,
         "Message", msg);
 }
 
+void log_hook_modification(const char *funcname, const char *origbytes, const char *newbytes, unsigned int len)
+{
+	char msg1[128] = { 0 };
+	char msg2[128] = { 0 };
+	char *p;
+	unsigned int i;
+
+	for (i = 0; i < len && i < 124/3; i++) {
+		p = &msg1[i * 3];
+		sprintf(p, "%02X ", (unsigned char)origbytes[i]);
+	}
+	for (i = 0; i < len && i < 124 / 3; i++) {
+		p = &msg2[i * 3];
+		sprintf(p, "%02X ", (unsigned char)newbytes[i]);
+	}
+
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 0, 0, "lsssss",
+		"ThreadIdentifier", GetCurrentThreadId(),
+		"Subcategory", "unhook",
+		"FunctionName", funcname,
+		"UnhookType", "modification",
+		"OriginalBytes", msg1,
+		"NewBytes", msg2);
+}
+
+void log_hook_removal(const char *funcname)
+{
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 0, 0, "lsss",
+		"ThreadIdentifier", GetCurrentThreadId(),
+		"Subcategory", "unhook",
+		"FunctionName", funcname,
+		"UnhookType", "removal");
+}
+
 void log_init(unsigned int ip, unsigned short port, int debug)
 {
     InitializeCriticalSection(&g_mutex);
