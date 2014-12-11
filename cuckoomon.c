@@ -358,6 +358,7 @@ static hook_t g_hooks[] = {
 	HOOK(kernel32, GetTickCount),
     HOOK(ntdll, NtQuerySystemTime),
 	HOOK(user32, GetLastInputInfo),
+	HOOK(winmm, timeGetTime),
 
     //
     // Socket Hooks

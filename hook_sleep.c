@@ -159,6 +159,17 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemTime,
     return 0;
 }
 
+HOOKDEF(DWORD, WINAPI, timeGetTime,
+	void
+	) {
+	DWORD ret = Old_timeGetTime();
+
+	// add the time we've skipped
+	ret += (DWORD)(time_skipped.QuadPart / 10000);
+
+	return ret;
+}
+
 HOOKDEF(void, WINAPI, GetSystemTimeAsFileTime,
 	_Out_ LPFILETIME lpSystemTimeAsFileTime
 ) {

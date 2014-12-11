@@ -1119,6 +1119,10 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    PLARGE_INTEGER DelayInterval
 );
 
+extern HOOKDEF(DWORD, WINAPI, timeGetTime,
+	void
+);
+
 extern HOOKDEF(BOOL, WINAPI, ExitWindowsEx,
     __in  UINT uFlags,
     __in  DWORD dwReason
