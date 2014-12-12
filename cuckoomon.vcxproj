@@ -95,6 +95,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="alloc.c" />
     <ClCompile Include="config.c" />
     <ClCompile Include="cuckoomon.c" />
     <ClCompile Include="hooking.c" />

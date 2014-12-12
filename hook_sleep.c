@@ -161,7 +161,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemTime,
 
 HOOKDEF(DWORD, WINAPI, timeGetTime,
 	void
-	) {
+) {
 	DWORD ret = Old_timeGetTime();
 
 	// add the time we've skipped

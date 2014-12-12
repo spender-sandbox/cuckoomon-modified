@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utf8.h"
 #include "log.h"
 #include "bson.h"
+#include "pipe.h"
 #include "config.h"
 
 // the size of the logging buffer
@@ -32,11 +33,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define BUFFER_LOG_MAX 256
 
 static CRITICAL_SECTION g_mutex;
+static CRITICAL_SECTION g_writing_log_buffer_mutex;
 static int g_sock;
 static unsigned int g_starttick;
 
 static char g_buffer[BUFFERSIZE];
-static int g_idx;
+static volatile int g_idx;
 
 // current to-be-logged API call
 static bson g_bson[1];
@@ -53,66 +55,96 @@ int g_log_index = 10;  // index must start after the special IDs (see defines)
 // Log API
 //
 
+static HANDLE g_log_thread_handle;
+static HANDLE g_logwatcher_thread_handle;
+static HANDLE g_log_flush;
+
+static DWORD WINAPI _log_thread(LPVOID param)
+{
+	hook_disable();
+
+	while (1) {
+		WaitForSingleObject(g_log_flush, 500);
+		EnterCriticalSection(&g_writing_log_buffer_mutex);
+		while (g_idx > 0) {
+			int written = -1;
+
+			if (g_sock == INVALID_SOCKET) {
+				char filename[64];
+				snprintf(filename, sizeof(filename), "c:\\debug%u.log", GetCurrentProcessId());
+				// will happen when we're in debug mode
+				FILE *f = fopen(filename, "ab");
+				if (f) {
+					written = fwrite(g_buffer, 1, g_idx, f);
+					fclose(f);
+				}
+				else {
+					// some non-admin debug case
+					written = g_idx;
+				}
+			}
+			else {
+				written = send(g_sock, g_buffer, g_idx, 0);
+			}
+
+			if (written < 0)
+				continue;
+
+			// if this call didn't write the entire buffer, then we have to move
+			// around some stuff in the buffer
+			if (written < g_idx) {
+				memmove(g_buffer, g_buffer + written, g_idx - written);
+			}
+
+			// subtract the amount of written bytes from the index
+			g_idx -= written;
+		}
+		LeaveCriticalSection(&g_writing_log_buffer_mutex);
+	}
+}
+
+static DWORD WINAPI _logwatcher_thread(LPVOID param)
+{
+	hook_disable();
+
+	while (WaitForSingleObject(g_log_thread_handle, 1000) == WAIT_TIMEOUT);
+
+	if (is_shutting_down() == 0) {
+		pipe("CRITICAL:Logging thread was terminated!");
+	}
+	return 0;
+}
+
+extern BOOLEAN g_dll_main_complete;
+
 void log_flush()
 {
-    while (g_idx > 0) {
-        int written;
-        if(g_sock == INVALID_SOCKET) {
-            written = fwrite(g_buffer, 1, g_idx, stderr);
-        }
-        else {
-            written = send(g_sock, g_buffer, g_idx, 0);
-        }
-
-		if (written < 0)
-			return;
-
-        // if this call didn't write the entire buffer, then we have to move
-        // around some stuff in the buffer
-        if(written < g_idx) {
-            memmove(g_buffer, g_buffer + written, g_idx - written);
-        }
-
-        // subtract the amount of written bytes from the index
-        g_idx -= written;
-    }
+	/* The logging thread we create in DllMain won't actually start until after DllMain
+	completes, so we need to ensure we don't wait here on the logging thread as it will
+	result in a deadlock.
+	There's thus an implicit assumption here that we won't log more than BUFFERSIZE before
+	DllMain completes, otherwise we'll lose logs.
+	*/
+	if (g_dll_main_complete) {
+		SetEvent(g_log_flush);
+		while (g_idx) Sleep(50);
+	}
 }
-
-/*
-static void log_raw(const char *buf, size_t length) {
-    for (int i=0; i<length; i++) {
-        g_buffer[g_idx] = buf[i];
-        g_idx++;
-
-        if (g_idx >= BUFFERSIZE -1) {
-            log_flush();
-        }
-    }
-}
-*/
 
 static void log_raw_direct(const char *buf, size_t length) {
-	if (g_sock == INVALID_SOCKET) {
-		char filename[64];
-		snprintf(filename, sizeof(filename), "c:\\debug%u.log", GetCurrentProcessId());
-		// will happen when we're in debug mode
-		FILE *f = fopen(filename, "ab");
-		if (f) {
-			fwrite(buf, length, 1, f);
-			fclose(f);
-		}
-		return;
+	size_t copiedlen = 0;
+	size_t copylen;
+
+	while (copiedlen != length) {
+		EnterCriticalSection(&g_writing_log_buffer_mutex);
+		copylen = min(length - copiedlen, (size_t)(BUFFERSIZE - g_idx));
+		memcpy(&g_buffer[g_idx], &buf[copiedlen], copylen);
+		g_idx += copylen;
+		copiedlen += copylen;
+		LeaveCriticalSection(&g_writing_log_buffer_mutex);
+		if (copiedlen != length)
+			log_flush();
 	}
-    size_t sent = 0;
-    int r;
-    while (sent < length) {
-        r = send(g_sock, buf+sent, length-sent, 0);
-        if (r == -1) {
-            fprintf(stderr, "send returned -1.\n");
-            return;
-        }
-        sent += r;
-    }
 }
 
 void debug_message(const char *msg) {
@@ -141,6 +173,29 @@ static void log_int16(short value)
 static void log_int32(int value)
 {
     bson_append_int( g_bson, g_istr, value );
+}
+
+// snprintf can end up acquiring the process' heap lock which will be unsafe in the context of a hooked
+// NtAllocate/FreeVirtualMemory
+static void num_to_string(char *buf, unsigned int buflen, unsigned int num)
+{
+	unsigned int dec = 1000000000;
+	unsigned int i = 0;
+
+	if (!buflen)
+		return;
+
+	while (dec) {
+		if (!i && ((num / dec) || dec == 1))
+			buf[i++] = '0' + (num / dec);
+		else if (i)
+			buf[i++] = '0' + (num / dec);
+		if (i == buflen - 1)
+			break;
+		num = num % dec;
+		dec /= 10;
+	}
+	buf[buflen - 1] = '\0';
 }
 
 static void log_string(const char *str, int length)
@@ -183,7 +238,7 @@ static void log_argv(int argc, const char ** argv) {
     bson_append_start_array( g_bson, g_istr );
 
     for (int i=0; i<argc; i++) {
-        snprintf(g_istr, 4, "%u", i);
+		num_to_string(g_istr, 4, i);
         log_string(argv[i], -1);
     }
     bson_append_finish_array( g_bson );
@@ -193,8 +248,8 @@ static void log_wargv(int argc, const wchar_t ** argv) {
     bson_append_start_array( g_bson, g_istr );
 
     for (int i=0; i<argc; i++) {
-        snprintf(g_istr, 4, "%u", i);
-        log_wstring(argv[i], -1);
+		num_to_string(g_istr, 4, i);
+		log_wstring(argv[i], -1);
     }
 
     bson_append_finish_array( g_bson );
@@ -253,7 +308,7 @@ void loq(int index, const char *category, const char *name,
             }
 
             pname = va_arg(args, const char *);
-            snprintf(g_istr, 4, "%u", argnum);
+			num_to_string(g_istr, 4, argnum);
             argnum++;
 
             //on certain formats, we need to tell cuckoo about them for nicer display / matching
@@ -376,7 +431,7 @@ void loq(int index, const char *category, const char *name,
 
         // pop the key and omit it
         (void) va_arg(args, const char *);
-        snprintf(g_istr, 4, "%u", argnum);
+		num_to_string(g_istr, 4, argnum);
         argnum++;
 
         // log the value
@@ -595,14 +650,8 @@ void loq(int index, const char *category, const char *name,
 
     bson_append_finish_array( g_bson );
     bson_finish( g_bson );
-    // if (bson_size( g_bson ) > BUFFERSIZE) {
-    //     //DBGWARN, ignoring bson obj
-    // } else {
-        log_raw_direct(bson_data( g_bson ), bson_size( g_bson ));
-    // }
-
+    log_raw_direct(bson_data( g_bson ), bson_size( g_bson ));
     bson_destroy( g_bson );
-    // log_flush();
     LeaveCriticalSection(&g_mutex);
 }
 
@@ -681,9 +730,12 @@ void log_hook_removal(const char *funcname)
 
 void log_init(unsigned int ip, unsigned short port, int debug)
 {
-    InitializeCriticalSection(&g_mutex);
+	InitializeCriticalSection(&g_mutex);
+	InitializeCriticalSection(&g_writing_log_buffer_mutex);
 
-    if(debug != 0) {
+	g_log_flush = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+	if(debug != 0) {
         g_sock = INVALID_SOCKET;
     }
     else {
@@ -698,21 +750,35 @@ void log_init(unsigned int ip, unsigned short port, int debug)
             .sin_port           = htons(port),
         };
 
-        connect(g_sock, (struct sockaddr *) &addr, sizeof(addr));
+		if (connect(g_sock, (struct sockaddr *) &addr, sizeof(addr))) {
+			closesocket(g_sock);
+			g_sock = INVALID_SOCKET;
+		}
     }
+
+	g_log_thread_handle =
+		CreateThread(NULL, 0, &_log_thread, NULL, 0, NULL);
+
+	g_logwatcher_thread_handle =
+		CreateThread(NULL, 0, &_logwatcher_thread, NULL, 0, NULL);
+
+	if (g_log_thread_handle == NULL || g_logwatcher_thread_handle == NULL) {
+		pipe("CRITICAL:Error initializing logging threads!");
+		return;
+	}
 
 	announce_netlog();
     log_new_process();
     log_new_thread();
     // flushing here so host can create files / keep timestamps
-    // log_flush();
+    log_flush();
 }
 
 void log_free()
 {
-    DeleteCriticalSection(&g_mutex);
     log_flush();
-    if(g_sock != INVALID_SOCKET) {
+	DeleteCriticalSection(&g_mutex);
+	if (g_sock != INVALID_SOCKET) {
         closesocket(g_sock);
 		g_sock = INVALID_SOCKET;
     }

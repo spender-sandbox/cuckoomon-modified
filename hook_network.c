@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "log.h"
 #include "pipe.h"
+#include "config.h"
 
 HOOKDEF(HINTERNET, WINAPI, WinHttpOpen,
 	_In_opt_ LPCWSTR pwszUserAgent,
@@ -197,9 +198,13 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenA,
     _In_  LPCTSTR lpszProxyBypass,
     _In_  DWORD dwFlags
 ) {
-    HINTERNET ret = Old_InternetOpenA(lpszAgent, dwAccessType, lpszProxyName,
+	HINTERNET ret = Old_InternetOpenA(lpszAgent, dwAccessType, lpszProxyName,
         lpszProxyBypass, dwFlags);
-    LOQ_nonnull("network", "spssp", "Agent", lpszAgent, "AccessType", dwAccessType,
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+	
+	LOQ_nonnull("network", "spssp", "Agent", lpszAgent, "AccessType", dwAccessType,
         "ProxyName", lpszProxyName, "ProxyBypass", lpszProxyBypass,
         "Flags", dwFlags);
     return ret;
@@ -214,7 +219,11 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenW,
 ) {
     HINTERNET ret = Old_InternetOpenW(lpszAgent, dwAccessType, lpszProxyName,
         lpszProxyBypass, dwFlags);
-    LOQ_nonnull("network", "upuup", "Agent", lpszAgent, "AccessType", dwAccessType,
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
+	LOQ_nonnull("network", "upuup", "Agent", lpszAgent, "AccessType", dwAccessType,
         "ProxyName", lpszProxyName, "ProxyBypass", lpszProxyBypass,
         "Flags", dwFlags);
     return ret;
@@ -472,7 +481,11 @@ HOOKDEF(int, WINAPI, getaddrinfo,
     _Out_     PADDRINFOA *ppResult
 ) {
     int ret = Old_getaddrinfo(pNodeName, pServiceName, pHints, ppResult);
-    LOQ_zero("network", "ss", "NodeName", pNodeName, "ServiceName", pServiceName);
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
+	LOQ_zero("network", "ss", "NodeName", pNodeName, "ServiceName", pServiceName);
     return ret;
 }
 

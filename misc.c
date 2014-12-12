@@ -30,6 +30,8 @@ static _RtlGenRandom pRtlGenRandom;
 static _NtQueryAttributesFile pNtQueryAttributesFile;
 static _NtQueryObject pNtQueryObject;
 static _NtQueryKey pNtQueryKey;
+_NtAllocateVirtualMemory pNtAllocateVirtualMemory;
+_NtFreeVirtualMemory pNtFreeVirtualMemory;
 
 void resolve_runtime_apis(void)
 {
@@ -40,6 +42,8 @@ void resolve_runtime_apis(void)
 	*(FARPROC *)&pNtQueryObject = GetProcAddress(ntdllbase, "NtQueryObject");
 	*(FARPROC *)&pNtQueryKey = GetProcAddress(ntdllbase, "NtQueryKey");
 	*(FARPROC *)&pNtQueryAttributesFile = GetProcAddress(ntdllbase, "NtQueryAttributesFile");
+	*(FARPROC *)&pNtAllocateVirtualMemory = GetProcAddress(ntdllbase, "NtAllocateVirtualMemory");
+	*(FARPROC *)&pNtFreeVirtualMemory = GetProcAddress(ntdllbase, "NtFreeVirtualMemory");
 	*(FARPROC *)&pRtlGenRandom = GetProcAddress(GetModuleHandle("advapi32"), "SystemFunction036");
 }
 

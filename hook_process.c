@@ -235,7 +235,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
     __in_opt  HANDLE ProcessHandle,
     __in      NTSTATUS ExitStatus
 ) {
-    // Process will terminate. Default logging will not work. Be aware: return value not valid
+	// Process will terminate. Default logging will not work. Be aware: return value not valid
     NTSTATUS ret = 0;
     LOQ_ntstatus("process", "pl", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
 	if (ProcessHandle == (HANDLE)0xffffffff) {
@@ -381,6 +381,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtUnmapViewOfSection,
 	return ret;
 }
 
+// it's not safe to call pipe() in this hook until we replace all uses of snprintf in pipe()
 HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
     __in     HANDLE ProcessHandle,
     __inout  PVOID *BaseAddress,
@@ -494,6 +495,7 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
     return ret;
 }
 
+// it's not safe to call pipe() in this hook until we replace all uses of snprintf in pipe()
 HOOKDEF(NTSTATUS, WINAPI, NtFreeVirtualMemory,
     IN      HANDLE ProcessHandle,
     IN      PVOID *BaseAddress,

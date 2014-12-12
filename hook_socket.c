@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <mswsock.h>
 #include "hooking.h"
 #include "log.h"
+#include "config.h"
 
 
 static void get_ip_port(const struct sockaddr *addr,
@@ -49,6 +50,10 @@ HOOKDEF(struct hostent *, WSAAPI, gethostbyname,
     __in  const char *name
 ) {
     struct hostent *ret = Old_gethostbyname(name);
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
     LOQ_nonnull("network", "s", "Name", name);
     return ret;
 }

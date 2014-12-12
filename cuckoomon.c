@@ -68,7 +68,6 @@ static hook_t g_hooks[] = {
 	//
     // File Hooks
     //
-
 	HOOK(ntdll, NtQueryAttributesFile),
 	HOOK(ntdll, NtQueryFullAttributesFile),
 	HOOK(ntdll, NtCreateFile),
@@ -163,22 +162,22 @@ static hook_t g_hooks[] = {
     // Native Registry Hooks
     //
 
-    HOOK(ntdll, NtCreateKey),
+	HOOK(ntdll, NtCreateKey),
     HOOK(ntdll, NtOpenKey),
     HOOK(ntdll, NtOpenKeyEx),
-    HOOK(ntdll, NtRenameKey),
+	HOOK(ntdll, NtRenameKey),
     HOOK(ntdll, NtReplaceKey),
     HOOK(ntdll, NtEnumerateKey),
     HOOK(ntdll, NtEnumerateValueKey),
-    HOOK(ntdll, NtSetValueKey),
-    HOOK(ntdll, NtQueryValueKey),
+	HOOK(ntdll, NtSetValueKey),
+	HOOK(ntdll, NtQueryValueKey),
     HOOK(ntdll, NtQueryMultipleValueKey),
     HOOK(ntdll, NtDeleteKey),
-    HOOK(ntdll, NtDeleteValueKey),
-    HOOK(ntdll, NtLoadKey),
+	HOOK(ntdll, NtDeleteValueKey),
+	HOOK(ntdll, NtLoadKey),
     HOOK(ntdll, NtLoadKey2),
     HOOK(ntdll, NtLoadKeyEx),
-    HOOK(ntdll, NtQueryKey),
+	HOOK(ntdll, NtQueryKey),
     HOOK(ntdll, NtSaveKey),
     HOOK(ntdll, NtSaveKeyEx),
 
@@ -232,8 +231,6 @@ static hook_t g_hooks[] = {
     // all variants of ShellExecute end up in ShellExecuteExW
     HOOK(shell32, ShellExecuteExW),
     HOOK(ntdll, NtUnmapViewOfSection),
-	// this hook needs to be disabled if you want to debug a binary with cuckoomon.dll loaded and pageheap enabled,
-	// otherwise we'll hit a deadlock on bson's calloc
     HOOK(ntdll, NtAllocateVirtualMemory),
     HOOK(ntdll, NtReadVirtualMemory),
     HOOK(kernel32, ReadProcessMemory),
@@ -591,8 +588,12 @@ void init_private_heap(void)
 	bson_set_malloc_func(malloc_func);
 	bson_set_realloc_func(realloc_func);
 	bson_set_free_func(free_func);
+#ifdef USE_PRIVATE_HEAP
 	g_heap = HeapCreate(0, 16 * 1024 * 1024, 0);
+#endif
 }
+
+BOOLEAN g_dll_main_complete;
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
@@ -613,11 +614,11 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			return TRUE;
 		}
 
+		resolve_runtime_apis();
+
 		init_private_heap();
 
 		set_os_bitness();
-
-		resolve_runtime_apis();
 
 		get_our_process_path();
 
@@ -634,15 +635,17 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		add_all_dlls_to_dll_ranges();
 
+#if !CUCKOODBG
 		// hide our module from peb
         hide_module_from_peb(hModule);
+#endif
 
         // initialize file stuff
         file_init();
 
         // read the config settings
 		if (!read_config())
-#ifdef CUCKOODBG
+#if CUCKOODBG
 			;
 #else
 			// if we're not debugging, then failure to read the cuckoomon config should be a critical error
@@ -684,5 +687,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         log_free();
     }
 
-    return TRUE;
+	g_dll_main_complete = TRUE;
+
+	return TRUE;
 }

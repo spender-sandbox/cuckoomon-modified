@@ -81,6 +81,7 @@ int read_config(void)
 						for (unsigned int i = 0; i < url_len; i++)
 							utmp[i] = (wchar_t)(unsigned short)value[i];
 						g_config.url_of_interest = utmp;
+						g_config.suspend_logging = TRUE;
 					}
 				}
 			}
