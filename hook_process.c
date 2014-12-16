@@ -392,7 +392,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
 ) {
     NTSTATUS ret = Old_NtAllocateVirtualMemory(ProcessHandle, BaseAddress,
         ZeroBits, RegionSize, AllocationType, Protect);
-	if (AllocationType != PAGE_READWRITE || ProcessHandle != (HANDLE)0xffffffff) {
+	if (Protect != PAGE_READWRITE || ProcessHandle != (HANDLE)0xffffffff) {
 		LOQ_ntstatus("process", "pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 			"RegionSize", RegionSize, "Protection", Protect);
 	}
