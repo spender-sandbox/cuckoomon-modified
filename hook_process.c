@@ -392,8 +392,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
 ) {
     NTSTATUS ret = Old_NtAllocateVirtualMemory(ProcessHandle, BaseAddress,
         ZeroBits, RegionSize, AllocationType, Protect);
-    LOQ_ntstatus("process", "pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-        "RegionSize", RegionSize, "Protection", Protect);
+	if (AllocationType != PAGE_READWRITE || ProcessHandle != (HANDLE)0xffffffff) {
+		LOQ_ntstatus("process", "pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+			"RegionSize", RegionSize, "Protection", Protect);
+	}
     return ret;
 }
 
@@ -504,8 +506,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtFreeVirtualMemory,
 ) {
     NTSTATUS ret = Old_NtFreeVirtualMemory(ProcessHandle, BaseAddress,
         RegionSize, FreeType);
-    LOQ_ntstatus("process", "pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-        "RegionSize", RegionSize, "FreeType", FreeType);
+	if (ProcessHandle != (HANDLE)0xffffffff) {
+		LOQ_ntstatus("process", "pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+			"RegionSize", RegionSize, "FreeType", FreeType);
+	}
     return ret;
 }
 
