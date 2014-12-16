@@ -117,7 +117,12 @@ int read_config(void)
             }
         }
     }
-    fclose(fp);
+
+	/* don't suspend logging if this isn't the first process */
+	if (!g_config.first_process)
+		g_config.suspend_logging = FALSE;
+
+	fclose(fp);
     DeleteFile(config_fname);
 	return 1;
 }

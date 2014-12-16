@@ -595,6 +595,8 @@ void init_private_heap(void)
 
 BOOLEAN g_dll_main_complete;
 
+DWORD g_tls_hook_index;
+
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
     if(dwReason == DLL_PROCESS_ATTACH) {
@@ -622,7 +624,11 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		get_our_process_path();
 
-        // there's a small list of processes which we don't want to inject
+		g_tls_hook_index = TlsAlloc();
+		if (g_tls_hook_index == TLS_OUT_OF_INDEXES)
+			return TRUE;
+
+		// there's a small list of processes which we don't want to inject
         if(is_ignored_process()) {
             return TRUE;
         }
@@ -675,7 +681,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
             hook_disable_retaddr_check();
         }
 
-        // initialize our unhook detection
+		// initialize our unhook detection
         unhook_init_detection();
 
         // initialize all hooks

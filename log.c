@@ -400,14 +400,12 @@ void loq(int index, const char *category, const char *name,
 
     bson_init( g_bson );
     bson_append_int( g_bson, "I", index );
-	if (hook_info()) {
-		hook_info_t *hookinfo = hook_info();
-		bson_append_int(g_bson, "C", *(DWORD *)(hookinfo->retaddr_esp));
-		// return location of malware callsite
-		bson_append_int(g_bson, "R", (int)hookinfo->main_caller_retaddr);
-		// return parent location of malware callsite
-		bson_append_int(g_bson, "P", (int)hookinfo->parent_caller_retaddr);
-	}
+	hook_info_t *hookinfo = hook_info();
+	bson_append_int(g_bson, "C", *(DWORD *)(hookinfo->retaddr_esp));
+	// return location of malware callsite
+	bson_append_int(g_bson, "R", (int)hookinfo->main_caller_retaddr);
+	// return parent location of malware callsite
+	bson_append_int(g_bson, "P", (int)hookinfo->parent_caller_retaddr);
 	bson_append_int(g_bson, "T", GetCurrentThreadId());
     bson_append_int( g_bson, "t", GetTickCount() - g_starttick );
 
