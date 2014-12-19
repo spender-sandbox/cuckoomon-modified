@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include "ntapi.h"
+#include "hooking.h"
 #include "pipe.h"
 #include "utf8.h"
 #include "misc.h"
@@ -154,7 +155,7 @@ int pipe(const char *fmt, ...)
 	int ret = -1;
 	DWORD lasterror;
 
-	lasterror = GetLastError();
+	lasterror = our_getlasterror();
 	len = _pipe_sprintf(NULL, fmt, args);
     if (len > 0) {
         char *buf = calloc(1, len + 1);
@@ -178,7 +179,7 @@ int pipe(const char *fmt, ...)
 		free(buf);
     }
 
-	SetLastError(lasterror);
+	our_setlasterror(lasterror);
 
 	return ret;
 }

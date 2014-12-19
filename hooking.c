@@ -683,7 +683,7 @@ int hook_api(hook_t *h, int type)
     return ret;
 }
 
-static DWORD our_getlasterror(void)
+DWORD our_getlasterror(void)
 {
 	char *teb = (char *)__readfsdword(0x18);
 
@@ -691,7 +691,7 @@ static DWORD our_getlasterror(void)
 }
 
 // we do our own version of this function to avoid the potential debug triggers
-static void our_setlasterror(DWORD val)
+void our_setlasterror(DWORD val)
 {
 	char *teb = (char *)__readfsdword(0x18);
 

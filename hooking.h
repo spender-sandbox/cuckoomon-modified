@@ -60,6 +60,8 @@ hook_info_t* hook_info();
 void hook_enable();
 void hook_disable();
 int called_by_hook(void);
+DWORD our_getlasterror(void);
+void our_setlasterror(DWORD val);
 
 extern LARGE_INTEGER time_skipped;
 

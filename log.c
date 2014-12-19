@@ -278,7 +278,7 @@ void loq(int index, const char *category, const char *name,
 	if (index >= LOG_ID_ANOMALY && g_config.suspend_logging)
 		return;
 
-	lasterror = GetLastError();
+	lasterror = our_getlasterror();
 
 	EnterCriticalSection(&g_mutex);
 
@@ -655,7 +655,7 @@ void loq(int index, const char *category, const char *name,
     bson_destroy( g_bson );
     LeaveCriticalSection(&g_mutex);
 
-	SetLastError(lasterror);
+	our_setlasterror(lasterror);
 }
 
 void announce_netlog()

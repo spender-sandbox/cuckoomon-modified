@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <shlwapi.h>
 #include <sddl.h>
 #include "misc.h"
+#include "hooking.h"
 #include "config.h"
 
 static _NtQueryInformationProcess pNtQueryInformationProcess;
@@ -341,7 +342,7 @@ char *ensure_absolute_ascii_path(char *out, const char *in)
 	unsigned int lenchars;
 	DWORD lasterror;
 
-	lasterror = GetLastError();
+	lasterror = our_getlasterror();
 
 	if (!GetFullPathNameA(in, MAX_PATH, tmpout, NULL))
 		goto normal_copy;
@@ -377,7 +378,7 @@ out:
 	if (out[1] == ':' && out[2] == '\\')
 		out[0] = toupper(out[0]);
 
-	SetLastError(lasterror);
+	our_setlasterror(lasterror);
 
 	return out;
 }
@@ -396,7 +397,7 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 
 	DWORD lasterror;
 
-	lasterror = GetLastError();
+	lasterror = our_getlasterror();
 
 	if (!wcsncmp(in, L"\\??\\", 4)) {
 		inadj = in + 4;
@@ -515,7 +516,7 @@ out:
 	if (out[1] == L':' && out[2] == L'\\')
 		out[0] = toupper(out[0]);
 
-	SetLastError(lasterror);
+	our_setlasterror(lasterror);
 
 	return out;
 }
@@ -652,7 +653,7 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 	HKEY rootkey;
 	DWORD lasterror;
 
-	lasterror = GetLastError();
+	lasterror = our_getlasterror();
 
 	if (ObjectAttributes == NULL || ObjectAttributes->ObjectName == NULL)
 		goto error;
@@ -746,14 +747,14 @@ normal:
 		keybuf->KeyNameLength -= (14 - ourlen) * sizeof(WCHAR);
 	}
 
-	SetLastError(lasterror);
+	our_setlasterror(lasterror);
 
 	return keybuf->KeyName;
 error:
 	keybuf->KeyName[0] = 0;
 	keybuf->KeyNameLength = 0;
 
-	SetLastError(lasterror);
+	our_setlasterror(lasterror);
 
 	return keybuf->KeyName;
 }
