@@ -105,3 +105,8 @@ void set_dll_of_interest(ULONG_PTR BaseAddress);
 extern wchar_t *our_process_path;
 
 BOOLEAN is_valid_address_range(ULONG_PTR start, DWORD len);
+
+extern ULONG_PTR g_our_dll_base;
+extern DWORD g_our_dll_size;
+
+DWORD get_image_size(ULONG_PTR base);

@@ -47,6 +47,16 @@ void resolve_runtime_apis(void)
 	*(FARPROC *)&pRtlGenRandom = GetProcAddress(GetModuleHandle("advapi32"), "SystemFunction036");
 }
 
+ULONG_PTR g_our_dll_base;
+DWORD g_our_dll_size;
+
+DWORD get_image_size(ULONG_PTR base)
+{
+	PIMAGE_DOS_HEADER doshdr = (PIMAGE_DOS_HEADER)base;
+	PIMAGE_NT_HEADERS nthdr = (PIMAGE_NT_HEADERS)(base + doshdr->e_lfanew);
+	return nthdr->OptionalHeader.SizeOfImage;
+}
+
 BOOLEAN is_valid_address_range(ULONG_PTR start, DWORD len)
 {
 	MEMORY_BASIC_INFORMATION meminfo;
@@ -54,7 +64,7 @@ BOOLEAN is_valid_address_range(ULONG_PTR start, DWORD len)
 	if (!VirtualQuery((LPCVOID)start, &meminfo, sizeof(meminfo)))
 		return FALSE;
 
-	if (start >= (ULONG_PTR)meminfo.AllocationBase && (start + len) <= ((ULONG_PTR)meminfo.AllocationBase + meminfo.RegionSize) && !(meminfo.Protect & PAGE_NOACCESS))
+	if (start >= (ULONG_PTR)meminfo.AllocationBase && (start + len) <= ((ULONG_PTR)meminfo.AllocationBase + meminfo.RegionSize) && !(meminfo.Protect & (PAGE_NOACCESS|PAGE_GUARD)))
 		return TRUE;
 
 	return FALSE;
@@ -329,6 +339,9 @@ char *ensure_absolute_ascii_path(char *out, const char *in)
 	unsigned int nonexistentidx;
 	unsigned int pathcomponentlen;
 	unsigned int lenchars;
+	DWORD lasterror;
+
+	lasterror = GetLastError();
 
 	if (!GetFullPathNameA(in, MAX_PATH, tmpout, NULL))
 		goto normal_copy;
@@ -363,6 +376,9 @@ out:
 	out[MAX_PATH - 1] = '\0';
 	if (out[1] == ':' && out[2] == '\\')
 		out[0] = toupper(out[0]);
+
+	SetLastError(lasterror);
+
 	return out;
 }
 
@@ -377,6 +393,10 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	const wchar_t *inadj;
 	unsigned int inlen;
 	int is_globalroot = 0;
+
+	DWORD lasterror;
+
+	lasterror = GetLastError();
 
 	if (!wcsncmp(in, L"\\??\\", 4)) {
 		inadj = in + 4;
@@ -494,6 +514,9 @@ out:
 		free(nonexistent);
 	if (out[1] == L':' && out[2] == L'\\')
 		out[0] = toupper(out[0]);
+
+	SetLastError(lasterror);
+
 	return out;
 }
 
@@ -627,6 +650,9 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 	unsigned int remaining;
 	unsigned int curlen;
 	HKEY rootkey;
+	DWORD lasterror;
+
+	lasterror = GetLastError();
 
 	if (ObjectAttributes == NULL || ObjectAttributes->ObjectName == NULL)
 		goto error;
@@ -719,10 +745,16 @@ normal:
 		memcpy(keybuf->KeyName, L"HKEY_USERS", ourlen * sizeof(WCHAR));
 		keybuf->KeyNameLength -= (14 - ourlen) * sizeof(WCHAR);
 	}
+
+	SetLastError(lasterror);
+
 	return keybuf->KeyName;
 error:
 	keybuf->KeyName[0] = 0;
 	keybuf->KeyNameLength = 0;
+
+	SetLastError(lasterror);
+
 	return keybuf->KeyName;
 }
 

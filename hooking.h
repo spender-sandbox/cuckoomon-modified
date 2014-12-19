@@ -17,27 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 typedef struct _hook_info_t {
-    unsigned int depth_count;
-	unsigned int backtrace_disable;
-    unsigned int hook_count;
-    unsigned int retaddr_esp;
-
+	int disable_count;
+	ULONG_PTR return_address;
+	ULONG_PTR frame_pointer;
 	ULONG_PTR main_caller_retaddr;
 	ULONG_PTR parent_caller_retaddr;
-
-    unsigned int last_error;
-    unsigned int ret_last_error;
-
-    // in case of an exception, this is the state of all registers upon
-    // execution of our hook
-    unsigned int eax;
-    unsigned int ecx;
-    unsigned int edx;
-    unsigned int ebx;
-    unsigned int esp;
-    unsigned int ebp;
-    unsigned int esi;
-    unsigned int edi;
 } hook_info_t;
 
 typedef struct _hook_t {
@@ -64,7 +48,7 @@ typedef struct _hook_t {
 
     unsigned char tramp[128];
     unsigned char pre_tramp[150];
-    unsigned char store_exc[128];
+    //unsigned char our_handler[128];
     unsigned char hook_data[32];
 } hook_t;
 
@@ -75,13 +59,7 @@ int hook_api(hook_t *h, int type);
 hook_info_t* hook_info();
 void hook_enable();
 void hook_disable();
-
-int hook_is_inside();
-
-unsigned int hook_get_last_error();
-void hook_set_last_error(unsigned int errcode);
-
-void hook_disable_retaddr_check();
+int called_by_hook(void);
 
 extern LARGE_INTEGER time_skipped;
 

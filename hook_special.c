@@ -49,7 +49,7 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 	Logging the load could confuse a novice analyst into thinking there's unusual
 	activity when there's not, so hide it
 	*/
-	if (hook_info()->depth_count == 1 && wcsncmp(library.Buffer, g_config.dllpath, wcslen(g_config.dllpath))) {
+	if (!called_by_hook() && wcsncmp(library.Buffer, g_config.dllpath, wcslen(g_config.dllpath))) {
 		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
 	        LOQspecial_ntstatus("system", "pFP", "Flags", Flags, "FileName", library.Buffer,
 		       "BaseAddress", ModuleHandle);
@@ -115,7 +115,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
         disable_sleep_skip();
     }
 	
-    if (hook_info()->depth_count == 1) {
+    if (!called_by_hook()) {
 		if (dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT && lpStartupInfo->cb == sizeof(STARTUPINFOEXW)) {
 			HANDLE ParentHandle = (HANDLE)0xffffffff;
 			unsigned int i;

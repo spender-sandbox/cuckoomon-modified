@@ -273,9 +273,12 @@ void loq(int index, const char *category, const char *name,
     const char * fmtbak = fmt;
     int argnum = 2;
     int count = 1; char key = 0;
+	DWORD lasterror;
 
 	if (index >= LOG_ID_ANOMALY && g_config.suspend_logging)
 		return;
+
+	lasterror = GetLastError();
 
 	EnterCriticalSection(&g_mutex);
 
@@ -401,7 +404,7 @@ void loq(int index, const char *category, const char *name,
     bson_init( g_bson );
     bson_append_int( g_bson, "I", index );
 	hook_info_t *hookinfo = hook_info();
-	bson_append_int(g_bson, "C", *(DWORD *)(hookinfo->retaddr_esp));
+	bson_append_int(g_bson, "C", (int)hookinfo->return_address);
 	// return location of malware callsite
 	bson_append_int(g_bson, "R", (int)hookinfo->main_caller_retaddr);
 	// return parent location of malware callsite
@@ -651,6 +654,8 @@ void loq(int index, const char *category, const char *name,
     log_raw_direct(bson_data( g_bson ), bson_size( g_bson ));
     bson_destroy( g_bson );
     LeaveCriticalSection(&g_mutex);
+
+	SetLastError(lasterror);
 }
 
 void announce_netlog()

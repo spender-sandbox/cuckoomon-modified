@@ -150,8 +150,12 @@ int pipe(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    int len = _pipe_sprintf(NULL, fmt, args);
+	int len;
 	int ret = -1;
+	DWORD lasterror;
+
+	lasterror = GetLastError();
+	len = _pipe_sprintf(NULL, fmt, args);
     if (len > 0) {
         char *buf = calloc(1, len + 1);
         _pipe_sprintf(buf, fmt, args);
@@ -173,7 +177,10 @@ int pipe(const char *fmt, ...)
 #endif
 		free(buf);
     }
-    return ret;
+
+	SetLastError(lasterror);
+
+	return ret;
 }
 
 int pipe2(void *out, int *outlen, const char *fmt, ...)

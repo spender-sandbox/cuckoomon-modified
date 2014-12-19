@@ -426,7 +426,7 @@ void set_hooks_dll(const wchar_t *library)
     for (int i = 0; i < ARRAYSIZE(g_hooks); i++) {
         if(!wcsicmp(g_hooks[i].library, library)) {
 			if (hook_api(&g_hooks[i], HOOKTYPE) < 0)
-				pipe("WARN:Unable to hook %z", g_hooks[i].funcname);
+				pipe("WARNING:Unable to hook %z", g_hooks[i].funcname);
         }
     }
 }
@@ -470,7 +470,7 @@ void set_hooks()
     for (int i = 0; i < ARRAYSIZE(g_hooks); i++) {
 		//pipe("INFO:Hooking %z", g_hooks[i].funcname);
 		if (hook_api(&g_hooks[i], HOOKTYPE) < 0)
-			pipe("WARN:Unable to hook %z", g_hooks[i].funcname);
+			pipe("WARNING:Unable to hook %z", g_hooks[i].funcname);
     }
 
 	for (i = 0; i < num_suspended_threads; i++) {
@@ -506,8 +506,8 @@ LONG WINAPI cuckoomon_exception_handler(
 	strcpy(msg, "Exception Caught! EIP:");
 	if (dllname)
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
-	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %08x, Fault Address: %08x, Exception Code: %08x, ",
-		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], ExceptionInfo->ExceptionRecord->ExceptionCode);
+	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %08x, Fault Address: %08x, Esp: %08x, Exception Code: %08x, ",
+		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (DWORD)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
 	if (is_valid_address_range((ULONG_PTR)stack, 10 * sizeof(DWORD))) {
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Stack Dump: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x, ",
 		stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
@@ -616,6 +616,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			return TRUE;
 		}
 
+		g_our_dll_base = (ULONG_PTR)hModule;
+		g_our_dll_size = get_image_size(g_our_dll_base);
+		
 		resolve_runtime_apis();
 
 		init_private_heap();
@@ -677,9 +680,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         init_startup_time(g_config.startup_time);
 
         // disable the retaddr check if the user wants so
-        if(g_config.retaddr_check == 0) {
-            hook_disable_retaddr_check();
-        }
+        //if(g_config.retaddr_check == 0) {
+        //    hook_disable_retaddr_check();
+        //}
 
 		// initialize our unhook detection
         unhook_init_detection();

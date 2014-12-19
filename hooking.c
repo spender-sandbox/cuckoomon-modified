@@ -32,11 +32,6 @@ extern DWORD g_tls_hook_index;
 // do not change this number
 #define TLS_LAST_ERROR 0x34
 
-// hook return address stack space
-#define TLS_HOOK_INFO_RETADDR_SPACE 0x100
-
-// by default we enable the retaddr check
-static int g_enable_retaddr_check = 1;
 
 // length disassembler engine
 int lde(void *addr)
@@ -59,59 +54,62 @@ int lde(void *addr)
     return ret;
 }
 
+static void emit_rel(unsigned char *buf, unsigned char *source, unsigned char *target)
+{
+	*(DWORD *)buf = (DWORD)(target - (source + 4));
+}
+
 // need to be very careful about what we call in here, as it can be called in the context of any hook
 // including those that hold the loader lock
-static int is_interesting_backtrace(unsigned int _ebp)
+
+static int set_caller_info(unsigned int addr)
 {
 	hook_info_t *hookinfo = hook_info();
 
-	hookinfo->backtrace_disable = 1;
-	//pipe("INFO:called is_interesting_backtrace %p, tid %d", *(unsigned int *)hookinfo->retaddr_esp, GetCurrentThreadId());
-	hookinfo->backtrace_disable = 0;
+	if (!is_in_dll_range(addr)) {
+		if (hookinfo->main_caller_retaddr == 0)
+			hookinfo->main_caller_retaddr = addr;
+		else {
+			hookinfo->parent_caller_retaddr = addr;
+			return 1;
+		}
+	}
+	return 0;
+}
 
-	// only perform this function when the retaddr-check is enabled, otherwise
-    // return true in all cases (if retaddr-check is disabled, then every
-    // backtrace is interesting)
-    //if(g_enable_retaddr_check == 0) {
-    //    return 1;
-    //}
+static int addr_in_our_dll_range(unsigned int addr)
+{
+	if (addr >= g_our_dll_base && addr < (g_our_dll_base + g_our_dll_size))
+		return 1;
+	return 0;
+}
 
-    // http://en.wikipedia.org/wiki/Win32_Thread_Information_Block
+static int operate_on_backtrace(unsigned int retaddr, unsigned int _ebp, int (*func)(unsigned int))
+{
+	hook_info_t *hookinfo = hook_info();
+	int ret;
+
     unsigned int top = __readfsdword(0x04);
     unsigned int bottom = __readfsdword(0x08);
 
     unsigned int count = HOOK_BACKTRACE_DEPTH;
 
-	if (hookinfo->depth_count != 1)
-		return 1;
+	ret = func(retaddr);
+	if (ret)
+		return ret;
 
-	hookinfo->main_caller_retaddr = 0;
-	hookinfo->parent_caller_retaddr = 0;
-
-	if (!is_in_dll_range((ULONG_PTR)*(DWORD *)hookinfo->retaddr_esp))
-		hookinfo->main_caller_retaddr = (ULONG_PTR)*(DWORD *)hookinfo->retaddr_esp;
-
-	while (_ebp >= bottom && _ebp <= (top - 8) && count-- != 0) {
-
+	while (_ebp >= bottom && _ebp <= (top - 8) && count-- != 0)
+	{
         // obtain the return address and the next value of ebp
 		ULONG_PTR addr = *(unsigned int *)(_ebp + 4);
 		_ebp = *(unsigned int *)_ebp;
 
-		if (!is_in_dll_range(addr)) {
-			if (hookinfo->main_caller_retaddr == 0)
-				hookinfo->main_caller_retaddr = addr;
-			else {
-				hookinfo->parent_caller_retaddr = addr;
-				return 1;
-			}
-		}
-			// if this return address is *not* to be ignored, then it's
-        // interesting
-        //if(is_ignored_retaddr(addr) == 0) {
-        //    return 1;
-        //}
+		ret = func(addr);
+		if (ret)
+			return ret;
     }
-    return 1;
+
+	return ret;
 }
 
 // create a trampoline at the given address, that is, we are going to replace
@@ -126,101 +124,6 @@ static int hook_create_trampoline(unsigned char *addr, int len,
     unsigned char *tramp)
 {
     const unsigned char *base = tramp;
-
-    // after the original function has returned, we have to make a backup of
-    // the Last Error Code, so what we do is the following (we use the same
-    // method below in the pre-tramp.) We store the current return address in
-    // info->ret_last_error, then we overwrite the return address with a
-    // return address in our trampoline. When we reach the trampoline, we make
-    // a backup of the Last Error Code and jmp to the real return address.
-
-	unsigned char pre_backup1[] = {
-		// push eax
-		0x50,
-		// push ecx
-		0x51,
-		// push edx
-		0x52,
-		// pushf
-		0x9c,
-		// cld
-		0xfc,
-		// call hook_info
-		0xe8, 0x00, 0x00, 0x00, 0x00
-	};
-	unsigned char pre_backup2[] = {
-		// popf
-		0x9d,
-		// pop edx
-		0x5a,
-		// pop ecx
-		0x59,
-        // cmp dword [eax+hook_info_t.hook_count], 0
-        0x83, 0x78, offsetof(hook_info_t, hook_count), 0x00,
-        // jg $+12
-        0x7f, 0x12,
-            // inc dword [eax+hook_info_t.hook_count]
-            0xff, 0x40, offsetof(hook_info_t, hook_count),
-            // push dword [esp+4]
-            0xff, 0x74, 0xe4, 0x04,
-            // pop dword [eax+hook_info_t.ret_last_error]
-            0x8f, 0x40, offsetof(hook_info_t, ret_last_error),
-            // mov dword [esp+4], new_return_address
-            0xc7, 0x44, 0xe4, 0x04, 0x00, 0x00, 0x00, 0x00,
-
-        // pop eax
-        0x58
-    };
-
-    // the function returns here after executing, backup the Last Error Code
-    unsigned char post_backup1[] = {
-        // push eax
-        0x50,
-		// push ecx
-		0x51,
-		// push edx
-		0x52,
-		// pushf
-		0x9c,
-		// cld
-		0xfc,
-		// call hook_info
-		0xe8, 0x00, 0x00, 0x00, 0x00
-	};
-	unsigned char post_backup2[] = {
-		// popf
-		0x9d,
-		// pop edx
-		0x5a,
-		// pop ecx
-		0x59,
-		// dec dword [eax+hook_info_t.hook_count]
-        0xff, 0x48, offsetof(hook_info_t, hook_count),
-        // cmp dword [eax+hook_info_t.depth_count], 1
-        0x83, 0x78, offsetof(hook_info_t, depth_count), 0x01,
-        // jg $+0a
-        0x7f, 0x0a,
-            // push dword fs:[TLS_LAST_ERROR]
-            0x64, 0xff, 0x35, TLS_LAST_ERROR, 0x00, 0x00, 0x00,
-            // pop dword [eax+hook_info_t.last_error]
-            0x8f, 0x40, offsetof(hook_info_t, last_error),
-        // mov eax, dword [eax+hook_info_t.ret_last_error]
-        0x8b, 0x40, offsetof(hook_info_t, ret_last_error),
-        // xchg eax, dword [esp]
-        0x87, 0x04, 0xe4,
-        // retn
-        0xc3
-    };
-
-    *(unsigned int *)(pre_backup1 + sizeof(pre_backup1) - sizeof(unsigned int)) =
-        (unsigned char *)&hook_info - (tramp + sizeof(pre_backup1));
-
-    memcpy(tramp, pre_backup1, sizeof(pre_backup1));
-    tramp += sizeof(pre_backup1);
-	memcpy(tramp, pre_backup2, sizeof(pre_backup2));
-	tramp += sizeof(pre_backup2);
-
-    unsigned char **pre_backup_addr = (unsigned char **)(tramp - 5);
 
     // our trampoline should contain at least enough bytes to fit the given
     // length
@@ -330,23 +233,36 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 
     // append a jump from the trampoline to the original function
     *tramp++ = 0xe9;
-    *(unsigned int *) tramp =
-        (unsigned int) addr - (unsigned int) tramp - 4;
+	emit_rel(tramp, tramp, addr);
     tramp += 4;
 
-    // return address is the next instruction after the jmp
-    *pre_backup_addr = tramp;
-
-	*(unsigned int *)(post_backup1 + sizeof(post_backup1) - sizeof(unsigned int)) =
-		(unsigned char *)&hook_info - (tramp + sizeof(post_backup1));
-	
-	memcpy(tramp, post_backup1, sizeof(post_backup1));
-    tramp += sizeof(post_backup1);
-	memcpy(tramp, post_backup2, sizeof(post_backup2));
-	tramp += sizeof(post_backup2);
-
-    // return the length of this trampoline
+	// return the length of this trampoline
     return tramp - base;
+}
+
+int called_by_hook(void)
+{
+	hook_info_t *hookinfo = hook_info();
+
+	return operate_on_backtrace(hookinfo->return_address, hookinfo->frame_pointer, addr_in_our_dll_range);
+}
+
+// returns 1 if we should call our hook, 0 if we should call the original function instead
+static int WINAPI enter_hook(uint8_t is_special_hook, unsigned int _ebp, unsigned int retaddr)
+{
+	hook_info_t *hookinfo = hook_info();
+
+	hookinfo->return_address = retaddr;
+	hookinfo->frame_pointer = _ebp;
+
+	/* set caller information */
+	hookinfo->main_caller_retaddr = 0;
+	hookinfo->parent_caller_retaddr = 0;
+	operate_on_backtrace(retaddr, _ebp, set_caller_info);
+
+	if ((!called_by_hook() || is_special_hook) && (hookinfo->disable_count < 1))
+		return 1;
+	return 0;
 }
 
 // this function constructs the so-called pre-trampoline, this pre-trampoline
@@ -361,245 +277,67 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 // engine "once inside a hook, don't hook further API calls" by setting the
 // allow_hook_recursion flag to false. The example above is what happens when
 // the hook recursion is not allowed.
-static void hook_create_pre_tramp(hook_t *h, uint8_t is_special_hook)
+static void hook_create_pre_tramp(hook_t *h)
 {
 	unsigned char *p;
 	unsigned int off;
 
 	unsigned char pre_tramp1[] = {
-		// push ebx
-		0x53,
-		// push eax
-		0x50,
-		// push ecx
-		0x51,
-		// push edx
-		0x52,
+#if DISABLE_HOOK_CONTENT
+		0xe9, 0x00, 0x00, 0x00, 0x00,
+#endif
 		// pushf
 		0x9c,
+		// pusha
+		0x60,
 		// cld
 		0xfc,
-		// call hook_info
+		// push dword ptr [esp+36]
+		0xff, 0x74, 0x24, 0x24,
+		// push ebp
+		0x55,
+		// push h->allow_hook_recursion
+		0x6a, h->allow_hook_recursion,
+		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
 		0xe8, 0x00, 0x00, 0x00, 0x00
 	};
 	unsigned char pre_tramp2[] = {
-		// popf
-		0x9d,
-		// pop edx
-		0x5a,
-		// pop ecx
-		0x59,
-
-		// inc dword [eax+hook_info_t.depth_count]
-		0xff, 0x40, offsetof(hook_info_t, depth_count),
-
-		// mov ebx, [esp+8]
-		0x8b, 0x5c, 0xe4, 0x08,
-		// xchg esp, [eax+hook_info_t.retaddr_esp]
-		0x87, 0x60, offsetof(hook_info_t, retaddr_esp),
-		// push ebx
-		0x53,
-		// xchg esp, [eax+hook_info_t.retaddr_esp]
-		0x87, 0x60, offsetof(hook_info_t, retaddr_esp),
-		// mov dword [esp+8], new_return_address
-		0xc7, 0x44, 0xe4, 0x08, 0x00, 0x00, 0x00, 0x00
-	};
-	unsigned char pre_tramp3[] = {
-		// pushf
-		0x9c,
-		// cld
-		0xfc,
-		// pushad
-		0x60,
-		// push ebp
-		0x55,
-		// cmp dword [eax+hook_info_t.backtrace_disable], 1
-		0x83, 0x78, offsetof(hook_info_t, backtrace_disable), 0x01,
-		// jz $+0x5
-		0x74, 0x05,
-			// call is_interesting_backtrace, we're ignoring the return value now
-			0xe8, 0x00, 0x00, 0x00, 0x00
-	};
-	unsigned char pre_tramp4[] = {
 		// test eax, eax
 		0x85, 0xc0,
-		// pop eax
-		0x58,
 		// popad
 		0x61,
+		// jnz 0x6
+		0x75, 0x06,
+			// popf
+			0x9d,
+			// jmp h->tramp (original function)
+			0xe9, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp3[] = {
 		// popf
 		0x9d,
-
-		// special hook support
-		// mov ebx, 1
-		0xbb, 0x01, 0x00, 0x00, 0x00,
-		// cmp ebx, is_special_hook
-		0x83, 0xfb, is_special_hook,
-		// jnz $+7
-		0x75, 0x07,
-			// pop eax; pop ebx
-			0x58, 0x5b,
-			// jmp h->store_exc
-			0xe9, 0x00, 0x00, 0x00, 0x00
-	};
-	unsigned char pre_tramp5[] = {
-		// cmp dword [eax+hook_info_t.depth_count], 1
-		0x83, 0x78, offsetof(hook_info_t, depth_count), 0x01,
-		// jle $+7
-		0x7e, 0x07,
-			// pop eax; pop ebx
-			0x58, 0x5b,
-			// jmp h->tramp
-			0xe9, 0x00, 0x00, 0x00, 0x00
-	};
-	unsigned char pre_tramp6[] = {
-		// pop eax; pop ebx
-		0x58, 0x5b,
-		// jmp h->store_exc
+		// jmp h->new_func (New_ func)
 		0xe9, 0x00, 0x00, 0x00, 0x00
 	};
-	unsigned char pre_tramp7[] = {
-        // push ebx; push eax
-        0x53, 0x50,
-		// push ecx
-		0x51,
-		// push edx
-		0x52,
-		// pushf
-		0x9c,
-		// cld
-		0xfc,
-		// call hook_info
-		0xe8, 0x00, 0x00, 0x00, 0x00
-	};
-	unsigned char pre_tramp8[] = {
-		// popf
-		0x9d,
-		// pop edx
-		0x5a,
-		// pop ecx
-		0x59,
-		// dec dword [eax+hook_info_t.depth_count]
-        0xff, 0x48, offsetof(hook_info_t, depth_count),
-        // push dword [eax+hook_info_t.last_error]
-        0xff, 0x70, offsetof(hook_info_t, last_error),
-        // pop dword fs:[TLS_LAST_ERROR]
-		0x64, 0x8f, 0x05, TLS_LAST_ERROR, 0x00, 0x00, 0x00,
 
-        // xchg esp, [eax+hook_info_t.retaddr_esp]
-        0x87, 0x60, offsetof(hook_info_t, retaddr_esp),
-        // pop ebx
-        0x5b,
-        // xchg esp, [eax+hook_info_t.retaddr_esp]
-        0x87, 0x60, offsetof(hook_info_t, retaddr_esp),
-        // pop eax
-        0x58,
-        // xchg ebx, dword [esp]
-        0x87, 0x1c, 0xe4,
-        // retn
-        0xc3
-    };
+#if DISABLE_HOOK_CONTENT
+	emit_rel(pre_tramp1 + 1, h->pre_tramp + 1, h->tramp);
+#endif
 
-	*(unsigned int *)(pre_tramp1 + sizeof(pre_tramp1) - sizeof(unsigned int)) =
-		(unsigned char *)&hook_info - (h->pre_tramp + sizeof(pre_tramp1));
-	// set return address to beginning of pre_tramp7
-	*(unsigned int *)(pre_tramp2 + sizeof(pre_tramp2) - sizeof(unsigned int)) =
-		(unsigned int)h->pre_tramp + sizeof(pre_tramp1) + sizeof(pre_tramp2) + sizeof(pre_tramp3) + sizeof(pre_tramp4) + sizeof(pre_tramp5) + sizeof(pre_tramp6);
-	*(unsigned int *)(pre_tramp3 + sizeof(pre_tramp3) - sizeof(unsigned int)) =
-		(unsigned char *)&is_interesting_backtrace - (h->pre_tramp + sizeof(pre_tramp1) + sizeof(pre_tramp2) + sizeof(pre_tramp3));
-	*(unsigned int *)(pre_tramp4 + sizeof(pre_tramp4) - sizeof(unsigned int)) =
-		h->store_exc - (h->pre_tramp + sizeof(pre_tramp1) + sizeof(pre_tramp2) + sizeof(pre_tramp3) + sizeof(pre_tramp4));
-	*(unsigned int *)(pre_tramp5 + sizeof(pre_tramp5) - sizeof(unsigned int)) =
-		h->tramp - (h->pre_tramp + sizeof(pre_tramp1) + sizeof(pre_tramp2) + sizeof(pre_tramp3) + sizeof(pre_tramp4) + sizeof(pre_tramp5));
-	*(unsigned int *)(pre_tramp6 + sizeof(pre_tramp6) - sizeof(unsigned int)) =
-		h->store_exc - (h->pre_tramp + sizeof(pre_tramp1) + sizeof(pre_tramp2) + sizeof(pre_tramp3) + sizeof(pre_tramp4) + sizeof(pre_tramp5) + sizeof(pre_tramp6));
-	*(unsigned int *)(pre_tramp7 + sizeof(pre_tramp7) - sizeof(unsigned int)) =
-		(unsigned char *)&hook_info - (h->pre_tramp + sizeof(pre_tramp1) + sizeof(pre_tramp2) + sizeof(pre_tramp3) + sizeof(pre_tramp4) + sizeof(pre_tramp5) + sizeof(pre_tramp6) + sizeof(pre_tramp7));
+	p = h->pre_tramp;
+	off = sizeof(pre_tramp1) - sizeof(unsigned int);
+	emit_rel(pre_tramp1 + off, p + off, (unsigned char *)&enter_hook);
+	memcpy(p, pre_tramp1, sizeof(pre_tramp1));
+	p += sizeof(pre_tramp1);
 
-	p = pre_tramp1;
-	off = 0;
-	memcpy(h->pre_tramp + off, p, sizeof(pre_tramp1));
-	off += sizeof(pre_tramp1);
-	p = pre_tramp2;
-	memcpy(h->pre_tramp + off, p, sizeof(pre_tramp2));
-	off += sizeof(pre_tramp2);
-	p = pre_tramp3;
-	memcpy(h->pre_tramp + off, p, sizeof(pre_tramp3));
-	off += sizeof(pre_tramp3);
-	p = pre_tramp4;
-	memcpy(h->pre_tramp + off, p, sizeof(pre_tramp4));
-	off += sizeof(pre_tramp4);
-	p = pre_tramp5;
-	memcpy(h->pre_tramp + off, p, sizeof(pre_tramp5));
-	off += sizeof(pre_tramp5);
-	p = pre_tramp6;
-	memcpy(h->pre_tramp + off, p, sizeof(pre_tramp6));
-	off += sizeof(pre_tramp6);
-	p = pre_tramp7;
-	memcpy(h->pre_tramp + off, p, sizeof(pre_tramp7));
-	off += sizeof(pre_tramp7);
-	p = pre_tramp8;
-	memcpy(h->pre_tramp + off, p, sizeof(pre_tramp8));
-}
+	off = sizeof(pre_tramp2) - sizeof(unsigned int);
+	emit_rel(pre_tramp2 + off, p + off, h->tramp);
+	memcpy(p, pre_tramp2, sizeof(pre_tramp2));
+	p += sizeof(pre_tramp2);
 
-static void hook_store_exception_info(hook_t *h)
-{
-    unsigned char store_exception1[] = {
-        // push eax
-        0x50,
-		// push ecx
-		0x51,
-		// push edx
-		0x52,
-		// pushf
-		0x9c,
-		// cld
-		0xfc,
-		// call hook_info
-		0xe8, 0x00, 0x00, 0x00, 0x00
-	};
-	unsigned char store_exception2[] = {
-		// popf
-		0x9d,
-		// pop edx
-		0x5a,
-		// pop ecx
-		0x59,
-		// xchg ebx, dword [esp]
-        0x87, 0x1c, 0xe4,
-        // mov dword [eax+hook_info_t.eax], ebx
-        0x89, 0x58, offsetof(hook_info_t, eax),
-        // xchg ebx, dword [esp]
-        0x87, 0x1c, 0xe4,
-        // mov dword [eax+hook_info_t.ecx], ecx
-        0x89, 0x48, offsetof(hook_info_t, ecx),
-        // mov dword [eax+hook_info_t.edx], edx
-        0x89, 0x50, offsetof(hook_info_t, edx),
-        // mov dword [eax+hook_info_t.ebx], ebx
-        0x89, 0x58, offsetof(hook_info_t, ebx),
-        // mov dword [eax+hook_info_t.esp], esp
-        0x89, 0x60, offsetof(hook_info_t, esp),
-        // mov dword [eax+hook_info_t.ebp], ebp
-        0x89, 0x68, offsetof(hook_info_t, ebp),
-        // mov dword [eax+hook_info_t.esi], esi
-        0x89, 0x70, offsetof(hook_info_t, esi),
-        // mov dword [eax+hook_info_t.edi], edi
-        0x89, 0x78, offsetof(hook_info_t, edi),
-        // pop eax
-        0x58,
-        // jmp h->new_func
-        0xe9, 0x00, 0x00, 0x00, 0x00
-    };
-
-	*(unsigned int *)(store_exception1 + sizeof(store_exception1) - sizeof(unsigned int)) =
-		(unsigned char *)&hook_info - (h->store_exc + sizeof(store_exception1));
-	*(unsigned int *)(store_exception2 + sizeof(store_exception2) - sizeof(unsigned int)) =
-            (unsigned char *) h->new_func - (h->store_exc + sizeof(store_exception1) + sizeof(store_exception2));
-
-	unsigned char *p = h->store_exc;
-	memcpy(p, store_exception1, sizeof(store_exception1));
-	p += sizeof(store_exception1);
-	memcpy(p, store_exception2, sizeof(store_exception2));
+	off = sizeof(pre_tramp3) - sizeof(unsigned int);
+	emit_rel(pre_tramp3 + off, p + off, h->new_func);
+	memcpy(p, pre_tramp3, sizeof(pre_tramp3));
 }
 
 static int hook_api_jmp_direct(hook_t *h, unsigned char *from,
@@ -885,13 +623,13 @@ int hook_api(hook_t *h, int type)
 			// step over the short jump and the relative offset
 			addr += 4;
 		}
-		if (!wcscmp(h->library, L"ntdll") && addr[0] == '\xb8') {
-			// hooking a native API, leave in the mov eax, <syscall nr> instruction
-			// as some malware depends on this for direct syscalls
-			// missing a few syscalls is better than crashing and getting no information
-			// at all
-			type = HOOK_NATIVE_JMP_INDIRECT;
-		}
+	}
+	if (!wcscmp(h->library, L"ntdll") && addr[0] == 0xb8) {
+		// hooking a native API, leave in the mov eax, <syscall nr> instruction
+		// as some malware depends on this for direct syscalls
+		// missing a few syscalls is better than crashing and getting no information
+		// at all
+		type = HOOK_NATIVE_JMP_INDIRECT;
 	}
 
 	// check if this is a valid hook type
@@ -907,19 +645,11 @@ int hook_api(hook_t *h, int type)
 		&old_protect)) {
 
 		if (hook_create_trampoline(addr, hook_types[type].len, h->tramp)) {
-
-			hook_store_exception_info(h);
-
-			uint8_t special = 0;
-
-			if (h->allow_hook_recursion == 1) {
-				special = 1;
-			}
-
+			//hook_store_exception_info(h);
 			uint8_t orig[16];
 			memcpy(orig, addr, 16);
 
-			hook_create_pre_tramp(h, special);
+			hook_create_pre_tramp(h);
 
 			// insert the hook (jump from the api to the
 			// pre-trampoline)
@@ -979,18 +709,18 @@ hook_info_t *hook_info()
 	if (ptr == NULL) {
 		// this wizardry allows us to hook NtAllocateVirtualMemory -- otherwise we'd crash from infinite
 		// recursion if NtAllocateVirtualMemory was the first API we saw on a new thread
-		char dummybuf[sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE + sizeof(unsigned int)] = { 0 };
+		char dummybuf[sizeof(hook_info_t)] = { 0 };
 
 		hook_info_t *info = (hook_info_t *)&dummybuf;
-		info->retaddr_esp = (unsigned int)info + sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE;
 		TlsSetValue(g_tls_hook_index, info);
 
 		// now allocate the memory we need for the hook info struct without calling our hooks
-		info->depth_count++;
-		hook_info_t *newinfo = (hook_info_t *)calloc(1, sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE + sizeof(unsigned int));
-		info->depth_count--;
+		// shouldn't need to do the disable_count thanks to the new call stack inspection, but
+		// it doesn't hurt
+		info->disable_count++;
+		hook_info_t *newinfo = (hook_info_t *)calloc(1, sizeof(hook_info_t));
+		info->disable_count--;
 
-		newinfo->retaddr_esp = (unsigned int)newinfo + sizeof(hook_info_t) + TLS_HOOK_INFO_RETADDR_SPACE;
 		TlsSetValue(g_tls_hook_index, newinfo);
 		ptr = newinfo;
 	}
@@ -1002,30 +732,10 @@ hook_info_t *hook_info()
 
 void hook_enable()
 {
-    hook_info()->depth_count--;
+    hook_info()->disable_count--;
 }
 
 void hook_disable()
 {
-    hook_info()->depth_count++;
-}
-
-int hook_is_inside()
-{
-    return hook_info()->depth_count || hook_info()->hook_count;
-}
-
-unsigned int hook_get_last_error()
-{
-    return hook_info()->last_error;
-}
-
-void hook_set_last_error(unsigned int errcode)
-{
-    hook_info()->last_error = errcode;
-}
-
-void hook_disable_retaddr_check()
-{
-    g_enable_retaddr_check = 0;
+    hook_info()->disable_count++;
 }
