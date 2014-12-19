@@ -780,7 +780,6 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 void log_free()
 {
     log_flush();
-	DeleteCriticalSection(&g_mutex);
 	if (g_sock != INVALID_SOCKET) {
         closesocket(g_sock);
 		g_sock = INVALID_SOCKET;
