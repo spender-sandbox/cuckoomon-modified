@@ -68,6 +68,12 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
 
             ret += _pipe_ascii(&out, s, strlen(s));
         }
+		else if (*fmt == 'c') {
+			char buf[2];
+			buf[0] = va_arg(args, char);
+			buf[1] = '\0';
+			ret += _pipe_ascii(&out, buf, 1);
+		}
         else if(*fmt == 'Z') {
             const wchar_t *s = va_arg(args, const wchar_t *);
             if(s == NULL) return -1;
@@ -141,6 +147,10 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
 			sprintf(s, "%p", va_arg(args, void *));
 			ret += _pipe_ascii(&out, s, strlen(s));
 		}
+		else {
+			const char *msg = "-- UNKNOWN FORMAT STRING -- ";
+			ret += _pipe_ascii(&out, msg, strlen(msg));
+		}
         fmt++;
     }
     return ret;
@@ -150,17 +160,17 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
 int pipe(const char *fmt, ...)
 {
     va_list args;
-    va_start(args, fmt);
 	int len;
 	int ret = -1;
 	DWORD lasterror;
+
+	va_start(args, fmt);
 
 	lasterror = our_getlasterror();
 	len = _pipe_sprintf(NULL, fmt, args);
     if (len > 0) {
         char *buf = calloc(1, len + 1);
         _pipe_sprintf(buf, fmt, args);
-        va_end(args);
 
 #ifdef CUCKOODBG
 		char filename[64];
@@ -178,6 +188,8 @@ int pipe(const char *fmt, ...)
 #endif
 		free(buf);
     }
+
+	va_end(args);
 
 	our_setlasterror(lasterror);
 

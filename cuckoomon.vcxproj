@@ -62,6 +62,8 @@
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>ws2_32.lib;shlwapi.lib;bson.lib;capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)\Debug</AdditionalLibraryDirectories>
+      <BaseAddress>0x30000000</BaseAddress>
+      <SetChecksum>true</SetChecksum>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -88,6 +90,8 @@
       <AdditionalLibraryDirectories>$(ProjectDir)\Release</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
+      <BaseAddress>0x30000000</BaseAddress>
+      <SetChecksum>true</SetChecksum>
     </Link>
     <PreBuildEvent>
       <Command>

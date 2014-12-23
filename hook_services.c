@@ -48,31 +48,32 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenSCManagerW,
 
 HOOKDEF(SC_HANDLE, WINAPI, CreateServiceA,
     __in       SC_HANDLE hSCManager,
-    __in       LPCTSTR lpServiceName,
-    __in_opt   LPCTSTR lpDisplayName,
+    __in       LPCSTR lpServiceName,
+    __in_opt   LPCSTR lpDisplayName,
     __in       DWORD dwDesiredAccess,
     __in       DWORD dwServiceType,
     __in       DWORD dwStartType,
     __in       DWORD dwErrorControl,
-    __in_opt   LPCTSTR lpBinaryPathName,
-    __in_opt   LPCTSTR lpLoadOrderGroup,
+    __in_opt   LPCSTR lpBinaryPathName,
+    __in_opt   LPCSTR lpLoadOrderGroup,
     __out_opt  LPDWORD lpdwTagId,
-    __in_opt   LPCTSTR lpDependencies,
-    __in_opt   LPCTSTR lpServiceStartName,
-    __in_opt   LPCTSTR lpPassword
+    __in_opt   LPCSTR lpDependencies,
+    __in_opt   LPCSTR lpServiceStartName,
+    __in_opt   LPCSTR lpPassword
 ) {
     SC_HANDLE ret = Old_CreateServiceA(hSCManager, lpServiceName,
         lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType,
         dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId,
         lpDependencies, lpServiceStartName, lpPassword);
-    LOQ_nonnull("services", "pssp3l3s", "ServiceControlHandle", hSCManager,
+	LOQ_nonnull("services", "pssp3l3s", "ServiceControlHandle", hSCManager,
         "ServiceName", lpServiceName, "DisplayName", lpDisplayName,
         "DesiredAccess", dwDesiredAccess, "ServiceType", dwServiceType,
         "StartType", dwStartType, "ErrorControl", dwErrorControl,
         "BinaryPathName", lpBinaryPathName,
         "ServiceStartName", lpServiceStartName,
         "Password", lpPassword);
-    return ret;
+
+	return ret;
 }
 
 HOOKDEF(SC_HANDLE, WINAPI, CreateServiceW,
@@ -94,7 +95,7 @@ HOOKDEF(SC_HANDLE, WINAPI, CreateServiceW,
         lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType,
         dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId,
         lpDependencies, lpServiceStartName, lpPassword);
-    LOQ_nonnull("services", "puup3lF2u", "ServiceControlHandle", hSCManager,
+    LOQ_nonnull("services", "puup3l3u", "ServiceControlHandle", hSCManager,
         "ServiceName", lpServiceName, "DisplayName", lpDisplayName,
         "DesiredAccess", dwDesiredAccess, "ServiceType", dwServiceType,
         "StartType", dwStartType, "ErrorControl", dwErrorControl,

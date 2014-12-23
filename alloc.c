@@ -50,7 +50,7 @@ void *cm_realloc(void *ptr, size_t size)
 
 	assert(hdr->Magic == CM_ALLOC_MAGIC);
 
-	if (hdr->Max >= size) {
+	if (hdr->Max >= (size + CM_ALLOC_METASIZE)) {
 		hdr->Used = size + CM_ALLOC_METASIZE;
 		return ptr;
 	}

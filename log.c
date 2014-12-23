@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 
 // the size of the logging buffer
-#define BUFFERSIZE 1024 * 1024
+#define BUFFERSIZE 16 * 1024 * 1024
 #define BUFFER_LOG_MAX 256
 
 static CRITICAL_SECTION g_mutex;
@@ -37,7 +37,7 @@ static CRITICAL_SECTION g_writing_log_buffer_mutex;
 static int g_sock;
 static unsigned int g_starttick;
 
-static char g_buffer[BUFFERSIZE];
+static char *g_buffer;
 static volatile int g_idx;
 
 // current to-be-logged API call
@@ -195,7 +195,7 @@ static void num_to_string(char *buf, unsigned int buflen, unsigned int num)
 		num = num % dec;
 		dec /= 10;
 	}
-	buf[buflen - 1] = '\0';
+	buf[i] = '\0';
 }
 
 static void log_string(const char *str, int length)
@@ -209,10 +209,8 @@ static void log_string(const char *str, int length)
     int utf8len = * (int *) utf8s;
     ret = bson_append_binary( g_bson, g_istr, BSON_BIN_BINARY, utf8s+4, utf8len );
     if (ret == BSON_ERROR) {
-        char tmp[64];
-        snprintf(tmp, sizeof(tmp), "dbg bson err string %x utf8len %d", g_bson->err, utf8len);
-        debug_message(tmp);
-    }
+		bson_append_string_n(g_bson, g_istr, "", 0);
+	}
     free(utf8s);
 }
 
@@ -227,10 +225,8 @@ static void log_wstring(const wchar_t *str, int length)
     int utf8len = * (int *) utf8s;
     ret = bson_append_binary( g_bson, g_istr, BSON_BIN_BINARY, utf8s+4, utf8len );
     if (ret == BSON_ERROR) {
-        char tmp[64];
-        snprintf(tmp, 64, "dbg bson err wstring %x utf8len %d", g_bson->err, utf8len);
-        debug_message(tmp);
-    }
+		bson_append_string_n(g_bson, g_istr, "", 0);
+	}
     free(utf8s);
 }
 
@@ -269,7 +265,6 @@ void loq(int index, const char *category, const char *name,
     int is_success, int return_value, const char *fmt, ...)
 {
     va_list args;
-    va_start(args, fmt);
     const char * fmtbak = fmt;
     int argnum = 2;
     int count = 1; char key = 0;
@@ -285,9 +280,11 @@ void loq(int index, const char *category, const char *name,
 	if(logtbl_explained[index] == 0) {
         logtbl_explained[index] = 1;
         const char * pname;
-
         bson b[1];
-        bson_init( b );
+
+		va_start(args, fmt);
+
+		bson_init( b );
         bson_append_int( b, "I", index );
         bson_append_string( b, "name", name );
         bson_append_string( b, "type", "info" );
@@ -386,7 +383,10 @@ void loq(int index, const char *category, const char *name,
                 (void) va_arg(args, unsigned long);
                 (void) va_arg(args, unsigned long);
                 (void) va_arg(args, unsigned char *);
-            }
+			}
+			else {
+				pipe("CRITICAL:Unknown format string character %c", key);
+			}
 
         }
         bson_append_finish_array( b );
@@ -394,9 +394,9 @@ void loq(int index, const char *category, const char *name,
         log_raw_direct(bson_data( b ), bson_size( b ));
         bson_destroy( b );
         // log_flush();
-    }
+		va_end(args);
+	}
 
-    va_end(args);
     fmt = fmtbak;
     va_start(args, fmt);
     count = 1; key = 0; argnum = 2;
@@ -429,11 +429,10 @@ void loq(int index, const char *category, const char *name,
             // the next format specifier
             key = *fmt++;
         }
-
         // pop the key and omit it
         (void) va_arg(args, const char *);
 		num_to_string(g_istr, 4, argnum);
-        argnum++;
+		argnum++;
 
         // log the value
         if(key == 's') {
@@ -733,6 +732,8 @@ void log_hook_removal(const char *funcname)
 
 void log_init(unsigned int ip, unsigned short port, int debug)
 {
+	g_buffer = calloc(1, BUFFERSIZE);
+
 	InitializeCriticalSection(&g_mutex);
 	InitializeCriticalSection(&g_writing_log_buffer_mutex);
 
