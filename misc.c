@@ -418,13 +418,13 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	if (tmpout == NULL || nonexistent == NULL)
 		goto normal_copy;
 
-	if (inlen > 0 && inadj[0] == L'\\') {
+	if (!wcsnicmp(inadj, L"\\device\\", 8) || !wcsnicmp(inadj, L"\\systemroot", 11)) {
 		// handle \\Device\\* and \\systemroot\\*
 		unsigned int matchlen;
 		wchar_t *tmpout2;
 		wchar_t *retstr = get_matching_unicode_specialname(inadj, &matchlen);
 		if (retstr == NULL)
-			goto regular_normalize;
+			goto normal_copy;
 		// rewrite \\Device\\HarddiskVolumeX etc to the appropriate drive letter
 		tmpout2 = malloc(32768 * sizeof(wchar_t));
 		if (tmpout2 == NULL)
@@ -459,7 +459,6 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 		goto globalroot_copy;
 	}
 	else {
-regular_normalize:
 		if (!GetFullPathNameW(inadj, 32768, tmpout, NULL))
 			goto normal_copy;
 	}
