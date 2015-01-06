@@ -106,6 +106,7 @@ struct MCInst {
 	// This is copied from cs_x86 struct
 	uint8_t x86_prefix[4];
 	uint8_t imm_size;	// immediate size for X86_OP_IMM operand
+	uint8_t imm_encoded_size; // encoded size of X86_OP_IMM operand
 };
 
 void MCInst_Init(MCInst *inst);

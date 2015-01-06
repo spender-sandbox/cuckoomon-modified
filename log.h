@@ -115,9 +115,9 @@ extern int g_log_index;
     ENSURE_ULONG(param); else *param = 0
 
 #define ENSURE_SIZET(param) \
-    ULONG _##param = 0; if(param == NULL) param = &_##param
+    ULONG_PTR _##param = 0; if(param == NULL) param = &_##param
 #define ENSURE_SIZET_ZERO(param) \
-    ENSURE_ULONG(param); else *param = 0
+    ENSURE_SIZET(param); else *param = 0
 
 #define ENSURE_CLIENT_ID(param) \
     CLIENT_ID _##param; memset(&_##param, 0, sizeof(_##param)); if (param == NULL) param = &_##param

@@ -16,6 +16,7 @@ void MCInst_Init(MCInst *inst)
 	inst->size = 0;
 	inst->has_imm = false;
 	inst->op1_size = 0;
+	inst->imm_encoded_size = 0;
 }
 
 void MCInst_clear(MCInst *inst)

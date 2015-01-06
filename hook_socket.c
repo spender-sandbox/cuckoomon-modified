@@ -27,7 +27,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static void get_ip_port(const struct sockaddr *addr,
     const char **ip, int *port)
 {
-    if(addr == NULL) return;
+	DWORD lasterror;
+
+	if (addr == NULL)
+		return;
+
+	lasterror = our_getlasterror();
 
     // TODO IPv6 support.
     if(addr->sa_family == AF_INET) {
@@ -35,6 +40,8 @@ static void get_ip_port(const struct sockaddr *addr,
         *ip = inet_ntoa(addr4->sin_addr);
         *port = htons(addr4->sin_port);
     }
+
+	our_setlasterror(lasterror);
 }
 
 HOOKDEF(int, WINAPI, WSAStartup,

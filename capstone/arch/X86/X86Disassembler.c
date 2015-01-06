@@ -169,10 +169,13 @@ static void translateImmediate(MCInst *mcInst, uint64_t immediate,
 	else if (type == TYPE_IMM8 || type == TYPE_IMM16 || type == TYPE_IMM32 ||
 			type == TYPE_IMM64 || type == TYPE_IMMv) {
 		uint32_t Opcode = MCInst_getOpcode(mcInst);
+
 		switch (operand->encoding) {
 			default:
 				break;
 			case ENCODING_IB:
+				mcInst->imm_encoded_size = 1;
+
 				// Special case those X86 instructions that use the imm8 as a set of
 				// bits, bit count, etc. and are not sign-extend.
 				if (
@@ -200,14 +203,17 @@ static void translateImmediate(MCInst *mcInst, uint64_t immediate,
 							immediate |= ~(0xffull);
 				break;
 			case ENCODING_IW:
-				if(immediate & 0x8000)
+				mcInst->imm_encoded_size = 2;
+				if (immediate & 0x8000)
 					immediate |= ~(0xffffull);
 				break;
 			case ENCODING_ID:
-				if(immediate & 0x80000000)
+				mcInst->imm_encoded_size = 4;
+				if (immediate & 0x80000000)
 					immediate |= ~(0xffffffffull);
 				break;
 			case ENCODING_IO:
+				mcInst->imm_encoded_size = 8;
 				break;
 		}
 	}
@@ -739,6 +745,7 @@ bool X86_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 	memset(&insn, 0, offsetof(InternalInstruction, reader));
 
 	if (instr->flat_insn->detail) {
+		instr->flat_insn->detail->x86.imm_encoded_size = 0;
 		instr->flat_insn->detail->x86.op_count = 0;
 		instr->flat_insn->detail->x86.sse_cc = X86_SSE_CC_INVALID;
 		instr->flat_insn->detail->x86.avx_cc = X86_AVX_CC_INVALID;
@@ -777,6 +784,7 @@ bool X86_getInstruction(csh ud, const uint8_t *code, size_t code_len,
 		if (result) {
 			instr->imm_size = insn.immSize;
 			if (handle->detail) {
+				instr->flat_insn->detail->x86.imm_encoded_size = instr->imm_encoded_size;
 				update_pub_insn(instr->flat_insn, &insn, instr->x86_prefix);
 			} else {
 				// still copy all prefixes

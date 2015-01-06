@@ -278,7 +278,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlA,
     HINTERNET ret = Old_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders,
         dwHeadersLength, dwFlags, dwContext);
     if(dwHeadersLength == (DWORD) -1)
-		dwHeadersLength = strlen(lpszHeaders);
+		dwHeadersLength = (DWORD)strlen(lpszHeaders);
     LOQ_nonnull("network", "psSp", "ConnectionHandle", hInternet, "URL", lpszUrl,
         "Headers", dwHeadersLength, lpszHeaders, "Flags", dwFlags);
     return ret;
@@ -342,7 +342,7 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestA,
 ) {
     BOOL ret = Old_HttpSendRequestA(hRequest, lpszHeaders, dwHeadersLength,
         lpOptional, dwOptionalLength);
-    if(dwHeadersLength == (DWORD) -1 && lpszHeaders != NULL) dwHeadersLength = strlen(lpszHeaders);
+    if(dwHeadersLength == (DWORD) -1 && lpszHeaders != NULL) dwHeadersLength = (DWORD)strlen(lpszHeaders);
     LOQ_bool("network", "pSb", "RequestHandle", hRequest,
         "Headers", dwHeadersLength, lpszHeaders,
         "PostData", dwOptionalLength, lpOptional);

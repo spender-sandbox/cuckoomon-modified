@@ -66,7 +66,7 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
             const char *s = va_arg(args, const char *);
             if(s == NULL) return -1;
 
-            ret += _pipe_ascii(&out, s, strlen(s));
+            ret += _pipe_ascii(&out, s, (int)strlen(s));
         }
 		else if (*fmt == 'c') {
 			char buf[2];
@@ -98,7 +98,7 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
             const char *s = va_arg(args, const char *);
             if(s == NULL) return -1;
 
-            ret += _pipe_ascii(&out, s, len < 0 ? strlen(s) : len);
+			ret += _pipe_ascii(&out, s, len < 0 ? (int)strlen(s) : len);
         }
         else if(*fmt == 'S') {
             int len = va_arg(args, int);
@@ -135,21 +135,21 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
         else if(*fmt == 'd') {
             char s[32];
             sprintf(s, "%d", va_arg(args, int));
-            ret += _pipe_ascii(&out, s, strlen(s));
+			ret += _pipe_ascii(&out, s, (int)strlen(s));
         }
         else if(*fmt == 'x') {
             char s[16];
             sprintf(s, "%x", va_arg(args, int));
-            ret += _pipe_ascii(&out, s, strlen(s));
+			ret += _pipe_ascii(&out, s, (int)strlen(s));
         }
 		else if (*fmt == 'p') {
 			char s[18];
 			sprintf(s, "%p", va_arg(args, void *));
-			ret += _pipe_ascii(&out, s, strlen(s));
+			ret += _pipe_ascii(&out, s, (int)strlen(s));
 		}
 		else {
 			const char *msg = "-- UNKNOWN FORMAT STRING -- ";
-			ret += _pipe_ascii(&out, msg, strlen(msg));
+			ret += _pipe_ascii(&out, msg, (int)strlen(msg));
 		}
         fmt++;
     }

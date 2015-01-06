@@ -94,7 +94,7 @@ DWORD pid_from_process_handle(HANDLE process_handle)
 	duped = DuplicateHandle(GetCurrentProcess(), process_handle, GetCurrentProcess(), &dup_handle, PROCESS_QUERY_INFORMATION, FALSE, 0);
 
     if(pNtQueryInformationProcess(dup_handle, 0, &pbi, sizeof(pbi), &ulSize) >= 0 && ulSize == sizeof(pbi))
-        PID = pbi.UniqueProcessId;
+        PID = (DWORD)pbi.UniqueProcessId;
 
 	if (duped)
 		CloseHandle(dup_handle);
@@ -197,7 +197,7 @@ void set_dll_of_interest(ULONG_PTR BaseAddress)
 
 void add_all_dlls_to_dll_ranges(void)
 {
-	LDR_MODULE *mod; PEB *peb = (PEB *)__readfsdword(0x30);
+	LDR_MODULE *mod; PEB *peb = (PEB *)get_peb();
 
 	/* skip the base image */
 	mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
@@ -214,7 +214,7 @@ void add_all_dlls_to_dll_ranges(void)
 
 char *convert_address_to_dll_name_and_offset(ULONG_PTR addr, unsigned int *offset)
 {
-	LDR_MODULE *mod; PEB *peb = (PEB *)__readfsdword(0x30);
+	LDR_MODULE *mod; PEB *peb = (PEB *)get_peb();
 
 	for (mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
 		mod->BaseAddress != NULL;
@@ -227,7 +227,7 @@ char *convert_address_to_dll_name_and_offset(ULONG_PTR addr, unsigned int *offse
 			return NULL;
 		for (i = 0; i < (mod->BaseDllName.Length / sizeof(wchar_t)); i++)
 			buf[i] = (char)mod->BaseDllName.Buffer[i];
-		*offset = addr - (ULONG_PTR)mod->BaseAddress;
+		*offset = (unsigned int)(addr - (ULONG_PTR)mod->BaseAddress);
 		return buf;
 	}
 	return NULL;
@@ -243,7 +243,7 @@ char *convert_address_to_dll_name_and_offset(ULONG_PTR addr, unsigned int *offse
 
 void hide_module_from_peb(HMODULE module_handle)
 {
-    LDR_MODULE *mod; PEB *peb = (PEB *) __readfsdword(0x30);
+    LDR_MODULE *mod; PEB *peb = (PEB *)get_peb();
 
     for (mod = (LDR_MODULE *) peb->LoaderData->InLoadOrderModuleList.Flink;
          mod->BaseAddress != NULL;
@@ -359,7 +359,7 @@ char *ensure_absolute_ascii_path(char *out, const char *in)
 		pathcomponent = strrchr(tmpout, '\\');
 		if (pathcomponent == NULL)
 			goto normal_copy;
-		pathcomponentlen = strlen(pathcomponent);
+		pathcomponentlen = (unsigned int)strlen(pathcomponent);
 		nonexistentidx -= pathcomponentlen;
 		memcpy(nonexistent + nonexistentidx, pathcomponent, pathcomponentlen * sizeof(char));
 		*pathcomponent = '\0';
@@ -590,7 +590,7 @@ wchar_t *get_full_key_pathA(HKEY registry, const char *in, PKEY_NAME_INFORMATION
 	wchar_t *ret;
 
 	if (in) {
-		widelen = (strlen(in) + 1) * sizeof(wchar_t);
+		widelen = (unsigned int)((strlen(in) + 1) * sizeof(wchar_t));
 		widein = calloc(1, widelen);
 		for (u = widein, p = in; *p; p++, u++)
 			*u = (wchar_t)(unsigned short)*p;
@@ -700,8 +700,8 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 
 	keybuf->KeyName[keybuf->KeyNameLength / sizeof(WCHAR)] = 0;
 
-	curlen = wcslen(keybuf->KeyName);
-	remaining = maxlen_chars - wcslen(keybuf->KeyName) - 1;
+	curlen = (unsigned int)wcslen(keybuf->KeyName);
+	remaining = maxlen_chars - (unsigned int)wcslen(keybuf->KeyName) - 1;
 
 	if (ObjectAttributes->ObjectName == NULL) {
 		if (remaining < 10)
@@ -839,7 +839,7 @@ void specialname_map_init(void)
 	char c;
 	unsigned int idx = 0;
 	unsigned int i, x;
-	unsigned int len;
+	size_t len;
 	letter[1] = ':';
 	letter[2] = '\0';
 	for (c = 'A'; c <= 'Z'; c++) {
@@ -864,7 +864,7 @@ void specialname_map_init(void)
 	for (x = 0; x < len - strlen("\\system32"); x++)
 		system32dir_w[x] = (wchar_t)buf[x];
 	wcscat(system32dir_w, L"\\system32");
-	system32dir_len = len;
+	system32dir_len = (unsigned int)len;
 
 	len = strlen(buf) + strlen("\\sysnative");
 	sysnativedir_a = calloc(1, len + 1);
@@ -874,7 +874,7 @@ void specialname_map_init(void)
 	for (x = 0; x < len - strlen("\\sysnative"); x++)
 		sysnativedir_w[x] = (wchar_t)buf[x];
 	wcscat(sysnativedir_w, L"\\sysnative");
-	sysnativedir_len = len;
+	sysnativedir_len = (unsigned int)len;
 
 	for (i = 0; i < idx; i++) {
 		len = strlen(g_specialnames_a[i]) + 1;
@@ -895,7 +895,7 @@ int is_wow64_fs_redirection_disabled(void)
 {
 	if (is_64bit_os) {
 		__try {
-			PCHAR teb = (PCHAR)__readfsdword(0x18);
+			PCHAR teb = (PCHAR)NtCurrentTeb();
 			PCHAR ptr1 = (PCHAR)(ULONG_PTR)*(DWORD *)(teb + 0xf70);
 			if (ptr1 == NULL)
 				return 0;

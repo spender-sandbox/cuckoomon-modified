@@ -56,7 +56,7 @@ static void new_file_path_ascii(const char *fname)
 	if (absolutename != NULL) {
 		unsigned int len;
 		ensure_absolute_ascii_path(absolutename, fname);
-		len = strlen(absolutename);
+		len = (unsigned int)strlen(absolutename);
 		pipe("FILE_NEW:%s", len, absolutename);
 	}
 }
@@ -104,8 +104,8 @@ static void file_write(HANDLE file_handle)
     if(r != NULL) {
         UNICODE_STRING str = {
             // microsoft actually meant "size"
-            .Length         = r->length * sizeof(wchar_t),
-            .MaximumLength  = (r->length + 1) * sizeof(wchar_t) ,
+            .Length         = (USHORT)r->length * sizeof(wchar_t),
+			.MaximumLength = ((USHORT)r->length + 1) * sizeof(wchar_t),
             .Buffer         = r->filename,
         };
 

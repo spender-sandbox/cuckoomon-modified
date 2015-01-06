@@ -24,9 +24,6 @@
     <ClCompile Include="cuckoomon.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="hooking.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="hook_file.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -166,6 +163,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="alloc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooking_32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooking_64.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hooking.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

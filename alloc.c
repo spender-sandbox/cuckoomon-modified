@@ -24,7 +24,6 @@ void *cm_alloc(size_t size)
 	return (PCHAR)BaseAddress + CM_ALLOC_METASIZE;
 }
 
-
 void cm_free(void *ptr)
 {
 	PVOID BaseAddress;

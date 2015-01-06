@@ -24,6 +24,17 @@ typedef struct _hook_info_t {
 	ULONG_PTR parent_caller_retaddr;
 } hook_info_t;
 
+typedef struct _hook_data_t {
+	unsigned char tramp[128];
+	unsigned char pre_tramp[150];
+	//unsigned char our_handler[128];
+	unsigned char hook_data[32];
+} hook_data_t;
+
+typedef struct _addr_map_t {
+	ULONG_PTR map[32][2];
+} addr_map_t;
+
 typedef struct _hook_t {
     const wchar_t *library;
     const char *funcname;
@@ -46,13 +57,13 @@ typedef struct _hook_t {
     // this hook has been performed
     int is_hooked;
 
-    unsigned char tramp[128];
-    unsigned char pre_tramp[150];
-    //unsigned char our_handler[128];
-    unsigned char hook_data[32];
+	hook_data_t *hookdata;
 } hook_t;
 
 int lde(void *addr);
+void init_capstone(void);
+
+hook_data_t *alloc_hookdata_near(void *addr);
 
 int hook_api(hook_t *h, int type);
 
@@ -62,6 +73,8 @@ void hook_disable();
 int called_by_hook(void);
 DWORD our_getlasterror(void);
 void our_setlasterror(DWORD val);
+int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr);
+void emit_rel(unsigned char *buf, unsigned char *source, unsigned char *target);
 
 extern LARGE_INTEGER time_skipped;
 
@@ -69,6 +82,7 @@ extern LARGE_INTEGER time_skipped;
 
 #define HOOK_ENABLE_FPU 0
 
+#ifndef _WIN64
 enum {
     HOOK_JMP_DIRECT,
     HOOK_NOP_JMP_DIRECT,
@@ -88,6 +102,39 @@ enum {
 	HOOK_HOTPATCH_JMP_INDIRECT,
     HOOK_TECHNIQUE_MAXTYPE,
 };
+#else
+enum {
+	HOOK_NATIVE_JMP_INDIRECT,
+	HOOK_HOTPATCH_JMP_INDIRECT
+};
+#endif
+
+static __inline PVOID get_peb(void)
+{
+#ifndef _WIN64
+	return (PVOID)__readfsdword(0x30);
+#else
+	return (PVOID)__readgsqword(0x30);
+#endif
+}
+
+static __inline ULONG_PTR get_stack_top(void)
+{
+#ifndef _WIN64
+	return __readfsdword(0x04);
+#else
+	return __readgsqword(0x08);
+#endif
+}
+
+static __inline ULONG_PTR get_stack_bottom(void)
+{
+#ifndef _WIN64
+	return __readfsdword(0x08);
+#else
+	return __readgsqword(0x10);
+#endif
+}
 
 #define HOOKDEF(return_value, calling_convention, apiname, ...) \
     return_value (calling_convention *Old_##apiname)(__VA_ARGS__); \

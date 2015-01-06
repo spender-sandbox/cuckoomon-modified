@@ -34,7 +34,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 static CRITICAL_SECTION g_mutex;
 static CRITICAL_SECTION g_writing_log_buffer_mutex;
-static int g_sock;
+static SOCKET g_sock;
 static unsigned int g_starttick;
 
 static char *g_buffer;
@@ -75,7 +75,7 @@ static DWORD WINAPI _log_thread(LPVOID param)
 				// will happen when we're in debug mode
 				FILE *f = fopen(filename, "ab");
 				if (f) {
-					written = fwrite(g_buffer, 1, g_idx, f);
+					written = (int)fwrite(g_buffer, 1, g_idx, f);
 					fclose(f);
 				}
 				else {
@@ -139,7 +139,7 @@ static void log_raw_direct(const char *buf, size_t length) {
 		EnterCriticalSection(&g_writing_log_buffer_mutex);
 		copylen = min(length - copiedlen, (size_t)(BUFFERSIZE - g_idx));
 		memcpy(&g_buffer[g_idx], &buf[copiedlen], copylen);
-		g_idx += copylen;
+		g_idx += (int)copylen;
 		copiedlen += copylen;
 		LeaveCriticalSection(&g_writing_log_buffer_mutex);
 		if (copiedlen != length)

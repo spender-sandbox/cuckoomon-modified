@@ -56,7 +56,7 @@ int read_config(void)
                     ARRAYSIZE(g_config.results));
             }
 			else if (!strcmp(key, "file-of-interest")) {
-				unsigned len = strlen(value);
+				unsigned int len = (unsigned int)strlen(value);
 				if (len > 1) {
 					if (value[1] == ':') {
 						// is a file
@@ -64,7 +64,7 @@ int read_config(void)
 						wchar_t *utmp = calloc(1, MAX_PATH * sizeof(wchar_t));
 						unsigned int full_len;
 						ensure_absolute_ascii_path(tmp, value);
-						full_len = strlen(tmp);
+						full_len = (unsigned int)strlen(tmp);
 						for (unsigned int i = 0; i < full_len; i++)
 							utmp[i] = (wchar_t)(unsigned short)tmp[i];
 						free(tmp);
@@ -77,7 +77,7 @@ int read_config(void)
 					else {
 						// is a URL
 						wchar_t *utmp = calloc(1, 512 * sizeof(wchar_t));
-						unsigned int url_len = strlen(value);
+						unsigned int url_len = (unsigned int)strlen(value);
 						for (unsigned int i = 0; i < url_len; i++)
 							utmp[i] = (wchar_t)(unsigned short)value[i];
 						g_config.url_of_interest = utmp;

@@ -227,6 +227,9 @@ typedef struct cs_x86 {
 	// SIB value, or 0 when irrelevant.
 	uint8_t sib;
 
+	// encoded size of immediate value
+	uint8_t imm_encoded_size;
+
 	// Displacement value, or 0 when irrelevant.
 	int32_t disp;
 
