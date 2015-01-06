@@ -5,6 +5,30 @@ enum {
 	INJECT_QUEUEUSERAPC
 };
 
+static int grant_debug_privileges(void)
+{
+	HANDLE token = NULL;
+	TOKEN_PRIVILEGES priv;
+	LUID privval;
+	int ret;
+
+	if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &token))
+		return 0;
+
+	if (!LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &privval)) {
+		CloseHandle(token);
+		return 0;
+	}
+	priv.PrivilegeCount = 1;
+	priv.Privileges[0].Luid = privval;
+	priv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+	ret = AdjustTokenPrivileges(token, FALSE, &priv, sizeof(priv), NULL, NULL);
+	CloseHandle(token);
+
+	return ret;
+}
+
 static int inject(int pid, int tid, const char *dllpath, unsigned int injectmode)
 {
 	HANDLE prochandle = NULL;
@@ -14,19 +38,19 @@ static int inject(int pid, int tid, const char *dllpath, unsigned int injectmode
 	SIZE_T byteswritten = 0;
 	int ret = -1;
 
-	if (pid <= 0 || tid == 0)
+	if (pid <= 0 || tid < 0)
 		goto out;
 
-	if (injectmode == INJECT_QUEUEUSERAPC && tid == -1)
+	if (injectmode == INJECT_QUEUEUSERAPC && tid == 0)
 		goto out;
 
 	prochandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-	if (prochandle == INVALID_HANDLE_VALUE)
+	if (prochandle == NULL)
 		goto out;
 
-	if (tid != -1) {
+	if (tid > 0) {
 		threadhandle = OpenThread(THREAD_ALL_ACCESS, FALSE, tid);
-		if (threadhandle == INVALID_HANDLE_VALUE)
+		if (threadhandle == NULL)
 			goto out;
 	}
 
@@ -67,6 +91,9 @@ out:
 int main(int argc, char *argv[])
 {
 	if (argc < 2)
+		return -1;
+	
+	if (!grant_debug_privileges())
 		return -1;
 
 	if (!strcmp(argv[1], "inject")) {
