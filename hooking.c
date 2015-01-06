@@ -146,6 +146,21 @@ hook_info_t *hook_info()
 	return ptr;
 }
 
+DWORD our_getlasterror(void)
+{
+	char *teb = (char *)NtCurrentTeb();
+
+	return *(DWORD *)(teb + TLS_LAST_ERROR);
+}
+
+// we do our own version of this function to avoid the potential debug triggers
+void our_setlasterror(DWORD val)
+{
+	char *teb = (char *)NtCurrentTeb();
+
+	*(DWORD *)(teb + TLS_LAST_ERROR) = val;
+}
+
 void hook_enable()
 {
     hook_info()->disable_count--;
