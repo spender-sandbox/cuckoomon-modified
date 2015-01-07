@@ -459,7 +459,7 @@ static int hook_api_native_jmp_indirect(hook_t *h, unsigned char *from,
 
 hook_data_t *alloc_hookdata_near(void *addr)
 {
-	return malloc(sizeof(hook_data_t));
+	return calloc(1, sizeof(hook_data_t));
 }
 
 int hook_api(hook_t *h, int type)

@@ -88,25 +88,25 @@ out:
 	return ret;
 }
 
-int main(int argc, char *argv[])
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	if (argc < 2)
+	if (__argc < 2)
 		return -1;
 	
 	if (!grant_debug_privileges())
 		return -1;
 
-	if (!strcmp(argv[1], "inject")) {
+	if (!strcmp(__argv[1], "inject")) {
 		unsigned int injectmode;
-		if (argc != 6)
+		if (__argc != 6)
 			return -1;
-		if (!strcmp(argv[5], "createremotethread"))
+		if (!strcmp(__argv[5], "createremotethread"))
 			injectmode = INJECT_CREATEREMOTETHREAD;
-		else if (!strcmp(argv[5], "queueuserapc"))
+		else if (!strcmp(__argv[5], "queueuserapc"))
 			injectmode = INJECT_QUEUEUSERAPC;
 		else
 			return -1;
-		return inject(atoi(argv[2]), atoi(argv[3]), argv[4], injectmode);
+		return inject(atoi(__argv[2]), atoi(__argv[3]), __argv[4], injectmode);
 	}
 
 	return -1;
