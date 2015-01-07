@@ -367,7 +367,7 @@ static int hook_api_jmp_indirect(hook_t *h, unsigned char *from,
     *from++ = 0xff;
     *from++ = 0x25;
 
-    *(ULONG_PTR *) from = (ULONG_PTR)h->hookdata->hook_data - ((ULONG_PTR)from + 4);
+    *(int *) from = (int)(h->hookdata->hook_data - ((ULONG_PTR)from + 4));
 
     // the real address is stored in hook_data
 	memcpy(h->hookdata->hook_data, &to, sizeof(to));
