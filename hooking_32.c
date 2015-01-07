@@ -451,7 +451,12 @@ static int hook_api_native_jmp_indirect(hook_t *h, unsigned char *from,
 
 hook_data_t *alloc_hookdata_near(void *addr)
 {
-	return calloc(1, sizeof(hook_data_t));
+	DWORD oldprot;
+	hook_data_t *ret = calloc(1, sizeof(hook_data_t));
+
+	VirtualProtect(ret, sizeof(hook_data_t), PAGE_EXECUTE_READWRITE, &oldprot);
+
+	return ret;
 }
 
 int hook_api(hook_t *h, int type)
