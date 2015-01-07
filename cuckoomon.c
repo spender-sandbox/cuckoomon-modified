@@ -419,7 +419,11 @@ static hook_t g_hooks[] = {
 // get a random hooking method, except for hook_jmp_direct
 //#define HOOKTYPE randint(HOOK_NOP_JMP_DIRECT, HOOK_MOV_EAX_INDIRECT_PUSH_RETN)
 // error testing with hook_jmp_direct only
+#ifdef _WIN64
+#define HOOKTYPE HOOK_JMP_INDIRECT
+#else
 #define HOOKTYPE HOOK_HOTPATCH_JMP_INDIRECT
+#endif
 
 void set_hooks_dll(const wchar_t *library)
 {
@@ -608,6 +612,15 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		   complete, and then did a successful createremotethread, so just do a cheap check for our hooks and fake that
 		   we loaded successfully
 		*/
+#ifdef _WIN64
+#if HOOKTYPE != HOOK_JMP_INDIRECT
+#error Update hook check
+#endif
+		if (((PUCHAR)ExitProcess)[0] == 0xff && ((PUCHAR)ExitProcess)[1] == 0x25) {
+			notify_successful_load();
+			return TRUE;
+		}
+#else
 #if HOOKTYPE != HOOK_HOTPATCH_JMP_INDIRECT
 #error Update hook check
 #endif
@@ -615,6 +628,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			notify_successful_load();
 			return TRUE;
 		}
+#endif
 
 		g_our_dll_base = (ULONG_PTR)hModule;
 		g_our_dll_size = get_image_size(g_our_dll_base);

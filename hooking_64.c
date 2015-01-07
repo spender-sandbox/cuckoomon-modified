@@ -406,7 +406,7 @@ int hook_api(hook_t *h, int type)
         int len;
     } hook_types[] = {
 		/* HOOK_NATIVE_JMP_INDIRECT */ {&hook_api_native_jmp_indirect, 14 },
-		/* HOOK_JMP_INDIRECT */{ &hook_api_jmp_indirect, 8 },
+		/* HOOK_JMP_INDIRECT */{ &hook_api_jmp_indirect, 6 },
 	};
 
     // is this address already hooked?
