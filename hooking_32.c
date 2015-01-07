@@ -39,19 +39,11 @@ static csh capstone;
 void init_capstone(void)
 {
 	cs_open(CS_ARCH_X86, CS_MODE_32, &capstone);
-	cs_option(capstone, CS_OPT_DETAIL, CS_OPT_ON);
 }
 
 // length disassembler engine
 int lde(void *addr)
 {
-    static int capstone_init = 0; static csh capstone;
-
-    if(capstone_init == 0) {
-        cs_open(CS_ARCH_X86, CS_MODE_32, &capstone);
-        capstone_init = 1;
-    }
-
     cs_insn *insn;
 
     size_t ret = cs_disasm(capstone, addr, 16, (uintptr_t) addr, 1, &insn);
