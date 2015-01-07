@@ -575,6 +575,8 @@ int hook_api(hook_t *h, int type)
 	if (VirtualProtect(addr, hook_types[type].len, PAGE_EXECUTE_READWRITE,
 		&old_protect)) {
 
+		h->hookdata = alloc_hookdata_near(addr);
+
 		if (hook_create_trampoline(addr, hook_types[type].len, h->hookdata->tramp)) {
 			//hook_store_exception_info(h);
 			uint8_t orig[16];
