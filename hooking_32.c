@@ -574,7 +574,7 @@ int hook_api(hook_t *h, int type)
 
 		h->hookdata = alloc_hookdata_near(addr);
 
-		if (hook_create_trampoline(addr, hook_types[type].len, h->hookdata->tramp)) {
+		if (h->hookdata && hook_create_trampoline(addr, hook_types[type].len, h->hookdata->tramp)) {
 			//hook_store_exception_info(h);
 			uint8_t orig[16];
 			memcpy(orig, addr, 16);

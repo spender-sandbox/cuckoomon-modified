@@ -83,20 +83,20 @@ static unsigned char *emit_indirect_call(unsigned char *buf, ULONG_PTR addr)
 {
 	*buf++ = 0xff;
 	*buf++ = 0x15;
-	*(DWORD *)buf = 0;
+	*(DWORD *)buf = 2;
 	buf += sizeof(DWORD);
+	*buf++ = 0xeb;
+	*buf++ = 0x08;
 	*(ULONG_PTR *)buf = addr;
 	buf += sizeof(ULONG_PTR);
 	return buf;
 }
 
-/* condcode must be rebased to zero, eg a jo (0x70 or 0x0f 0x80) should be rebased to 0
- * we'll emit a short conditional jump with two indirect jump targets
- */
 static unsigned char *emit_indirect_jcc(unsigned char condcode, unsigned char *buf, ULONG_PTR addr)
 {
-	*buf++ = 0x70 + condcode;
+	*buf++ = condcode;
 	*buf++ = 2 + 4 + 8;
+
 	*buf++ = 0xff;
 	*buf++ = 0x25;
 	*(DWORD *)buf = 0;
@@ -236,7 +236,7 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 			target = get_short_rel_target(addr);
 			if (addr_is_in_range(target, origaddr, stoleninstrlen))
 				target = get_corresponding_tramp_target(&addrmap, target);
-			tramp = emit_indirect_jcc(addr[0] - 0x70, tramp, target);
+			tramp = emit_indirect_jcc(addr[0], tramp, target);
 			addr += length;
 		}
         // return instruction, indicates end of basic block as well, so we
@@ -293,31 +293,34 @@ static void hook_create_pre_tramp(hook_t *h)
 		0x9c,
 		// push rax/rcx/rdx/rbx
 		0x50, 0x51, 0x52, 0x53,
-		// push r8, r10, r11
-		0x41, 0x50, 0x41, 0x52, 0x41, 0x53,
+		// push r8, r9, r10, r11
+		0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53,
 		// cld
 		0xfc,
-		// mov r8, qword ptr [rsp+0x30]
-		0x4c, 0x8b, 0x44, 0x24, 0x30,
+		// mov r8, qword ptr [rsp+0x50]
+		0x4c, 0x8b, 0x44, 0x24, 0x50,
 		// mov rdx, rbp
 		0x48, 0x8b, 0xd5,
 		// mov ecx, h->allow_hook_recursion
 		0xb9, h->allow_hook_recursion, 0x00, 0x00, 0x00,
-		// sub rsp, 0x28
-		0x48, 0x83, 0xec, 0x28,
+		// sub rsp, 0x20
+		0x48, 0x83, 0xec, 0x20,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
-		0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+		0xff, 0x15, 0x02, 0x00, 0x00, 0x00,
+		// jmp $+8
+		0xeb, 0x08,
+		// address of enter_hook
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 	unsigned char pre_tramp2[] = {
 		// test eax, eax
 		0x85, 0xc0,
-		// jnz 0x1d
-		0x75, 0x1d,
-			// add rsp, 0x28
-			0x48, 0x83, 0xc4, 0x28,
-			// pop r11, r10, r8
-			0x41, 0x5b, 0x41, 0x5a, 0x41, 0x58,
+		// jnz 0x1f
+		0x75, 0x1f,
+			// add rsp, 0x20
+			0x48, 0x83, 0xc4, 0x20,
+			// pop r11, r10, r9, r8
+			0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 			// pop rbx/rdx/rcx/rax
 			0x5b, 0x5a, 0x59, 0x58,
 			// popfq
@@ -327,10 +330,10 @@ static void hook_create_pre_tramp(hook_t *h)
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 	unsigned char pre_tramp3[] = {
-		// add rsp, 0x28
-		0x48, 0x83, 0xc4, 0x28,
-		// pop r11, r10, r8
-		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x58,
+		// add rsp, 0x20
+		0x48, 0x83, 0xc4, 0x20,
+		// pop r11, r10, r9, r8
+		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 		// pop rbx/rdx/rcx/rax
 		0x5b, 0x5a, 0x59, 0x58,
 		// popfq
@@ -455,7 +458,7 @@ int hook_api(hook_t *h, int type)
 
 		h->hookdata = alloc_hookdata_near(addr);
 
-		if (hook_create_trampoline(addr, hook_types[type].len, h->hookdata->tramp)) {
+		if (h->hookdata && hook_create_trampoline(addr, hook_types[type].len, h->hookdata->tramp)) {
 			//hook_store_exception_info(h);
 			uint8_t orig[16];
 			memcpy(orig, addr, 16);
