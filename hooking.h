@@ -114,7 +114,7 @@ static __inline PVOID get_peb(void)
 #ifndef _WIN64
 	return (PVOID)__readfsdword(0x30);
 #else
-	return (PVOID)__readgsqword(0x30);
+	return (PVOID)__readgsqword(0x60);
 #endif
 }
 

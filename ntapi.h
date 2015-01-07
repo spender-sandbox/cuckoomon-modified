@@ -371,6 +371,19 @@ typedef struct _LDR_MODULE {
     ULONG TimeDateStamp;
 } LDR_MODULE, *PLDR_MODULE;
 
+#ifdef _WIN64
+typedef struct _PEB {
+	BYTE Reserved1[2];
+	BYTE BeingDebugged;
+	BYTE Reserved2[21];
+	PPEB_LDR_DATA LoaderData;
+	PRTL_USER_PROCESS_PARAMETERS ProcessParameters;
+	BYTE Reserved3[520];
+	PVOID PostProcessInitRoutine;
+	BYTE Reserved4[136];
+	ULONG SessionId;
+} PEB;
+#else
 typedef struct _PEB {
     BOOLEAN InheritedAddressSpace;
     BOOLEAN ReadImageFileExecOptions;
@@ -427,6 +440,7 @@ typedef struct _PEB {
     BYTE    TlsExpansionBitmapBits[0x80];
     ULONG   SessionId;
 } PEB, *PPEB;
+#endif
 
 typedef enum _DBG_STATE
 {
