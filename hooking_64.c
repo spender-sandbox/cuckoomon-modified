@@ -159,15 +159,20 @@ static void retarget_rip_relative_displacement(ULONG_PTR target, unsigned char *
 {
 	unsigned short length = insn->size;
 	unsigned char offset = (unsigned char)(length - insn->detail->x86.imm_encoded_size - sizeof(int));
-	int rel = *(int *)(addr + offset);
-	target = (ULONG_PTR)(addr + length + rel);
+	unsigned char *newtramp = *tramp;
+	unsigned char *newaddr = *addr;
+	int rel = *(int *)(newaddr + offset);
+	target = (ULONG_PTR)(newaddr + length + rel);
 	// copy the instruction directly to the trampoline
 	while (length-- != 0) {
-		*(*tramp++) = *(*addr++);
+		*newtramp++ = *newaddr++;
 	}
 	// now replace the displacement
-	rel = (int)(target - (ULONG_PTR)*tramp);
-	*(int *)(*tramp - insn->detail->x86.imm_encoded_size - sizeof(int)) = rel;
+	rel = (int)(target - (ULONG_PTR)newtramp);
+	*(int *)(newtramp - insn->detail->x86.imm_encoded_size - sizeof(int)) = rel;
+
+	*tramp = newtramp;
+	*addr = newaddr;
 }
 
 // create a trampoline at the given address, that is, we are going to replace
