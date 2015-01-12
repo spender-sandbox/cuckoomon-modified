@@ -43,15 +43,15 @@ void init_capstone(void)
 
 int lde(void *addr)
 {
-    cs_insn *insn;
+	cs_insn *insn;
 
-    size_t ret = cs_disasm(capstone, addr, 16, (uintptr_t) addr, 1, &insn);
-    if(ret == 0) return 0;
+	size_t ret = cs_disasm(capstone, addr, 16, (uintptr_t)addr, 1, &insn);
+	if (ret == 0) return 0;
 
-    ret = insn->size;
+	ret = insn->size;
 
-    cs_free(insn, 1);
-    return (int)ret;
+	cs_free(insn, 1);
+	return (int)ret;
 }
 
 cs_insn *get_insn(void *addr)
@@ -184,37 +184,37 @@ static void retarget_rip_relative_displacement(ULONG_PTR target, unsigned char *
 // NOTE: tramp represents the memory address where the trampoline will be
 // placed, copying it to another memory address will result into failure
 static int hook_create_trampoline(unsigned char *addr, int len,
-    unsigned char *tramp)
+	unsigned char *tramp)
 {
 	addr_map_t addrmap;
 	ULONG_PTR target;
-    const unsigned char *base = tramp;
+	const unsigned char *base = tramp;
 	const unsigned char *origaddr = addr;
 	unsigned char insnidx = 0;
 	int stoleninstrlen = 0;
 	cs_insn *insn;
 
 	memset(&addrmap, 0, sizeof(addrmap));
-	
+
 	// our trampoline should contain at least enough bytes to fit the given
-    // length
-    while (len > 0) {
+	// length
+	while (len > 0) {
 		insn = get_insn(addr);
 		if (insn == NULL)
 			goto error;
 		int length = insn->size;
 
-        // how many bytes left?
-        len -= length;
+		// how many bytes left?
+		len -= length;
 		stoleninstrlen += length;
 
 		addrmap.map[insnidx][0] = (ULONG_PTR)tramp;
 		addrmap.map[insnidx][1] = (ULONG_PTR)addr;
-		
+
 		// check the type of instruction at this particular address, if it's
-        // a jump or a call instruction, then we have to calculate some fancy
-        // addresses, otherwise we can simply copy the instruction to our
-        // trampoline
+		// a jump or a call instruction, then we have to calculate some fancy
+		// addresses, otherwise we can simply copy the instruction to our
+		// trampoline
 
 		if (addr[0] == 0xe8 || addr[0] == 0xe9 || (addr[0] == 0x0f && addr[1] >= 0x80 && addr[1] < 0x90) ||
 			((insn->detail->x86.modrm & 0xc7) == 5)) {
@@ -239,19 +239,19 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 			tramp = emit_indirect_jcc(addr[0], tramp, target);
 			addr += length;
 		}
-        // return instruction, indicates end of basic block as well, so we
-        // have to check if we already have enough space for our hook..
-        else if((addr[0] == 0xc3 || addr[0] == 0xc2) && len > 0) {
+		// return instruction, indicates end of basic block as well, so we
+		// have to check if we already have enough space for our hook..
+		else if ((addr[0] == 0xc3 || addr[0] == 0xc2) && len > 0) {
 			goto error;
 		}
-        else {
-            // copy the instruction directly to the trampoline
-            while (length-- != 0) {
-                *tramp++ = *addr++;
-            }
-        }
+		else {
+			// copy the instruction directly to the trampoline
+			while (length-- != 0) {
+				*tramp++ = *addr++;
+			}
+		}
 		put_insn(insn);
-    }
+	}
 
 	// append a jump from the trampoline to the original function
 	*tramp++ = 0xe9;
@@ -259,7 +259,7 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 	tramp += 4;
 
 	// return the length of this trampoline
-    return (int)(tramp - base);
+	return (int)(tramp - base);
 error:
 	if (insn)
 		put_insn(insn);
@@ -289,22 +289,24 @@ static void hook_create_pre_tramp(hook_t *h)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 #endif
-		// pushfq
-		0x9c,
 		// push rax/rcx/rdx/rbx
 		0x50, 0x51, 0x52, 0x53,
 		// push r8, r9, r10, r11
 		0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53,
-		// cld
-		0xfc,
-		// mov r8, qword ptr [rsp+0x50]
-		0x4c, 0x8b, 0x44, 0x24, 0x50,
-		// mov rdx, rbp
-		0x48, 0x8b, 0xd5,
+		// call $+0
+		0xe8, 0x00, 0x00, 0x00, 0x00,
+		// pop r8
+		0x41, 0x58,
+		// sub r8, 17
+		0x49, 0x83, 0xe8, 0x11,
+		// mov r8, qword ptr [rsp+0x40]
+		// 0x4c, 0x8b, 0x44, 0x24, 0x40,
+		// lea rdx, [rsp+0x40]
+		0x48, 0x8d, 0x54, 0x24, 0x40,
 		// mov ecx, h->allow_hook_recursion
 		0xb9, h->allow_hook_recursion, 0x00, 0x00, 0x00,
-		// sub rsp, 0x20
-		0x48, 0x83, 0xec, 0x20,
+		// sub rsp, 0x28
+		0x48, 0x83, 0xec, 0x28,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
 		0xff, 0x15, 0x02, 0x00, 0x00, 0x00,
 		// jmp $+8
@@ -315,29 +317,25 @@ static void hook_create_pre_tramp(hook_t *h)
 	unsigned char pre_tramp2[] = {
 		// test eax, eax
 		0x85, 0xc0,
-		// jnz 0x1f
-		0x75, 0x1f,
-			// add rsp, 0x20
-			0x48, 0x83, 0xc4, 0x20,
-			// pop r11, r10, r9, r8
-			0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
-			// pop rbx/rdx/rcx/rax
-			0x5b, 0x5a, 0x59, 0x58,
-			// popfq
-			0x9d,
-			// jmp h->tramp (original function)
-			0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-	};
-	unsigned char pre_tramp3[] = {
-		// add rsp, 0x20
-		0x48, 0x83, 0xc4, 0x20,
+		// jnz 0x1e
+		0x75, 0x1e,
+		// add rsp, 0x28
+		0x48, 0x83, 0xc4, 0x28,
 		// pop r11, r10, r9, r8
 		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 		// pop rbx/rdx/rcx/rax
 		0x5b, 0x5a, 0x59, 0x58,
-		// popfq
-		0x9d,
+		// jmp h->tramp (original function)
+		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp3[] = {
+		// add rsp, 0x28
+		0x48, 0x83, 0xc4, 0x28,
+		// pop r11, r10, r9, r8
+		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
+		// pop rbx/rdx/rcx/rax
+		0x5b, 0x5a, 0x59, 0x58,
 		// jmp h->new_func (New_ func)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
@@ -361,20 +359,65 @@ static void hook_create_pre_tramp(hook_t *h)
 	off = sizeof(pre_tramp3) - sizeof(ULONG_PTR);
 	*(ULONG_PTR *)(pre_tramp3 + off) = (ULONG_PTR)h->new_func;
 	memcpy(p, pre_tramp3, sizeof(pre_tramp3));
+
+	/* now add the necessary unwind information so that stack traces work
+	 * properly.  must be modified whenever the assembly above changes
+	 */
+
+	/* would be really nice if MSDN had any mention whatsoever that the RUNTIME_FUNCTION needs to have
+	   a global allocation -- it doesn't copy the contents of the tiny 12-byte RUNTIME_FUNCTION, it merely
+	   stores the same pointer you provide to the API.  If you allocate it on the stack, or call the API multiple
+	   times with the same pointer value, you'll end up with completely broken unwind information that fails
+	   in spectacular ways.
+	 */
+	RUNTIME_FUNCTION *functable = malloc(sizeof(RUNTIME_FUNCTION));
+	UNWIND_INFO *unwindinfo = &h->hookdata->unwind_info;
+
+	functable->BeginAddress = offsetof(hook_data_t, pre_tramp);
+	functable->EndAddress = offsetof(hook_data_t, pre_tramp) + sizeof(h->hookdata->pre_tramp);
+	functable->UnwindData = offsetof(hook_data_t, unwind_info);
+
+	unwindinfo->Version = 1;
+	unwindinfo->Flags = UNW_FLAG_NHANDLER;
+	unwindinfo->SizeOfProlog = 38;
+	unwindinfo->CountOfCodes = 9;
+	unwindinfo->FrameRegister = 0;
+	unwindinfo->FrameOffset = 0;
+
+	unwindinfo->UnwindCode[0].UnwindOp = UWOP_ALLOC_SMALL;
+	unwindinfo->UnwindCode[0].CodeOffset = 38;
+	unwindinfo->UnwindCode[0].OpInfo = 4; // (4 + 1) * 8 = 0x28
+
+	BYTE regs1[] = { 11, 10, 9, 8 };
+	BYTE regs2[] = { 3, 2, 1, 0 };
+
+	for (int i = 0; i < ARRAYSIZE(regs1); i++) {
+		unwindinfo->UnwindCode[1 + i].UnwindOp = UWOP_PUSH_NONVOL;
+		unwindinfo->UnwindCode[1 + i].CodeOffset = 12 - (2 * i);
+		unwindinfo->UnwindCode[1 + i].OpInfo = regs1[i];
+	}
+
+	for (int i = 0; i < ARRAYSIZE(regs2); i++) {
+		unwindinfo->UnwindCode[5 + i].UnwindOp = UWOP_PUSH_NONVOL;
+		unwindinfo->UnwindCode[5 + i].CodeOffset = 4 - i;
+		unwindinfo->UnwindCode[5 + i].OpInfo = regs2[i];
+	}
+
+	RtlAddFunctionTable(functable, 1, (DWORD64)h->hookdata);
 }
 
 static int hook_api_jmp_indirect(hook_t *h, unsigned char *from,
-    unsigned char *to)
+	unsigned char *to)
 {
-    // jmp dword [hook_data]
-    *from++ = 0xff;
-    *from++ = 0x25;
+	// jmp dword [hook_data]
+	*from++ = 0xff;
+	*from++ = 0x25;
 
-    *(int *) from = (int)(h->hookdata->hook_data - ((ULONG_PTR)from + 4));
+	*(int *)from = (int)(h->hookdata->hook_data - ((ULONG_PTR)from + 4));
 
-    // the real address is stored in hook_data
+	// the real address is stored in hook_data
 	memcpy(h->hookdata->hook_data, &to, sizeof(to));
-    return 0;
+	return 0;
 }
 
 static int hook_api_native_jmp_indirect(hook_t *h, unsigned char *from,
@@ -408,31 +451,31 @@ hook_data_t *alloc_hookdata_near(void *addr)
 
 int hook_api(hook_t *h, int type)
 {
-    // table with all possible hooking types
-    static struct {
-        int(*hook)(hook_t *h, unsigned char *from, unsigned char *to);
-        int len;
-    } hook_types[] = {
-		/* HOOK_NATIVE_JMP_INDIRECT */ {&hook_api_native_jmp_indirect, 14 },
+	// table with all possible hooking types
+	static struct {
+		int(*hook)(hook_t *h, unsigned char *from, unsigned char *to);
+		int len;
+	} hook_types[] = {
+		/* HOOK_NATIVE_JMP_INDIRECT */{ &hook_api_native_jmp_indirect, 14 },
 		/* HOOK_JMP_INDIRECT */{ &hook_api_jmp_indirect, 6 },
 	};
 
-    // is this address already hooked?
-    if(h->is_hooked != 0) {
-        return 0;
-    }
+	// is this address already hooked?
+	if (h->is_hooked != 0) {
+		return 0;
+	}
 
-    // resolve the address to hook
-    unsigned char *addr = h->addr;
+	// resolve the address to hook
+	unsigned char *addr = h->addr;
 
-    if(addr == NULL && h->library != NULL && h->funcname != NULL) {
-        addr = (unsigned char *) GetProcAddress(GetModuleHandleW(h->library),
-            h->funcname);
-    }
-    if(addr == NULL) {
+	if (addr == NULL && h->library != NULL && h->funcname != NULL) {
+		addr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library),
+			h->funcname);
+	}
+	if (addr == NULL) {
 		// function doesn't exist in this DLL, not a critical error
 		return 0;
-    }
+	}
 
 	int ret = -1;
 
@@ -494,7 +537,75 @@ int hook_api(hook_t *h, int type)
 		pipe("WARNING:Unable to change protection for hook on %z", h->funcname);
 	}
 
-    return ret;
+	return ret;
 }
+
+static unsigned int our_stackwalk(ULONG_PTR retaddr, ULONG_PTR sp, PVOID *backtrace, unsigned int count)
+{
+	/* derived from http://www.nynaeve.net/Code/StackWalk64.cpp */
+	CONTEXT ctx;
+	DWORD64 imgbase;
+	PRUNTIME_FUNCTION runfunc;
+	KNONVOLATILE_CONTEXT_POINTERS nvctx;
+	PVOID handlerdata;
+	ULONG_PTR establisherframe;
+	unsigned int frame;
+
+	RtlCaptureContext(&ctx);
+
+	for (frame = 0; frame < count; frame++) {
+
+		backtrace[frame] = (PVOID)ctx.Rip;
+		runfunc = RtlLookupFunctionEntry(ctx.Rip, &imgbase, NULL);
+		memset(&nvctx, 0, sizeof(nvctx));
+		if (runfunc == NULL) {
+			ctx.Rip = (ULONG_PTR)(*(ULONG_PTR *)ctx.Rsp);
+			ctx.Rsp += 8;
+		}
+		else {
+			RtlVirtualUnwind(UNW_FLAG_NHANDLER, imgbase, ctx.Rip, runfunc, &ctx, &handlerdata, &establisherframe, &nvctx);
+		}
+		if (!ctx.Rip)
+			break;
+	}
+
+	return frame;
+}
+
+__declspec(noinline) int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR sp, int(*func)(ULONG_PTR))
+{
+	hook_info_t *hookinfo = hook_info();
+	int ret;
+	PVOID backtrace[HOOK_BACKTRACE_DEPTH];
+	DWORD lasterror;
+	WORD frames;
+	WORD i;
+
+	lasterror = our_getlasterror();
+
+	hook_disable();
+
+	frames = our_stackwalk(retaddr, sp, backtrace, HOOK_BACKTRACE_DEPTH);
+
+	for (i = 0; i < frames; i++) {
+		if (!addr_in_our_dll_range((ULONG_PTR)backtrace[i]))
+			break;
+	}
+
+	if (((PUCHAR)backtrace[i])[0] == 0xeb && ((PUCHAR)backtrace[i])[1] == 0x08)
+		i++;
+
+	for (i = 0; i < frames; i++) {
+		ret = func((ULONG_PTR)backtrace[i]);
+		if (ret)
+			goto out;
+	}
+
+out:
+	hook_enable();
+	our_setlasterror(lasterror);
+	return ret;
+}
+
 
 #endif

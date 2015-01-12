@@ -55,42 +55,14 @@ static int set_caller_info(ULONG_PTR addr)
 	return 0;
 }
 
-static int addr_in_our_dll_range(ULONG_PTR addr)
+int addr_in_our_dll_range(ULONG_PTR addr)
 {
 	if (addr >= g_our_dll_base && addr < (g_our_dll_base + g_our_dll_size))
 		return 1;
 	return 0;
 }
 
-static int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int (*func)(ULONG_PTR))
-{
-	hook_info_t *hookinfo = hook_info();
-	int ret;
-
-    ULONG_PTR top = get_stack_top();
-    ULONG_PTR bottom = get_stack_bottom();
-
-    unsigned int count = HOOK_BACKTRACE_DEPTH;
-
-	ret = func(retaddr);
-	if (ret)
-		return ret;
-
-	while (_ebp >= bottom && _ebp <= (top - (2 * sizeof(ULONG_PTR))) && count-- != 0)
-	{
-        // obtain the return address and the next value of ebp
-		ULONG_PTR addr = *(ULONG_PTR *)(_ebp + sizeof(ULONG_PTR));
-		_ebp = *(ULONG_PTR *)_ebp;
-
-		ret = func(addr);
-		if (ret)
-			return ret;
-    }
-
-	return ret;
-}
-
-int called_by_hook(void)
+__forceinline int called_by_hook(void)
 {
 	hook_info_t *hookinfo = hook_info();
 
@@ -98,7 +70,7 @@ int called_by_hook(void)
 }
 
 // returns 1 if we should call our hook, 0 if we should call the original function instead
-int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr)
+__declspec(noinline) int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr)
 {
 	hook_info_t *hookinfo = hook_info();
 
@@ -108,10 +80,12 @@ int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr
 	/* set caller information */
 	hookinfo->main_caller_retaddr = 0;
 	hookinfo->parent_caller_retaddr = 0;
-	operate_on_backtrace(retaddr, _ebp, set_caller_info);
 
-	if ((!called_by_hook() || is_special_hook) && (hookinfo->disable_count < 1))
+	if ((hookinfo->disable_count < 1) && (!called_by_hook() || is_special_hook)) {
+		operate_on_backtrace(retaddr, _ebp, set_caller_info);
 		return 1;
+	}
+
 	return 0;
 }
 

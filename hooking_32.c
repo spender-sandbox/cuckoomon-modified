@@ -613,4 +613,32 @@ int hook_api(hook_t *h, int type)
     return ret;
 }
 
+int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(ULONG_PTR))
+{
+	hook_info_t *hookinfo = hook_info();
+	int ret;
+
+	ULONG_PTR top = get_stack_top();
+	ULONG_PTR bottom = get_stack_bottom();
+
+	unsigned int count = HOOK_BACKTRACE_DEPTH;
+
+	ret = func(retaddr);
+	if (ret)
+		return ret;
+
+	while (_ebp >= bottom && _ebp <= (top - (2 * sizeof(ULONG_PTR))) && count-- != 0)
+	{
+		// obtain the return address and the next value of ebp
+		ULONG_PTR addr = *(ULONG_PTR *)(_ebp + sizeof(ULONG_PTR));
+		_ebp = *(ULONG_PTR *)_ebp;
+
+		ret = func(addr);
+		if (ret)
+			return ret;
+	}
+
+	return ret;
+}
+
 #endif

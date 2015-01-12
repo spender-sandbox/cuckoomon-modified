@@ -16,6 +16,46 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "ntapi.h"
+#include <Windows.h>
+
+enum {
+	UWOP_PUSH_NONVOL = 0,
+	UWOP_ALLOC_LARGE,
+	UWOP_ALLOC_SMALL,
+	UWOP_SET_FPREG,
+	UWOP_SAVE_NONVOL,
+	UWOP_SAVE_NONVOL_FAR,
+	UWOP_SAVE_XMM,
+	UWOP_SAVE_XMM_FAR,
+	UWOP_SAVE_XMM128,
+	UWOP_SAVE_XMM128_FAR,
+	UWOP_PUSH_MACHFRAME
+};
+
+#ifndef UNW_FLAG_NHANDLER
+#define UNW_FLAG_NHANDLER 0
+#endif
+
+typedef union _UNWIND_CODE {
+	struct {
+		BYTE CodeOffset;
+		BYTE UnwindOp : 4;
+		BYTE OpInfo : 4;
+	};
+	USHORT FrameOffset;
+} UNWIND_CODE;
+
+typedef struct _UNWIND_INFO {
+	BYTE Version : 3;
+	BYTE Flags : 5;
+	BYTE SizeOfProlog;
+	BYTE CountOfCodes;
+	BYTE FrameRegister : 4;
+	BYTE FrameOffset : 4;
+	UNWIND_CODE UnwindCode[10];
+} UNWIND_INFO;
+
 typedef struct _hook_info_t {
 	int disable_count;
 	ULONG_PTR return_address;
@@ -26,9 +66,11 @@ typedef struct _hook_info_t {
 
 typedef struct _hook_data_t {
 	unsigned char tramp[128];
-	unsigned char pre_tramp[150];
+	unsigned char pre_tramp[148];
 	//unsigned char our_handler[128];
 	unsigned char hook_data[32];
+
+	UNWIND_INFO unwind_info;
 } hook_data_t;
 
 typedef struct _addr_map_t {
@@ -71,10 +113,12 @@ hook_info_t* hook_info();
 void hook_enable();
 void hook_disable();
 int called_by_hook(void);
+int addr_in_our_dll_range(ULONG_PTR addr);
 DWORD our_getlasterror(void);
 void our_setlasterror(DWORD val);
 int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr);
 void emit_rel(unsigned char *buf, unsigned char *source, unsigned char *target);
+int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(ULONG_PTR));
 
 extern LARGE_INTEGER time_skipped;
 
