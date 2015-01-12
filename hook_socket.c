@@ -49,7 +49,7 @@ HOOKDEF(int, WINAPI, WSAStartup,
     _Out_  LPWSADATA lpWSAData
 ) {
     int ret = Old_WSAStartup(wVersionRequested, lpWSAData);
-    LOQ_zero("network", "p", "VersionRequested", wVersionRequested);
+    LOQ_zero("network", "h", "VersionRequested", wVersionRequested);
     return ret;
 }
 
@@ -235,7 +235,7 @@ HOOKDEF(int, WSAAPI, shutdown,
     __in  int how
 ) {
     int ret = Old_shutdown(s, how);
-    LOQ_sockerr("network", "il", "socket", s, "how", how);
+    LOQ_sockerr("network", "ii", "socket", s, "how", how);
     return ret;
 }
 
@@ -409,7 +409,7 @@ HOOKDEF(BOOL, PASCAL, TransmitFile,
 ) {
     BOOL ret = Old_TransmitFile(hSocket, hFile, nNumberOfBytesToWrite,
         nNumberOfBytesPerSend, lpOverlapped, lpTransmitBuffers, dwFlags);
-    LOQ_bool("network", "ipll", "socket", hSocket, "FileHandle", hFile,
+    LOQ_bool("network", "ipii", "socket", hSocket, "FileHandle", hFile,
         "NumberOfBytesToWrite", nNumberOfBytesToWrite,
         "NumberOfBytesPerSend", nNumberOfBytesPerSend);
     return ret;

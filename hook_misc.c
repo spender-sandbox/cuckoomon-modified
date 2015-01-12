@@ -33,7 +33,7 @@ HOOKDEF(HHOOK, WINAPI, SetWindowsHookExA,
 ) {
 
     HHOOK ret = Old_SetWindowsHookExA(idHook, lpfn, hMod, dwThreadId);
-    LOQ_nonnull("system", "lppl", "HookIdentifier", idHook, "ProcedureAddress", lpfn,
+    LOQ_nonnull("system", "ippi", "HookIdentifier", idHook, "ProcedureAddress", lpfn,
         "ModuleAddress", hMod, "ThreadId", dwThreadId);
     return ret;
 }
@@ -46,7 +46,7 @@ HOOKDEF(HHOOK, WINAPI, SetWindowsHookExW,
 ) {
 
     HHOOK ret = Old_SetWindowsHookExW(idHook, lpfn, hMod, dwThreadId);
-    LOQ_nonnull("system", "lppl", "HookIdentifier", idHook, "ProcedureAddress", lpfn,
+    LOQ_nonnull("system", "ippi", "HookIdentifier", idHook, "ProcedureAddress", lpfn,
         "ModuleAddress", hMod, "ThreadId", dwThreadId);
     return ret;
 }
@@ -82,7 +82,7 @@ HOOKDEF(UINT, WINAPI, SetErrorMode,
 #ifndef REPORT_EXCEPTIONS
 	ret = Old_SetErrorMode(uMode);
 #endif
-	LOQ_void("system", "p", "Mode", uMode);
+	LOQ_void("system", "h", "Mode", uMode);
 	return ret;
 }
 
@@ -97,7 +97,7 @@ HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
 
     NTSTATUS ret = Old_LdrLoadDll(PathToFile, Flags, ModuleFileName,
         ModuleHandle);
-    LOQ_ntstatus("system", "poP", "Flags", Flags, "FileName", &library,
+    LOQ_ntstatus("system", "hoP", "Flags", Flags, "FileName", &library,
         "BaseAddress", ModuleHandle);
     return ret;
 }
@@ -123,7 +123,7 @@ HOOKDEF(NTSTATUS, WINAPI, LdrGetProcedureAddress,
 ) {
     NTSTATUS ret = Old_LdrGetProcedureAddress(ModuleHandle, FunctionName,
         Ordinal, FunctionAddress);
-    LOQ_ntstatus("system", "pSlP", "ModuleHandle", ModuleHandle,
+    LOQ_ntstatus("system", "pSiP", "ModuleHandle", ModuleHandle,
         "FunctionName", FunctionName != NULL ? FunctionName->Length : 0,
             FunctionName != NULL ? FunctionName->Buffer : NULL,
         "Ordinal", Ordinal, "FunctionAddress", FunctionAddress);
@@ -143,7 +143,7 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
 	BOOL ret = Old_DeviceIoControl(hDevice, dwIoControlCode, lpInBuffer,
 		nInBufferSize, lpOutBuffer, nOutBufferSize, lpBytesReturned,
 		lpOverlapped);
-    LOQ_bool("device", "ppbb", "DeviceHandle", hDevice, "IoControlCode", dwIoControlCode,
+    LOQ_bool("device", "phbb", "DeviceHandle", hDevice, "IoControlCode", dwIoControlCode,
         "InBuffer", nInBufferSize, lpInBuffer,
         "OutBuffer", lpBytesReturned ? *lpBytesReturned : nOutBufferSize,
             lpOutBuffer);
@@ -161,7 +161,7 @@ HOOKDEF(BOOL, WINAPI, ExitWindowsEx,
     __in  DWORD dwReason
 ) {
     BOOL ret = 0;
-    LOQ_bool("system", "ll", "Flags", uFlags, "Reason", dwReason);
+    LOQ_bool("system", "hi", "Flags", uFlags, "Reason", dwReason);
     return Old_ExitWindowsEx(uFlags, dwReason);
 }
 
@@ -239,7 +239,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
     NTSTATUS ret = Old_NtMapViewOfSection(SectionHandle, ProcessHandle,
         BaseAddress, ZeroBits, CommitSize, SectionOffset, ViewSize,
         InheritDisposition, AllocationType, Win32Protect);
-    LOQ_ntstatus("process", "ppPpPp", "SectionHandle", SectionHandle,
+    LOQ_ntstatus("process", "ppPpPh", "SectionHandle", SectionHandle,
         "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "SectionOffset", SectionOffset, "ViewSize", ViewSize, "Win32Protect", Win32Protect);
 
@@ -254,7 +254,7 @@ HOOKDEF(int, WINAPI, GetSystemMetrics,
     _In_  int nIndex
 ) {
     int ret = Old_GetSystemMetrics(nIndex);
-    LOQ_nonzero("misc", "l", "SystemMetricIndex", nIndex);
+    LOQ_nonzero("misc", "i", "SystemMetricIndex", nIndex);
     return ret;
 }
 
@@ -277,7 +277,7 @@ HOOKDEF(BOOL, WINAPI, GetCursorPos,
 		last_skipped.QuadPart = time_skipped.QuadPart;
 	}
 
-	LOQ_bool("misc", "ll", "x", lpPoint != NULL ? lpPoint->x : 0,
+	LOQ_bool("misc", "ii", "x", lpPoint != NULL ? lpPoint->x : 0,
         "y", lpPoint != NULL ? lpPoint->y : 0);
 	
 	return ret;

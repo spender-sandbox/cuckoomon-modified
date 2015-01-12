@@ -51,10 +51,10 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 	*/
 	if (!called_by_hook() && wcsncmp(library.Buffer, g_config.dllpath, wcslen(g_config.dllpath))) {
 		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
-	        LOQspecial_ntstatus("system", "pFP", "Flags", Flags, "FileName", library.Buffer,
+	        LOQspecial_ntstatus("system", "hFP", "Flags", Flags, "FileName", library.Buffer,
 		       "BaseAddress", ModuleHandle);
 		else
-			LOQspecial_ntstatus("system", "poP", "Flags", Flags, "FileName", &library,
+			LOQspecial_ntstatus("system", "hoP", "Flags", Flags, "FileName", &library,
 				"BaseAddress", ModuleHandle);
 	}
 
@@ -125,7 +125,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
 					if (lpExtStartupInfo->lpAttributeList->Entries[i].Attribute & PARENT_PROCESS)
 						ParentHandle = *(HANDLE *)lpExtStartupInfo->lpAttributeList->Entries[i].lpValue;
 			}
-			LOQspecial_bool("process", "uupllppp", "ApplicationName", lpApplicationName,
+			LOQspecial_bool("process", "uuhiippp", "ApplicationName", lpApplicationName,
 				"CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
 				"ProcessId", lpProcessInformation->dwProcessId,
 				"ThreadId", lpProcessInformation->dwThreadId,
@@ -134,7 +134,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
 				"ThreadHandle", lpProcessInformation->hThread);
 		}
 		else {
-			LOQspecial_bool("process", "uupllpp", "ApplicationName", lpApplicationName,
+			LOQspecial_bool("process", "uuhiipp", "ApplicationName", lpApplicationName,
 				"CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
 				"ProcessId", lpProcessInformation->dwProcessId,
 				"ThreadId", lpProcessInformation->dwThreadId,
@@ -187,9 +187,9 @@ HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 		id2.Data4[0], id2.Data4[1], id2.Data4[2], id2.Data4[3], id2.Data4[4], id2.Data4[5], id2.Data4[6], id2.Data4[7]);
 
 	if ((known = known_object(&id1, &id2)))
-		LOQspecial_hresult("com", "spss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);
+		LOQspecial_hresult("com", "shss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);
 	else
-		LOQspecial_hresult("com", "sps", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2);
+		LOQspecial_hresult("com", "shs", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2);
 
 	return ret;
 }

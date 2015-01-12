@@ -29,7 +29,7 @@ HOOKDEF(HWND, WINAPI, FindWindowA,
     // the high-order word must be zero (from MSDN documentation.)
     HWND ret = Old_FindWindowA(lpClassName, lpWindowName);
     if(((DWORD_PTR) lpClassName & 0xffff) == (DWORD_PTR) lpClassName) {
-        LOQ_nonnull("windows", "ls", "ClassName", lpClassName, "WindowName", lpWindowName);
+        LOQ_nonnull("windows", "is", "ClassName", lpClassName, "WindowName", lpWindowName);
     }
     else {
         LOQ_nonnull("windows", "ss", "ClassName", lpClassName, "WindowName", lpWindowName);
@@ -43,7 +43,7 @@ HOOKDEF(HWND, WINAPI, FindWindowW,
 ) {
     HWND ret = Old_FindWindowW(lpClassName, lpWindowName);
     if(((DWORD_PTR) lpClassName & 0xffff) == (DWORD_PTR) lpClassName) {
-        LOQ_nonnull("windows", "lu", "ClassName", lpClassName, "WindowName", lpWindowName);
+        LOQ_nonnull("windows", "iu", "ClassName", lpClassName, "WindowName", lpWindowName);
     }
     else {
         LOQ_nonnull("windows", "uu", "ClassName", lpClassName, "WindowName", lpWindowName);
@@ -63,7 +63,7 @@ HOOKDEF(HWND, WINAPI, FindWindowExA,
     // lpszClass can be one of the predefined window controls.. which lay in
     // the 0..ffff range
     if(((DWORD_PTR) lpszClass & 0xffff) == (DWORD_PTR) lpszClass) {
-        LOQ_nonnull("windows", "ls", "ClassName", lpszClass, "WindowName", lpszWindow);
+        LOQ_nonnull("windows", "is", "ClassName", lpszClass, "WindowName", lpszWindow);
     }
     else {
         LOQ_nonnull("windows", "ss", "ClassName", lpszClass, "WindowName", lpszWindow);
@@ -82,7 +82,7 @@ HOOKDEF(HWND, WINAPI, FindWindowExW,
     // lpszClass can be one of the predefined window controls.. which lay in
     // the 0..ffff range
     if(((DWORD_PTR) lpszClass & 0xffff) == (DWORD_PTR) lpszClass) {
-        LOQ_nonnull("windows", "lu", "ClassName", lpszClass, "WindowName", lpszWindow);
+        LOQ_nonnull("windows", "iu", "ClassName", lpszClass, "WindowName", lpszWindow);
     }
     else {
         LOQ_nonnull("windows", "uu", "ClassName", lpszClass, "WindowName", lpszWindow);
@@ -121,7 +121,7 @@ HOOKDEF(HWND, WINAPI, CreateWindowExA,
 	// lpClassName can be one of the predefined window controls.. which lay in
 	// the 0..ffff range
 	if (((DWORD_PTR)lpClassName & 0xffff) == (DWORD_PTR)lpClassName) {
-		LOQ_nonnull("windows", "ls", "ClassName", lpClassName, "WindowName", lpWindowName);
+		LOQ_nonnull("windows", "is", "ClassName", lpClassName, "WindowName", lpWindowName);
 	}
 	else {
 		LOQ_nonnull("windows", "ss", "ClassName", lpClassName, "WindowName", lpWindowName);
@@ -155,7 +155,7 @@ HOOKDEF(HWND, WINAPI, CreateWindowExW,
 	// lpClassName can be one of the predefined window controls.. which lay in
 	// the 0..ffff range
 	if (((DWORD_PTR)lpClassName & 0xffff) == (DWORD_PTR)lpClassName) {
-		LOQ_nonnull("windows", "lu", "ClassName", lpClassName, "WindowName", lpWindowName);
+		LOQ_nonnull("windows", "iu", "ClassName", lpClassName, "WindowName", lpWindowName);
 	}
 	else {
 		LOQ_nonnull("windows", "uu", "ClassName", lpClassName, "WindowName", lpWindowName);

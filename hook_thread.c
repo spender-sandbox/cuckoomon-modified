@@ -39,7 +39,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueueApcThread,
 	NTSTATUS ret = Old_NtQueueApcThread(ThreadHandle, ApcRoutine,
 		ApcRoutineContext, ApcStatusBlock, ApcReserved);
 
-	LOQ_ntstatus("threading", "llp", "ProcessId", PID, "ThreadId", TID, "ThreadHandle", ThreadHandle);
+	LOQ_ntstatus("threading", "iip", "ProcessId", PID, "ThreadId", TID, "ThreadHandle", ThreadHandle);
 
 	if (NT_SUCCESS(ret))
 		disable_sleep_skip();
@@ -86,7 +86,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
         ObjectAttributes, ProcessHandle, lpStartAddress, lpParameter,
         CreateSuspended, StackZeroBits, SizeOfStackCommit, SizeOfStackReserve,
         lpBytesBuffer);
-    LOQ_ntstatus("threading", "Pppl", "ThreadHandle", hThread, "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("threading", "Pppi", "ThreadHandle", hThread, "ProcessHandle", ProcessHandle,
         "StartAddress", lpStartAddress, "CreateSuspended", CreateSuspended);
 
     return ret;
@@ -109,10 +109,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenThread,
 	}
 
 	if (ClientId) {
-		LOQ_ntstatus("threading", "Ppll", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
+		LOQ_ntstatus("threading", "Phii", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
 			"ProcessId", PID, "ThreadId", TID);
 	} else {
-		LOQ_ntstatus("threading", "PpO", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
+		LOQ_ntstatus("threading", "PhO", "ThreadHandle", ThreadHandle, "DesiredAccess", DesiredAccess,
 			"ObjectAttributes", ObjectAttributes);
 	}
     //if (NT_SUCCESS(ret)) {
@@ -163,7 +163,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtResumeThread,
     ENSURE_ULONG(SuspendCount);
 
     NTSTATUS ret = Old_NtResumeThread(ThreadHandle, SuspendCount);
-    LOQ_ntstatus("threading", "pL", "ThreadHandle", ThreadHandle, "SuspendCount", SuspendCount);
+    LOQ_ntstatus("threading", "pI", "ThreadHandle", ThreadHandle, "SuspendCount", SuspendCount);
     return ret;
 }
 
@@ -173,7 +173,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateThread,
 ) {
     // Thread will terminate. Default logging will not work. Be aware: return value not valid
     NTSTATUS ret = 0;
-    LOQ_ntstatus("threading", "pl", "ThreadHandle", ThreadHandle, "ExitStatus", ExitStatus);
+    LOQ_ntstatus("threading", "ph", "ThreadHandle", ThreadHandle, "ExitStatus", ExitStatus);
     ret = Old_NtTerminateThread(ThreadHandle, ExitStatus);    
     return ret;
 }
@@ -188,7 +188,7 @@ HOOKDEF(HANDLE, WINAPI, CreateThread,
 ) {
 	HANDLE ret = Old_CreateThread(lpThreadAttributes, dwStackSize,
         lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
-    LOQ_nonnull("threading", "pppL", "StartRoutine", lpStartAddress, "Parameter", lpParameter,
+    LOQ_nonnull("threading", "pphI", "StartRoutine", lpStartAddress, "Parameter", lpParameter,
         "CreationFlags", dwCreationFlags, "ThreadId", lpThreadId);
     if (ret != NULL)
         disable_sleep_skip();
@@ -209,7 +209,7 @@ HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
 	HANDLE ret = Old_CreateRemoteThread(hProcess, lpThreadAttributes,
         dwStackSize, lpStartAddress, lpParameter, dwCreationFlags,
         lpThreadId);
-    LOQ_nonnull("threading", "4pL", "ProcessHandle", hProcess, "StartRoutine", lpStartAddress,
+    LOQ_nonnull("threading", "ppphI", "ProcessHandle", hProcess, "StartRoutine", lpStartAddress,
         "Parameter", lpParameter, "CreationFlags", dwCreationFlags,
         "ThreadId", lpThreadId);
     if (ret != NULL)
@@ -221,7 +221,7 @@ HOOKDEF(VOID, WINAPI, ExitThread,
     __in  DWORD dwExitCode
 ) {
     int ret = 0;
-    LOQ_void("threading", "l", "ExitCode", dwExitCode);
+    LOQ_void("threading", "h", "ExitCode", dwExitCode);
     Old_ExitThread(dwExitCode);
 }
 
@@ -244,7 +244,7 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 	NTSTATUS ret = Old_RtlCreateUserThread(ProcessHandle, SecurityDescriptor,
         CreateSuspended, StackZeroBits, StackReserved, StackCommit,
         StartAddress, StartParameter, ThreadHandle, ClientId);
-    LOQ_ntstatus("threading", "plppPl", "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("threading", "pippPi", "ProcessHandle", ProcessHandle,
         "CreateSuspended", CreateSuspended, "StartAddress", StartAddress,
         "StartParameter", StartParameter, "ThreadHandle", ThreadHandle,
         "ThreadIdentifier", ClientId->UniqueThread);

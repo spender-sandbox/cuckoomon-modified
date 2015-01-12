@@ -66,7 +66,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 
 			if (num_skipped < 20) {
 				// notify how much we've skipped
-				LOQ_ntstatus("system", "ls", "Milliseconds", milli, "Status", "Skipped");
+				LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
 				num_skipped++;
 			}
 			else if (num_skipped == 20) {
@@ -80,12 +80,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 			LARGE_INTEGER newint;
 			newint.QuadPart = -(10000 * 10000);
 			time_skipped.QuadPart -= interval - (10000 * 10000);
-			LOQ_ntstatus("system", "ls", "Milliseconds", milli, "Status", "Skipped");
+			LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
 			return Old_NtDelayExecution(Alertable, &newint);
 		}
 		else if (g_config.force_sleepskip > 0) {
 			time_skipped.QuadPart += interval;
-			LOQ_ntstatus("system", "ls", "Milliseconds", milli, "Status", "Skipped");
+			LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
 			return ret;
 		}
         else {
@@ -94,7 +94,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     }
 	if (milli <= 10) {
 		if (num_small < 20) {
-			LOQ_ntstatus("system", "l", "Milliseconds", milli);
+			LOQ_ntstatus("system", "i", "Milliseconds", milli);
 			num_small++;
 		}
 		else if (num_small == 20) {
@@ -103,7 +103,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 		}
 	}
 	else {
-		LOQ_ntstatus("system", "l", "Milliseconds", milli);
+		LOQ_ntstatus("system", "i", "Milliseconds", milli);
 	}
     return Old_NtDelayExecution(Alertable, DelayInterval);
 }

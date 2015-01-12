@@ -175,6 +175,19 @@ static void log_int32(int value)
     bson_append_int( g_bson, g_istr, value );
 }
 
+static void log_int64(int64_t value)
+{
+	bson_append_long(g_bson, g_istr, value);
+}
+
+static void log_ptr(void *value)
+{
+	if (sizeof(ULONG_PTR) == 8)
+		log_int64((int64_t)value);
+	else
+		log_int32((int)value);
+}
+
 // snprintf can end up acquiring the process' heap lock which will be unsafe in the context of a hooked
 // NtAllocate/FreeVirtualMemory
 static void num_to_string(char *buf, unsigned int buflen, unsigned int num)
@@ -312,7 +325,7 @@ void loq(int index, const char *category, const char *name,
             argnum++;
 
             //on certain formats, we need to tell cuckoo about them for nicer display / matching
-            if (key == 'p' || key == 'P') {
+            if (key == 'p' || key == 'P' || key == 'h' || key == 'H') {
                 bson_append_start_array( b, g_istr );
                 bson_append_string( b, "0", pname );
                 bson_append_string( b, "1", "p" );
@@ -356,16 +369,19 @@ void loq(int index, const char *category, const char *name,
                 (void) va_arg(args, size_t *);
                 (void) va_arg(args, const char *);
             }
-            else if(key == 'i') {
+            else if(key == 'i' || key == 'h') {
                 (void) va_arg(args, int);
             }
-            else if(key == 'l' || key == 'p') {
-                (void) va_arg(args, long);
+            else if(key == 'I' || key == 'H') {
+                (void) va_arg(args, int *);
             }
-            else if(key == 'L' || key == 'P') {
-                (void) va_arg(args, long *);
-            }
-            else if(key == 'o') {
+			else if (key == 'l' || key == 'L') {
+				(void)va_arg(args, ULONG_PTR);
+			}
+			else if (key == 'p' || key == 'P') {
+				(void)va_arg(args, void *);
+			}
+			else if (key == 'o') {
                 (void) va_arg(args, UNICODE_STRING *);
             }
             else if(key == 'O' || key == 'K') {
@@ -488,18 +504,22 @@ void loq(int index, const char *category, const char *name,
             const char *s = va_arg(args, const char *);
             log_buffer(s, len == NULL ? 0 : *len);
         }
-        else if(key == 'i') {
-            int value = va_arg(args, int);
+		else if (key == 'i' || key == 'h') {
+			int value = va_arg(args, int);
             log_int32(value);
         }
-        else if(key == 'l' || key == 'p') {
-            long value = va_arg(args, long);
-            log_int32(value);
-        }
-        else if(key == 'L' || key == 'P') {
-            long *ptr = va_arg(args, long *);
+        else if(key == 'I' || key == 'H') {
+            int *ptr = va_arg(args, int *);
             log_int32(ptr != NULL ? *ptr : 0);
         }
+		else if (key == 'l' || key == 'p') {
+			void *value = va_arg(args, void *);
+			log_ptr(value);
+		}
+		else if (key == 'L' || key == 'P') {
+			void **ptr = va_arg(args, void **);
+			log_ptr(ptr != NULL ? *ptr : NULL);
+		}
 		else if (key == 'e') {
 			HKEY reg = va_arg(args, HKEY);
 			const char *s = va_arg(args, const char *);

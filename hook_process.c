@@ -32,7 +32,7 @@ HOOKDEF(HANDLE, WINAPI, CreateToolhelp32Snapshot,
 ) {
 	HANDLE ret = Old_CreateToolhelp32Snapshot(dwFlags, th32ProcessID);
 
-	LOQ_handle("process", "pl", "Flags", dwFlags, "ProcessId", th32ProcessID);
+	LOQ_handle("process", "hi", "Flags", dwFlags, "ProcessId", th32ProcessID);
 
 	return ret;
 }
@@ -48,7 +48,7 @@ HOOKDEF(BOOL, WINAPI, Process32NextW,
 		ret = Old_Process32NextW(hSnapshot, lppe);
 
 	if (ret)
-		LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
+		LOQ_bool("process", "ui", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
 	else
 		LOQ_bool("process", "");
 
@@ -66,7 +66,7 @@ HOOKDEF(BOOL, WINAPI, Process32FirstW,
 		ret = Old_Process32NextW(hSnapshot, lppe);
 
 	if (ret)
-		LOQ_bool("process", "ul", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
+		LOQ_bool("process", "ui", "ProcessName", lppe->szExeFile, "ProcessId", lppe->th32ProcessID);
 	else
 		LOQ_bool("process", "");
 
@@ -86,7 +86,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateProcess,
     NTSTATUS ret = Old_NtCreateProcess(ProcessHandle, DesiredAccess,
         ObjectAttributes, ParentProcess, InheritObjectTable, SectionHandle,
         DebugPort, ExceptionPort);
-    LOQ_ntstatus("process", "PppO", "ProcessHandle", ProcessHandle, "ParentHandle", ParentProcess, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("process", "PphO", "ProcessHandle", ProcessHandle, "ParentHandle", ParentProcess, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes);
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d", pid_from_process_handle(*ProcessHandle));
@@ -109,7 +109,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateProcessEx,
     NTSTATUS ret = Old_NtCreateProcessEx(ProcessHandle, DesiredAccess,
         ObjectAttributes, ParentProcess, Flags, SectionHandle, DebugPort,
         ExceptionPort, InJob);
-	LOQ_ntstatus("process", "PppO", "ProcessHandle", ProcessHandle, "ParentHandle", ParentProcess, "DesiredAccess", DesiredAccess,
+	LOQ_ntstatus("process", "PphO", "ProcessHandle", ProcessHandle, "ParentHandle", ParentProcess, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes);
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d", pid_from_process_handle(*ProcessHandle));
@@ -144,7 +144,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateUserProcess,
         ProcessObjectAttributes, ThreadObjectAttributes,
         ProcessFlags, ThreadFlags, ProcessParameters,
         CreateInfo, AttributeList);
-    LOQ_ntstatus("process", "PPppOOoo", "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("process", "PPhhOOoo", "ProcessHandle", ProcessHandle,
         "ThreadHandle", ThreadHandle,
         "ProcessDesiredAccess", ProcessDesiredAccess,
         "ThreadDesiredAccess", ThreadDesiredAccess,
@@ -176,7 +176,7 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserProcess,
         ProcessParameters, ProcessSecurityDescriptor,
         ThreadSecurityDescriptor, ParentProcess, InheritHandles, DebugPort,
         ExceptionPort, ProcessInformation);
-    LOQ_ntstatus("process", "opp", "ImagePath", ImagePath, "ObjectAttributes", ObjectAttributes,
+    LOQ_ntstatus("process", "ohp", "ImagePath", ImagePath, "ObjectAttributes", ObjectAttributes,
         "ParentHandle", ParentProcess);
     if(NT_SUCCESS(ret)) {
         pipe("PROCESS:%d,%d",
@@ -210,7 +210,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,
 
     NTSTATUS ret = Old_NtOpenProcess(ProcessHandle, DesiredAccess,
         ObjectAttributes, ClientId);
-    LOQ_ntstatus("process", "Ppl", "ProcessHandle", ProcessHandle,
+    LOQ_ntstatus("process", "Phi", "ProcessHandle", ProcessHandle,
         "DesiredAccess", DesiredAccess,
         "ProcessIdentifier", pid);
     /*
@@ -237,7 +237,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
 ) {
 	// Process will terminate. Default logging will not work. Be aware: return value not valid
     NTSTATUS ret = 0;
-    LOQ_ntstatus("process", "pl", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
+    LOQ_ntstatus("process", "pi", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
 	if (ProcessHandle == (HANDLE)0xffffffff) {
 		process_shutting_down = 1;
 		log_free();
@@ -259,7 +259,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateSection,
     NTSTATUS ret = Old_NtCreateSection(SectionHandle, DesiredAccess,
         ObjectAttributes, MaximumSize, SectionPageProtection,
         AllocationAttributes, FileHandle);
-    LOQ_ntstatus("process", "Ppop", "SectionHandle", SectionHandle,
+    LOQ_ntstatus("process", "Phop", "SectionHandle", SectionHandle,
         "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes ? ObjectAttributes->ObjectName : NULL,
         "FileHandle", FileHandle);
     return ret;
@@ -329,7 +329,7 @@ HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
         lpCommandLine, lpProcessAttributes, lpThreadAttributes,
         bInheritHandles, dwCreationFlags, lpEnvironment,
         lpCurrentDirectory, lpStartupInfo, lpProcessInformation, lpUnknown2);
-    LOQ_bool("process", "uupllpp", "ApplicationName", lpApplicationName,
+    LOQ_bool("process", "uuhiipp", "ApplicationName", lpApplicationName,
         "CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
         "ProcessId", lpProcessInformation->dwProcessId,
         "ThreadId", lpProcessInformation->dwThreadId,
@@ -342,7 +342,7 @@ HOOKDEF(VOID, WINAPI, ExitProcess,
     __in  UINT uExitCode
 ) {
     int ret = 0;
-    LOQ_void("process", "p", "ExitCode", uExitCode);
+    LOQ_void("process", "h", "ExitCode", uExitCode);
 	process_shutting_down = 1;
 	log_free();
     Old_ExitProcess(uExitCode);
@@ -354,10 +354,10 @@ HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     BOOL ret = Old_ShellExecuteExW(pExecInfo);
 	if (pExecInfo->lpFile && lstrlenW(pExecInfo->lpFile) > 2 &&
 		pExecInfo->lpFile[1] == L':' && pExecInfo->lpFile[2] == L'\\') {
-		LOQ_bool("process", "Ful", "FilePath", pExecInfo->lpFile,
+		LOQ_bool("process", "Fui", "FilePath", pExecInfo->lpFile,
 			"Parameters", pExecInfo->lpParameters, "Show", pExecInfo->nShow);
 	} else {
-		LOQ_bool("process", "uul", "FilePath", pExecInfo->lpFile,
+		LOQ_bool("process", "uui", "FilePath", pExecInfo->lpFile,
 			"Parameters", pExecInfo->lpParameters, "Show", pExecInfo->nShow);
 	}
 
@@ -393,7 +393,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
     NTSTATUS ret = Old_NtAllocateVirtualMemory(ProcessHandle, BaseAddress,
         ZeroBits, RegionSize, AllocationType, Protect);
 	if (Protect != PAGE_READWRITE || ProcessHandle != (HANDLE)0xffffffff) {
-		LOQ_ntstatus("process", "pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+		LOQ_ntstatus("process", "pPPh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 			"RegionSize", RegionSize, "Protection", Protect);
 	}
     return ret;
@@ -411,7 +411,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadVirtualMemory,
     NTSTATUS ret = Old_NtReadVirtualMemory(ProcessHandle, BaseAddress, Buffer,
         NumberOfBytesToRead, NumberOfBytesReaded);
 
-    LOQ_ntstatus("process", "2pB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+    LOQ_ntstatus("process", "ppB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "Buffer", NumberOfBytesReaded, Buffer);
     return ret;
 }
@@ -445,7 +445,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteVirtualMemory,
     NTSTATUS ret = Old_NtWriteVirtualMemory(ProcessHandle, BaseAddress, Buffer,
         NumberOfBytesToWrite, NumberOfBytesWritten);
 
-    LOQ_ntstatus("process", "2pB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+    LOQ_ntstatus("process", "ppB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "Buffer", NumberOfBytesWritten, Buffer);
     return ret;
 }
@@ -476,7 +476,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
 ) {
     NTSTATUS ret = Old_NtProtectVirtualMemory(ProcessHandle, BaseAddress,
         NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
-    LOQ_ntstatus("process", "pPPpP", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+    LOQ_ntstatus("process", "pPHhH", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "NumberOfBytesProtected", NumberOfBytesToProtect,
         "NewAccessProtection", NewAccessProtection,
         "OldAccessProtection", OldAccessProtection);
@@ -492,7 +492,7 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
 ) {
 	BOOL ret = Old_VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect,
         lpflOldProtect);
-    LOQ_bool("process", "pppp", "ProcessHandle", hProcess, "Address", lpAddress,
+    LOQ_bool("process", "ppph", "ProcessHandle", hProcess, "Address", lpAddress,
         "Size", dwSize, "Protection", flNewProtect);
     return ret;
 }
@@ -501,13 +501,13 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
 HOOKDEF(NTSTATUS, WINAPI, NtFreeVirtualMemory,
     IN      HANDLE ProcessHandle,
     IN      PVOID *BaseAddress,
-    IN OUT  PULONG RegionSize,
+    IN OUT  PSIZE_T RegionSize,
     IN      ULONG FreeType
 ) {
     NTSTATUS ret = Old_NtFreeVirtualMemory(ProcessHandle, BaseAddress,
         RegionSize, FreeType);
 	if (ProcessHandle != (HANDLE)0xffffffff) {
-		LOQ_ntstatus("process", "pPPp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+		LOQ_ntstatus("process", "pPPh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 			"RegionSize", RegionSize, "FreeType", FreeType);
 	}
     return ret;
@@ -520,7 +520,7 @@ HOOKDEF(BOOL, WINAPI, VirtualFreeEx,
     __in  DWORD dwFreeType
 ) {
     BOOL ret = Old_VirtualFreeEx(hProcess, lpAddress, dwSize, dwFreeType);
-    LOQ_bool("process", "pppl", "ProcessHandle", hProcess, "Address", lpAddress,
+    LOQ_bool("process", "ppph", "ProcessHandle", hProcess, "Address", lpAddress,
         "Size", dwSize, "FreeType", dwFreeType);
     return ret;
 }
@@ -544,17 +544,17 @@ HOOKDEF(BOOL, WINAPI, WaitForDebugEvent,
 
 	switch (lpDebugEvent->dwDebugEventCode) {
 	case CREATE_THREAD_DEBUG_EVENT:
-		LOQ_bool("process", "lllp", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "StartAddress", lpDebugEvent->u.CreateThread.lpStartAddress);
+		LOQ_bool("process", "iiip", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "StartAddress", lpDebugEvent->u.CreateThread.lpStartAddress);
 		break;
 	case LOAD_DLL_DEBUG_EVENT:
 		// we could continue ourselves here and skip notification to the malware of cuckoomon loading
 		if (lpDebugEvent->u.LoadDll.fUnicode)
-			LOQ_bool("process", "lllu", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "DllPath", lpDebugEvent->u.LoadDll.lpImageName);
+			LOQ_bool("process", "iiiu", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "DllPath", lpDebugEvent->u.LoadDll.lpImageName);
 		else
-			LOQ_bool("process", "llls", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "DllPath", lpDebugEvent->u.LoadDll.lpImageName);
+			LOQ_bool("process", "iiis", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "DllPath", lpDebugEvent->u.LoadDll.lpImageName);
 		break;
 	default:
-		LOQ_bool("process", "lll", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId);
+		LOQ_bool("process", "iii", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId);
 	}
 
 	return ret;
@@ -569,7 +569,7 @@ HOOKDEF(NTSTATUS, WINAPI, DbgUiWaitStateChange,
 	if (NT_SUCCESS(ret)) {
 		switch (StateChange->NewState) {
 		case DbgCreateThreadStateChange:
-			LOQ_ntstatus("process", "lllp", "NewState", StateChange->NewState, "ProcessId", pid_from_process_handle(StateChange->AppClientId.UniqueProcess), "ThreadId", tid_from_thread_handle(StateChange->AppClientId.UniqueThread), "StartAddress", StateChange->StateInfo.CreateThread.NewThread.StartAddress);
+			LOQ_ntstatus("process", "iiip", "NewState", StateChange->NewState, "ProcessId", pid_from_process_handle(StateChange->AppClientId.UniqueProcess), "ThreadId", tid_from_thread_handle(StateChange->AppClientId.UniqueThread), "StartAddress", StateChange->StateInfo.CreateThread.NewThread.StartAddress);
 			break;
 		case DbgLoadDllStateChange:
 			{
@@ -577,12 +577,12 @@ HOOKDEF(NTSTATUS, WINAPI, DbgUiWaitStateChange,
 
 				path_from_handle(StateChange->StateInfo.LoadDll.FileHandle, fname, 32768);
 				// we could continue ourselves here and skip notification to the malware of cuckoomon loading
-				LOQ_ntstatus("process", "lllF", "NewState", StateChange->NewState, "ProcessId", pid_from_process_handle(StateChange->AppClientId.UniqueProcess), "ThreadId", tid_from_thread_handle(StateChange->AppClientId.UniqueThread), "DllPath", fname);
+				LOQ_ntstatus("process", "iiiF", "NewState", StateChange->NewState, "ProcessId", pid_from_process_handle(StateChange->AppClientId.UniqueProcess), "ThreadId", tid_from_thread_handle(StateChange->AppClientId.UniqueThread), "DllPath", fname);
 				free(fname);
 			}
 			break;
 		default:
-			LOQ_ntstatus("process", "lll", "NewState", StateChange->NewState, "ProcessId", pid_from_process_handle(StateChange->AppClientId.UniqueProcess), "ThreadId", tid_from_thread_handle(StateChange->AppClientId.UniqueThread));
+			LOQ_ntstatus("process", "iii", "NewState", StateChange->NewState, "ProcessId", pid_from_process_handle(StateChange->AppClientId.UniqueProcess), "ThreadId", tid_from_thread_handle(StateChange->AppClientId.UniqueThread));
 		}
 	}
 

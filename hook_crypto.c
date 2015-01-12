@@ -30,7 +30,7 @@ HOOKDEF(BOOL, WINAPI, CryptAcquireContextA,
 	_In_	  DWORD dwFlags
 ) {
 	BOOL ret = Old_CryptAcquireContextA(phProv, pszContainer, pszProvider, dwProvType, dwFlags);
-	LOQ_bool("crypto", "ssp", "Container", pszContainer, "Provider", pszProvider, "Flags", dwFlags);
+	LOQ_bool("crypto", "ssh", "Container", pszContainer, "Provider", pszProvider, "Flags", dwFlags);
 	return ret;
 }
 
@@ -42,7 +42,7 @@ HOOKDEF(BOOL, WINAPI, CryptAcquireContextW,
 	_In_	  DWORD dwFlags
 ) {
 	BOOL ret = Old_CryptAcquireContextW(phProv, pszContainer, pszProvider, dwProvType, dwFlags);
-	LOQ_bool("crypto", "uup", "Container", pszContainer, "Provider", pszProvider, "Flags", dwFlags);
+	LOQ_bool("crypto", "uuh", "Container", pszContainer, "Provider", pszProvider, "Flags", dwFlags);
 	return ret;
 }
 
@@ -253,7 +253,7 @@ HOOKDEF(BOOL, WINAPI, CryptGenKey,
 	_Out_  HCRYPTKEY *phKey
 ) {
 	BOOL ret = Old_CryptGenKey(hProv, Algid, dwFlags, phKey);
-	LOQ_bool("crypto", "p", "Algid", Algid);
+	LOQ_bool("crypto", "h", "Algid", Algid);
 	return ret;
 }
 
@@ -265,6 +265,6 @@ HOOKDEF(BOOL, WINAPI, CryptCreateHash,
 	_Out_  HCRYPTHASH *phHash
 ) {
 	BOOL ret = Old_CryptCreateHash(hProv, Algid, hKey, dwFlags, phHash);
-	LOQ_bool("crypto", "p", "Algid", Algid);
+	LOQ_bool("crypto", "h", "Algid", Algid);
 	return ret;
 }

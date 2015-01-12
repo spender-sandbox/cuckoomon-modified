@@ -927,7 +927,7 @@ extern HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
 extern HOOKDEF(NTSTATUS, WINAPI, NtFreeVirtualMemory,
     IN      HANDLE ProcessHandle,
     IN      PVOID *BaseAddress,
-    IN OUT  PULONG RegionSize,
+    IN OUT  PSIZE_T RegionSize,
     IN      ULONG FreeType
 );
 

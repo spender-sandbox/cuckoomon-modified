@@ -30,7 +30,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateMutant,
 ) {
     NTSTATUS ret = Old_NtCreateMutant(MutantHandle, DesiredAccess,
         ObjectAttributes, InitialOwner);
-    LOQ_ntstatus("synchronization", "Pol", "Handle", MutantHandle,
+    LOQ_ntstatus("synchronization", "Poi", "Handle", MutantHandle,
         "MutexName", unistr_from_objattr(ObjectAttributes),
         "InitialOwner", InitialOwner);
     return ret;
@@ -69,7 +69,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateNamedPipeFile,
         CreateDisposition, CreateOptions, WriteModeMessage, ReadModeMessage,
         NonBlocking, MaxInstances, InBufferSize, OutBufferSize,
         DefaultTimeOut);
-    LOQ_ntstatus("synchronization", "PpOl", "NamedPipeHandle", NamedPipeFileHandle,
+    LOQ_ntstatus("synchronization", "PhOi", "NamedPipeHandle", NamedPipeFileHandle,
         "DesiredAccess", DesiredAccess, "PipeName", ObjectAttributes,
         "ShareAccess", ShareAccess);
     return ret;

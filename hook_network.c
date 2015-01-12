@@ -33,7 +33,7 @@ HOOKDEF(HINTERNET, WINAPI, WinHttpOpen,
 	_In_ DWORD dwFlags
 ) {
 	HINTERNET ret = Old_WinHttpOpen(pwszUserAgent, dwAccessType, pwszProxyName, pwszProxyBypass, dwFlags);
-	LOQ_nonnull("network", "uuupp", "UserAgent", pwszUserAgent, "ProxyName", pwszProxyName, "ProxyBypass", pwszProxyBypass, "AccessType", dwAccessType, "Flags", dwFlags);
+	LOQ_nonnull("network", "uuuhh", "UserAgent", pwszUserAgent, "ProxyName", pwszProxyName, "ProxyBypass", pwszProxyBypass, "AccessType", dwAccessType, "Flags", dwFlags);
 	return ret;
 }
 
@@ -63,7 +63,7 @@ HOOKDEF(BOOL, WINAPI, WinHttpSetOption,
 	_In_ DWORD dwBufferLength
 ) {
 	BOOL ret = Old_WinHttpSetOption(hInternet, dwOption, lpBuffer, dwBufferLength);
-	LOQ_bool("network", "ppb", "InternetHandle", hInternet, "Option", dwOption, "Buffer", dwBufferLength, lpBuffer);
+	LOQ_bool("network", "phb", "InternetHandle", hInternet, "Option", dwOption, "Buffer", dwBufferLength, lpBuffer);
 	return ret;
 }
 
@@ -74,7 +74,7 @@ HOOKDEF(HINTERNET, WINAPI, WinHttpConnect,
 	_Reserved_ DWORD dwReserved
 ) {
 	HINTERNET ret = Old_WinHttpConnect(hSession, pswzServerName, nServerPort, dwReserved);
-	LOQ_nonnull("network", "pul", "SessionHandle", hSession, "ServerName", pswzServerName, "ServerPort", nServerPort);
+	LOQ_nonnull("network", "pui", "SessionHandle", hSession, "ServerName", pswzServerName, "ServerPort", nServerPort);
 	return ret;
 }
 
@@ -88,7 +88,7 @@ HOOKDEF(HINTERNET, WINAPI, WinHttpOpenRequest,
 	_In_  DWORD dwFlags
 ) {
 	HINTERNET ret = Old_WinHttpOpenRequest(hConnect, pwszVerb, pwszObjectName, pwszVersion, pwszReferrer, ppwszAcceptTypes, dwFlags);
-	LOQ_nonnull("network", "puuuup", "InternetHandle", hConnect, "Verb", pwszVerb, "ObjectName", pwszObjectName, "Version", pwszVersion, "Referrer", pwszReferrer, "Flags", dwFlags);
+	LOQ_nonnull("network", "puuuuh", "InternetHandle", hConnect, "Verb", pwszVerb, "ObjectName", pwszObjectName, "Version", pwszVersion, "Referrer", pwszReferrer, "Flags", dwFlags);
 	return ret;
 }
 
@@ -152,7 +152,7 @@ HOOKDEF(DWORD, WINAPI, NetUserGetInfo,
 	_Out_ LPBYTE *bufptr
 ) {
 	DWORD ret = Old_NetUserGetInfo(servername, username, level, bufptr);
-	LOQ_zero("network", "uul", "ServerName", servername, "UserName", username, "Level", level);
+	LOQ_zero("network", "uui", "ServerName", servername, "UserName", username, "Level", level);
 	return ret;
 }
 
@@ -204,7 +204,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenA,
 	if (g_config.url_of_interest && g_config.suspend_logging)
 		g_config.suspend_logging = FALSE;
 	
-	LOQ_nonnull("network", "spssp", "Agent", lpszAgent, "AccessType", dwAccessType,
+	LOQ_nonnull("network", "shssh", "Agent", lpszAgent, "AccessType", dwAccessType,
         "ProxyName", lpszProxyName, "ProxyBypass", lpszProxyBypass,
         "Flags", dwFlags);
     return ret;
@@ -223,7 +223,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenW,
 	if (g_config.url_of_interest && g_config.suspend_logging)
 		g_config.suspend_logging = FALSE;
 
-	LOQ_nonnull("network", "upuup", "Agent", lpszAgent, "AccessType", dwAccessType,
+	LOQ_nonnull("network", "uhuuh", "Agent", lpszAgent, "AccessType", dwAccessType,
         "ProxyName", lpszProxyName, "ProxyBypass", lpszProxyBypass,
         "Flags", dwFlags);
     return ret;
@@ -242,7 +242,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetConnectA,
     HINTERNET ret = Old_InternetConnectA(hInternet, lpszServerName,
         nServerPort, lpszUsername, lpszPassword, dwService, dwFlags,
         dwContext);
-    LOQ_nonnull("network", "pslsslp", "InternetHandle", hInternet, "ServerName", lpszServerName,
+    LOQ_nonnull("network", "psissih", "InternetHandle", hInternet, "ServerName", lpszServerName,
         "ServerPort", nServerPort, "Username", lpszUsername,
         "Password", lpszPassword, "Service", dwService, "Flags", dwFlags);
     return ret;
@@ -261,7 +261,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetConnectW,
     HINTERNET ret = Old_InternetConnectW(hInternet, lpszServerName,
         nServerPort, lpszUsername, lpszPassword, dwService, dwFlags,
         dwContext);
-    LOQ_nonnull("network", "puluulp", "InternetHandle", hInternet, "ServerName", lpszServerName,
+    LOQ_nonnull("network", "puiuuih", "InternetHandle", hInternet, "ServerName", lpszServerName,
         "ServerPort", nServerPort, "Username", lpszUsername,
         "Password", lpszPassword, "Service", dwService, "Flags", dwFlags);
     return ret;
@@ -279,7 +279,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlA,
         dwHeadersLength, dwFlags, dwContext);
     if(dwHeadersLength == (DWORD) -1)
 		dwHeadersLength = (DWORD)strlen(lpszHeaders);
-    LOQ_nonnull("network", "psSp", "ConnectionHandle", hInternet, "URL", lpszUrl,
+    LOQ_nonnull("network", "psSh", "ConnectionHandle", hInternet, "URL", lpszUrl,
         "Headers", dwHeadersLength, lpszHeaders, "Flags", dwFlags);
     return ret;
 }
@@ -294,7 +294,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlW,
 ) {
     HINTERNET ret = Old_InternetOpenUrlW(hInternet, lpszUrl, lpszHeaders,
         dwHeadersLength, dwFlags, dwContext);
-    LOQ_nonnull("network", "puUp", "ConnectionHandle", hInternet, "URL", lpszUrl,
+    LOQ_nonnull("network", "puUh", "ConnectionHandle", hInternet, "URL", lpszUrl,
         "Headers", dwHeadersLength, lpszHeaders, "Flags", dwFlags);
     return ret;
 }
@@ -311,7 +311,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
 ) {
     HINTERNET ret = Old_HttpOpenRequestA(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ_nonnull("network", "psp", "InternetHandle", hConnect, "Path", lpszObjectName,
+    LOQ_nonnull("network", "psh", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
     return ret;
 }
@@ -328,7 +328,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
 ) {
     HINTERNET ret = Old_HttpOpenRequestW(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ_nonnull("network", "pup", "InternetHandle", hConnect, "Path", lpszObjectName,
+    LOQ_nonnull("network", "puh", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
     return ret;
 }
@@ -428,7 +428,7 @@ HOOKDEF(BOOL, WINAPI, InternetSetOptionA,
 ) {
 	BOOL ret = Old_InternetSetOptionA(hInternet, dwOption, lpBuffer, dwBufferLength);
 	// when logging the buffer, remember the special handling of dwBufferLength when lpBuffer holds a string vs other content
-	LOQ_bool("network", "pp", "InternetHandle", hInternet, "Option", dwOption);
+	LOQ_bool("network", "ph", "InternetHandle", hInternet, "Option", dwOption);
 	return ret;
 }
 
@@ -442,7 +442,7 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_A,
 ) {
     DNS_STATUS ret = Old_DnsQuery_A(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("network", "sip", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("network", "sih", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -456,7 +456,7 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_UTF8,
 ) {
     DNS_STATUS ret = Old_DnsQuery_UTF8(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("network", "sip", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("network", "sih", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -470,7 +470,7 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_W,
 ) {
     DNS_STATUS ret = Old_DnsQuery_W(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("network", "uip", "Name", lpstrName, "Type", wType, "Options", Options);
+    LOQ_zero("network", "uih", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 

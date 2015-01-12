@@ -188,7 +188,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
     ret = Old_NtCreateFile(FileHandle, DesiredAccess,
         ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes,
         ShareAccess | FILE_SHARE_READ, CreateDisposition, CreateOptions, EaBuffer, EaLength);
-    LOQ_ntstatus("filesystem", "PpOllp", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("filesystem", "PhOiih", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "CreateDisposition", CreateDisposition,
         "ShareAccess", ShareAccess, "FileAttributes", FileAttributes);
     if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {
@@ -211,7 +211,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
 
 	ret = Old_NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes,
 		IoStatusBlock, ShareAccess | FILE_SHARE_READ, OpenOptions);
-	LOQ_ntstatus("filesystem", "PpOl", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
+	LOQ_ntstatus("filesystem", "PhOi", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "ShareAccess", ShareAccess);
     if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {
         handle_new_file(*FileHandle, ObjectAttributes);
@@ -298,7 +298,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
         ApcRoutine, ApcContext, IoStatusBlock, IoControlCode,
         InputBuffer, InputBufferLength, OutputBuffer,
         OutputBufferLength);
-	LOQ_ntstatus("device", "ppbb", "FileHandle", FileHandle,
+	LOQ_ntstatus("device", "phbb", "FileHandle", FileHandle,
 		"IoControlCode", IoControlCode,
         "InputBuffer", InputBufferLength, InputBuffer,
         "OutputBuffer", IoStatusBlock->Information, OutputBuffer);
@@ -402,7 +402,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenDirectoryObject,
 ) {
     NTSTATUS ret = Old_NtOpenDirectoryObject(DirectoryHandle, DesiredAccess,
         ObjectAttributes);
-	LOQ_ntstatus("filesystem", "PpO", "DirectoryHandle", DirectoryHandle,
+	LOQ_ntstatus("filesystem", "PhO", "DirectoryHandle", DirectoryHandle,
         "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes);
     return ret;
 }
@@ -414,7 +414,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateDirectoryObject,
 ) {
     NTSTATUS ret = Old_NtCreateDirectoryObject(DirectoryHandle, DesiredAccess,
         ObjectAttributes);
-	LOQ_ntstatus("filesystem", "PpO", "DirectoryHandle", DirectoryHandle,
+	LOQ_ntstatus("filesystem", "PhO", "DirectoryHandle", DirectoryHandle,
         "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes);
     return ret;
 }
@@ -464,7 +464,7 @@ HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
 ) {
     BOOL ret = Old_MoveFileWithProgressW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, dwFlags);
-	LOQ_bool("filesystem", "FFp", "ExistingFileName", lpExistingFileName,
+	LOQ_bool("filesystem", "FFh", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName, "Flags", dwFlags);
     if (ret != FALSE) {
 		if (lpNewFileName)
@@ -548,7 +548,7 @@ HOOKDEF(BOOL, WINAPI, CopyFileExW,
 ) {
     BOOL ret = Old_CopyFileExW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
-	LOQ_bool("filesystem", "FFl", "ExistingFileName", lpExistingFileName,
+	LOQ_bool("filesystem", "FFi", "ExistingFileName", lpExistingFileName,
         "NewFileName", lpNewFileName, "CopyFlags", dwCopyFlags);
 
 	if (ret)
@@ -658,7 +658,7 @@ HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
 	_Out_ LPWSTR pszPath
 ) {
 	HRESULT ret = Old_SHGetFolderPathW(hwndOwner, nFolder, hToken, dwFlags, pszPath);
-	LOQ_hresult("filesystem", "pu", "Folder", nFolder, "Path", pszPath);
+	LOQ_hresult("filesystem", "hu", "Folder", nFolder, "Path", pszPath);
 	return ret;
 }
 
