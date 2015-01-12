@@ -170,6 +170,14 @@ static void log_int16(short value)
 }
 */
 
+static int bson_append_ptr(bson *b, const char *name, ULONG_PTR ptr)
+{
+	if (sizeof(ULONG_PTR) == 8)
+		return bson_append_long(b, name, ptr);
+	else
+		return bson_append_int(b, name, (int)ptr);
+}
+
 static void log_int32(int value)
 {
     bson_append_int( g_bson, g_istr, value );
@@ -275,7 +283,7 @@ static void log_buffer(const char *buf, size_t length) {
 }
 
 void loq(int index, const char *category, const char *name,
-    int is_success, int return_value, const char *fmt, ...)
+    int is_success, ULONG_PTR return_value, const char *fmt, ...)
 {
     va_list args;
     const char * fmtbak = fmt;
@@ -426,17 +434,18 @@ void loq(int index, const char *category, const char *name,
     bson_init( g_bson );
     bson_append_int( g_bson, "I", index );
 	hook_info_t *hookinfo = hook_info();
-	bson_append_int(g_bson, "C", (int)hookinfo->return_address);
+	bson_append_ptr(g_bson, "C", hookinfo->return_address);
 	// return location of malware callsite
-	bson_append_int(g_bson, "R", (int)hookinfo->main_caller_retaddr);
+	bson_append_ptr(g_bson, "R", hookinfo->main_caller_retaddr);
 	// return parent location of malware callsite
-	bson_append_int(g_bson, "P", (int)hookinfo->parent_caller_retaddr);
+	bson_append_ptr(g_bson, "P", hookinfo->parent_caller_retaddr);
 	bson_append_int(g_bson, "T", GetCurrentThreadId());
     bson_append_int( g_bson, "t", GetTickCount() - g_starttick );
 
 	bson_append_start_array(g_bson, "args");
     bson_append_int( g_bson, "0", is_success );
-    bson_append_int( g_bson, "1", return_value );
+    bson_append_ptr( g_bson, "1", return_value );
+
 
     while (--count != 0 || *fmt != 0) {
 

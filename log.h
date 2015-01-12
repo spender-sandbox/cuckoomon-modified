@@ -63,7 +63,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
 void loq(int index, const char *category, const char *name,
-    int is_success, int return_value, const char *fmt, ...);
+    int is_success, ULONG_PTR return_value, const char *fmt, ...);
 void log_new_process();
 void log_new_thread();
 void log_anomaly(const char *subcategory, int success,
