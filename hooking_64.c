@@ -135,6 +135,11 @@ static ULONG_PTR get_short_rel_target(unsigned char *buf)
 	return 0;
 }
 
+static ULONG_PTR get_indirect_target(unsigned char *buf)
+{
+	return *(ULONG_PTR *)(buf + 6 + *(int *)&buf[2]);
+}
+
 static ULONG_PTR get_corresponding_tramp_target(addr_map_t *map, ULONG_PTR addr)
 {
 	unsigned int i = 0;
@@ -155,12 +160,13 @@ static int addr_is_in_range(ULONG_PTR addr, const unsigned char *buf, DWORD size
 	return 0;
 }
 
-static void retarget_rip_relative_displacement(ULONG_PTR target, unsigned char **tramp, unsigned char **addr, cs_insn *insn)
+static void retarget_rip_relative_displacement(unsigned char **tramp, unsigned char **addr, cs_insn *insn)
 {
 	unsigned short length = insn->size;
 	unsigned char offset = (unsigned char)(length - insn->detail->x86.imm_encoded_size - sizeof(int));
 	unsigned char *newtramp = *tramp;
 	unsigned char *newaddr = *addr;
+	ULONG_PTR target;
 	int rel = *(int *)(newaddr + offset);
 	target = (ULONG_PTR)(newaddr + length + rel);
 	// copy the instruction directly to the trampoline
@@ -218,7 +224,7 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 
 		if (addr[0] == 0xe8 || addr[0] == 0xe9 || (addr[0] == 0x0f && addr[1] >= 0x80 && addr[1] < 0x90) ||
 			((insn->detail->x86.modrm & 0xc7) == 5)) {
-			retarget_rip_relative_displacement(get_near_rel_target(addr), &tramp, &addr, insn);
+			retarget_rip_relative_displacement(&tramp, &addr, insn);
 			if (addr[0] == 0xe9 && len > 0)
 				goto error;
 		}
@@ -478,6 +484,28 @@ int hook_api(hook_t *h, int type)
 	}
 
 	int ret = -1;
+
+	OSVERSIONINFO os_info = { sizeof(OSVERSIONINFO) };
+	if (GetVersionEx(&os_info) && os_info.dwMajorVersion >= 6) {
+		if (addr[0] == 0xeb) {
+			PUCHAR target = (PUCHAR)get_short_rel_target(addr);
+			if (target[0] == 0xff && target[1] == 0x25) {
+				unhook_detect_add_region(h->funcname, addr, addr, addr, 2);
+				addr = (PUCHAR)get_indirect_target(target);
+			}
+		}
+		else if (addr[0] == 0xe9) {
+			PUCHAR target = (PUCHAR)get_near_rel_target(addr);
+			unhook_detect_add_region(h->funcname, addr, addr, addr, 5);
+			if (target[0] == 0xff && target[1] == 0x25) {
+				unhook_detect_add_region(h->funcname, target, target, target, 6);
+				addr = (PUCHAR)get_indirect_target(target);
+			}
+			else {
+				addr = target;
+			}
+		}
+	}
 
 	if (!wcscmp(h->library, L"ntdll") && !memcmp(addr, "\x4c\x8b\xd1\xb8", 4)) {
 		// hooking a native API, leave in the mov eax, <syscall nr> instruction
