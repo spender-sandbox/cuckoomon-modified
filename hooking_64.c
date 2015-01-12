@@ -597,10 +597,10 @@ static unsigned int our_stackwalk(ULONG_PTR retaddr, ULONG_PTR sp, PVOID *backtr
 			break;
 	}
 
-	return frame;
+	return frame + 1;
 }
 
-__declspec(noinline) int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR sp, int(*func)(ULONG_PTR))
+int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR sp, int(*func)(ULONG_PTR))
 {
 	hook_info_t *hookinfo = hook_info();
 	int ret;
@@ -623,7 +623,7 @@ __declspec(noinline) int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR sp, i
 	if (((PUCHAR)backtrace[i])[0] == 0xeb && ((PUCHAR)backtrace[i])[1] == 0x08)
 		i++;
 
-	for (i = 0; i < frames; i++) {
+	for (; i < frames; i++) {
 		ret = func((ULONG_PTR)backtrace[i]);
 		if (ret)
 			goto out;

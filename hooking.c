@@ -62,7 +62,7 @@ int addr_in_our_dll_range(ULONG_PTR addr)
 	return 0;
 }
 
-__forceinline int called_by_hook(void)
+int called_by_hook(void)
 {
 	hook_info_t *hookinfo = hook_info();
 
@@ -70,7 +70,7 @@ __forceinline int called_by_hook(void)
 }
 
 // returns 1 if we should call our hook, 0 if we should call the original function instead
-__declspec(noinline) int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr)
+int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr)
 {
 	hook_info_t *hookinfo = hook_info();
 
