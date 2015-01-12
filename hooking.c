@@ -77,11 +77,11 @@ int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr
 	hookinfo->return_address = retaddr;
 	hookinfo->frame_pointer = _ebp;
 
-	/* set caller information */
-	hookinfo->main_caller_retaddr = 0;
-	hookinfo->parent_caller_retaddr = 0;
-
 	if ((hookinfo->disable_count < 1) && (!called_by_hook() || is_special_hook)) {
+		/* set caller information */
+		hookinfo->main_caller_retaddr = 0;
+		hookinfo->parent_caller_retaddr = 0;
+
 		operate_on_backtrace(retaddr, _ebp, set_caller_info);
 		return 1;
 	}
