@@ -326,9 +326,15 @@ void loq(int index, const char *category, const char *name,
 
             //on certain formats, we need to tell cuckoo about them for nicer display / matching
             if (key == 'p' || key == 'P' || key == 'h' || key == 'H') {
-                bson_append_start_array( b, g_istr );
+				const char *typestr;
+				if (key == 'h' || key == 'H' || sizeof(ULONG_PTR) != 8)
+					typestr = "h";
+				else
+					typestr = "p";
+
+				bson_append_start_array( b, g_istr );
                 bson_append_string( b, "0", pname );
-                bson_append_string( b, "1", "p" );
+                bson_append_string( b, "1", typestr );
                 bson_append_finish_array( b );
             } else {
                 bson_append_string( b, g_istr, pname );
