@@ -150,6 +150,9 @@
   <ItemGroup>
     <ClCompile Include="Loader.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Loader.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

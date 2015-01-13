@@ -1,9 +1,8 @@
-#include <Windows.h>
+// Copyright 2014-2015 Accuvant, Inc. (bspengler@accuvant.com)
+// This file is published under the GNU GPL v3
+// http://www.gnu.org/licenses/gpl.html
 
-enum {
-	INJECT_CREATEREMOTETHREAD,
-	INJECT_QUEUEUSERAPC
-};
+#include "Loader.h"
 
 static int grant_debug_privileges(void)
 {
@@ -73,12 +72,44 @@ static int inject(int pid, int tid, const char *dllpath, unsigned int injectmode
 		newhandle = CreateRemoteThread(prochandle, NULL, 0, loadlibraryaddr, dllpathbuf, 0, &threadid);
 		if (newhandle)
 			CloseHandle(newhandle);
-		else
+		else {
+			if (GetLastError() == ERROR_NOT_ENOUGH_MEMORY) {
+				/* Bypass Vista+ userland session restrictions on thread injection */
+				PVOID pCsrClientCallServer = (PVOID)GetProcAddress(GetModuleHandleA("ntdll.dll"), "CsrClientCallServer");
+				DWORD oldprot;
+				unsigned char origbuf[16];
+				// we hardcode the offsets obtained from reversing because all the definitions of 
+				// PORT_MESSAGE/CSRSS_MESSAGE/etc available online are incorrect for x64, assuming ULONG size of various fields 
+				// due to copy+pasting from Gary Nebbet's Windows 2000 Native API Reference book
+
+#ifdef _WIN64
+				const unsigned char payload[] = { 0x33, 0xc0, 0x89, 0x41, 52, 0xc3 }; // xor eax, eax / mov dword ptr [rcx+<offset of status>], eax / ret
+#else
+				const unsigned char payload[] = { 0x33, 0xc0, 0x8b, 0x4c, 0x24, 0x04, 0x89, 0x41, 20, 0xc2, 0x10, 0x00 }; // xor eax, eax, / mov ecx, [esp+4] / mov [ecx+<offset of status>], eax / retn 0x10
+#endif
+				VirtualProtect(pCsrClientCallServer, sizeof(payload), PAGE_EXECUTE_READWRITE, &oldprot);
+
+				memcpy(origbuf, pCsrClientCallServer, sizeof(payload));
+				memcpy(pCsrClientCallServer, payload, sizeof(payload));
+
+				newhandle = CreateRemoteThread(prochandle, NULL, 0, loadlibraryaddr, dllpathbuf, 0, &threadid);
+
+				memcpy(pCsrClientCallServer, origbuf, sizeof(payload));
+
+				if (newhandle)
+					CloseHandle(newhandle);
+
+				VirtualProtect(pCsrClientCallServer, sizeof(payload), oldprot, &oldprot);
+				if (newhandle)
+					goto success;
+			}
 			goto out;
+		}
 	}
 	else
 		goto out;
 
+success:
 	ret = 0;
 out:
 	if (prochandle)
