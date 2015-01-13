@@ -354,7 +354,7 @@ char *ensure_absolute_ascii_path(char *out, const char *in)
 		lenchars = GetLongPathNameA(tmpout, out, MAX_PATH);
 		if (lenchars)
 			break;
-		if (GetLastError() != ERROR_FILE_NOT_FOUND && GetLastError() != ERROR_PATH_NOT_FOUND)
+		if (GetLastError() != ERROR_FILE_NOT_FOUND && GetLastError() != ERROR_PATH_NOT_FOUND && GetLastError() != ERROR_INVALID_NAME)
 			goto normal_copy;
 		pathcomponent = strrchr(tmpout, '\\');
 		if (pathcomponent == NULL)
@@ -470,7 +470,7 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 		lenchars = GetLongPathNameW(tmpout, out, 32768);
 		if (lenchars)
 			break;
-		if (GetLastError() != ERROR_FILE_NOT_FOUND && GetLastError() != ERROR_PATH_NOT_FOUND)
+		if (GetLastError() != ERROR_FILE_NOT_FOUND && GetLastError() != ERROR_PATH_NOT_FOUND && GetLastError() != ERROR_INVALID_NAME)
 			goto normal_copy;
 		pathcomponent = wcsrchr(tmpout, L'\\');
 		if (pathcomponent == NULL)
