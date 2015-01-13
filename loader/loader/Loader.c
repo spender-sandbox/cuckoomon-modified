@@ -83,9 +83,9 @@ static int inject(int pid, int tid, const char *dllpath, unsigned int injectmode
 				// due to copy+pasting from Gary Nebbet's Windows 2000 Native API Reference book
 
 #ifdef _WIN64
-				const unsigned char payload[] = { 0x33, 0xc0, 0x89, 0x41, 52, 0xc3 }; // xor eax, eax / mov dword ptr [rcx+<offset of status>], eax / ret
+				const unsigned char payload[] = { 0x33, 0xc0, 0x89, 0x41, 0x34, 0xc3 }; // xor eax, eax / mov dword ptr [rcx+<offset of status>], eax / ret
 #else
-				const unsigned char payload[] = { 0x33, 0xc0, 0x8b, 0x4c, 0x24, 0x04, 0x89, 0x41, 20, 0xc2, 0x10, 0x00 }; // xor eax, eax, / mov ecx, [esp+4] / mov [ecx+<offset of status>], eax / retn 0x10
+				const unsigned char payload[] = { 0x33, 0xc0, 0x8b, 0x4c, 0x24, 0x04, 0x89, 0x41, 0x20, 0xc2, 0x10, 0x00 }; // xor eax, eax, / mov ecx, [esp+4] / mov [ecx+<offset of status>], eax / retn 0x10
 #endif
 				VirtualProtect(pCsrClientCallServer, sizeof(payload), PAGE_EXECUTE_READWRITE, &oldprot);
 
