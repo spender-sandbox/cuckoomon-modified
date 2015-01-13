@@ -340,9 +340,9 @@ char *ensure_absolute_ascii_path(char *out, const char *in)
 	unsigned int nonexistentidx;
 	unsigned int pathcomponentlen;
 	unsigned int lenchars;
-	DWORD lasterror;
+	lasterror_t lasterror;
 
-	lasterror = our_getlasterror();
+	get_lasterrors(&lasterror);
 
 	if (!GetFullPathNameA(in, MAX_PATH, tmpout, NULL))
 		goto normal_copy;
@@ -378,7 +378,7 @@ out:
 	if (out[1] == ':' && out[2] == '\\')
 		out[0] = toupper(out[0]);
 
-	our_setlasterror(lasterror);
+	set_lasterrors(&lasterror);
 
 	return out;
 }
@@ -395,9 +395,9 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	unsigned int inlen;
 	int is_globalroot = 0;
 
-	DWORD lasterror;
+	lasterror_t lasterror;
 
-	lasterror = our_getlasterror();
+	get_lasterrors(&lasterror);
 
 	if (!wcsncmp(in, L"\\??\\", 4)) {
 		inadj = in + 4;
@@ -489,14 +489,8 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 		memmove(out + system32dir_len + 1, out + system32dir_len, (lstrlenW(out + system32dir_len) + 1) * sizeof(wchar_t));
 		memcpy(out, sysnativedir_w, sysnativedir_len * sizeof(wchar_t));
 	}
-	out[32767] = L'\0';
-	if (tmpout)
-		free(tmpout);
-	if (nonexistent)
-		free(nonexistent);
-	if (out[1] == L':' && out[2] == L'\\')
-		out[0] = toupper(out[0]);
-	return out;
+
+	goto out;
 
 globalroot_copy:
 	wcscpy(out, L"\\??\\");
@@ -516,7 +510,7 @@ out:
 	if (out[1] == L':' && out[2] == L'\\')
 		out[0] = toupper(out[0]);
 
-	our_setlasterror(lasterror);
+	set_lasterrors(&lasterror);
 
 	return out;
 }
@@ -651,9 +645,9 @@ wchar_t *get_key_path(POBJECT_ATTRIBUTES ObjectAttributes, PKEY_NAME_INFORMATION
 	unsigned int remaining;
 	unsigned int curlen;
 	HKEY rootkey;
-	DWORD lasterror;
+	lasterror_t lasterror;
 
-	lasterror = our_getlasterror();
+	get_lasterrors(&lasterror);
 
 	if (ObjectAttributes == NULL || ObjectAttributes->ObjectName == NULL)
 		goto error;
@@ -747,14 +741,13 @@ normal:
 		keybuf->KeyNameLength -= (14 - ourlen) * sizeof(WCHAR);
 	}
 
-	our_setlasterror(lasterror);
+	goto out;
 
-	return keybuf->KeyName;
 error:
 	keybuf->KeyName[0] = 0;
 	keybuf->KeyNameLength = 0;
-
-	our_setlasterror(lasterror);
+out:
+	set_lasterrors(&lasterror);
 
 	return keybuf->KeyName;
 }

@@ -102,6 +102,11 @@ typedef struct _hook_t {
 	hook_data_t *hookdata;
 } hook_t;
 
+typedef struct _lasterror_t {
+	DWORD Win32Error;
+	DWORD NtstatusError;
+} lasterror_t;
+
 int lde(void *addr);
 void init_capstone(void);
 
@@ -114,8 +119,8 @@ void hook_enable();
 void hook_disable();
 int called_by_hook(void);
 int addr_in_our_dll_range(ULONG_PTR addr);
-DWORD our_getlasterror(void);
-void our_setlasterror(DWORD val);
+void get_lasterrors(lasterror_t *errors);
+void set_lasterrors(lasterror_t *errors);
 int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr);
 void emit_rel(unsigned char *buf, unsigned char *source, unsigned char *target);
 int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(ULONG_PTR));

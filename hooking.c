@@ -29,8 +29,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 extern DWORD g_tls_hook_index;
 
-// do not change this number
-#define TLS_LAST_ERROR 0x34
+#ifdef _WIN64
+#define TLS_LAST_WIN32_ERROR 0x68
+#define TLS_LAST_NTSTATUS_ERROR 0x1250
+#else
+#define TLS_LAST_WIN32_ERROR 0x34
+#define TLS_LAST_NTSTATUS_ERROR 0xbf4
+#endif
 
 void emit_rel(unsigned char *buf, unsigned char *source, unsigned char *target)
 {
@@ -93,7 +98,9 @@ hook_info_t *hook_info()
 {
 	hook_info_t *ptr;
 
-	DWORD lasterror = our_getlasterror();
+	lasterror_t lasterror;
+	
+	get_lasterrors(&lasterror);
 
 	ptr = (hook_info_t *)TlsGetValue(g_tls_hook_index);
 	if (ptr == NULL) {
@@ -115,24 +122,26 @@ hook_info_t *hook_info()
 		ptr = newinfo;
 	}
 
-	our_setlasterror(lasterror);
+	set_lasterrors(&lasterror);
 
 	return ptr;
 }
 
-DWORD our_getlasterror(void)
+void get_lasterrors(lasterror_t *errors)
 {
 	char *teb = (char *)NtCurrentTeb();
 
-	return *(DWORD *)(teb + TLS_LAST_ERROR);
+	errors->Win32Error = *(DWORD *)(teb + TLS_LAST_WIN32_ERROR);
+	errors->NtstatusError = *(DWORD *)(teb + TLS_LAST_NTSTATUS_ERROR);
 }
 
 // we do our own version of this function to avoid the potential debug triggers
-void our_setlasterror(DWORD val)
+void set_lasterrors(lasterror_t *errors)
 {
 	char *teb = (char *)NtCurrentTeb();
 
-	*(DWORD *)(teb + TLS_LAST_ERROR) = val;
+	*(DWORD *)(teb + TLS_LAST_WIN32_ERROR) = errors->Win32Error;
+	*(DWORD *)(teb + TLS_LAST_NTSTATUS_ERROR) = errors->NtstatusError;
 }
 
 void hook_enable()

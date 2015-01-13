@@ -162,11 +162,11 @@ int pipe(const char *fmt, ...)
     va_list args;
 	int len;
 	int ret = -1;
-	DWORD lasterror;
+	lasterror_t lasterror;
 
 	va_start(args, fmt);
 
-	lasterror = our_getlasterror();
+	get_lasterrors(&lasterror);
 	len = _pipe_sprintf(NULL, fmt, args);
     if (len > 0) {
         char *buf = calloc(1, len + 1);
@@ -191,7 +191,7 @@ int pipe(const char *fmt, ...)
 
 	va_end(args);
 
-	our_setlasterror(lasterror);
+	set_lasterrors(&lasterror);
 
 	return ret;
 }

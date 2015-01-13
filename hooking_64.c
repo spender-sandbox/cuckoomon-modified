@@ -605,11 +605,11 @@ int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR sp, int(*func)(ULONG_PTR))
 	hook_info_t *hookinfo = hook_info();
 	int ret;
 	PVOID backtrace[HOOK_BACKTRACE_DEPTH];
-	DWORD lasterror;
+	lasterror_t lasterror;
 	WORD frames;
 	WORD i;
 
-	lasterror = our_getlasterror();
+	get_lasterrors(&lasterror);
 
 	hook_disable();
 
@@ -631,7 +631,7 @@ int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR sp, int(*func)(ULONG_PTR))
 
 out:
 	hook_enable();
-	our_setlasterror(lasterror);
+	set_lasterrors(&lasterror);
 	return ret;
 }
 
