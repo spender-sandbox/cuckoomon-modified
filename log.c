@@ -599,7 +599,7 @@ void loq(int index, const char *category, const char *name,
         }
         else if(key == 'O') {
             OBJECT_ATTRIBUTES *obj = va_arg(args, OBJECT_ATTRIBUTES *);
-            if(obj == NULL || obj->ObjectName == NULL) {
+            if(obj == NULL) {
                 log_string("", 0);
             }
 			else {

@@ -296,7 +296,7 @@ uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
 	uint32_t copylen;
 
     if (obj->ObjectName == NULL || obj->ObjectName->Buffer == NULL) {
-        return 0;
+		return path_from_handle(obj->RootDirectory, path, buffer_length);;
     }
 
     // ObjectName->Length is actually the size in bytes.
