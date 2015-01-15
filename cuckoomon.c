@@ -501,6 +501,7 @@ LONG WINAPI cuckoomon_exception_handler(
 	ULONG_PTR eip = (ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
 	PUCHAR eipptr = (PUCHAR)eip;
 	DWORD *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
+	lasterror_t lasterror;
 
 #if REPORT_ALL_EXCEPTIONS == 0
 	if (ExceptionInfo->ExceptionRecord->ExceptionCode < 0xc0000000)
@@ -509,8 +510,11 @@ LONG WINAPI cuckoomon_exception_handler(
 
 	hook_disable();
 
+	get_lasterrors(&lasterror);
+
 	dllname = convert_address_to_dll_name_and_offset(eip, &offset);
-	strcpy(msg, "Exception Caught! EIP:");
+
+	sprintf(msg, "Exception Caught! PID: %u EIP:", GetCurrentProcessId());
 	if (dllname)
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
 	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %08x, Fault Address: %08x, Esp: %08x, Exception Code: %08x, ",
@@ -524,6 +528,10 @@ LONG WINAPI cuckoomon_exception_handler(
 			eipptr[0], eipptr[1], eipptr[2], eipptr[3], eipptr[4], eipptr[5], eipptr[6], eipptr[7], eipptr[8], eipptr[9], eipptr[10], eipptr[11], eipptr[12], eipptr[13], eipptr[14], eipptr[15]);
 	}
 	debug_message(msg);
+	if (dllname)
+		free(dllname);
+
+	set_lasterrors(&lasterror);
 
 	hook_enable();
 
