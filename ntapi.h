@@ -325,8 +325,6 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS {
 
 typedef void *PPS_CREATE_INFO, *PPS_ATTRIBUTE_LIST;
 
-#define PARENT_PROCESS    1
-
 typedef struct _PROC_THREAD_ATTRIBUTE_ENTRY
 {
 	ULONG_PTR Attribute;

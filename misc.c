@@ -216,6 +216,16 @@ char *convert_address_to_dll_name_and_offset(ULONG_PTR addr, unsigned int *offse
 {
 	LDR_MODULE *mod; PEB *peb = (PEB *)get_peb();
 
+	if (addr >= g_our_dll_base && addr < (g_our_dll_base + g_our_dll_size))
+	{
+		char *buf = calloc(1, strlen("cuckoomon.dll") + 1);
+		if (buf == NULL)
+			return NULL;
+		strcpy(buf, "cuckoomon.dll");
+		*offset = (unsigned int)(addr - g_our_dll_base);
+		return buf;
+	}
+
 	for (mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
 		mod->BaseAddress != NULL;
 		mod = (LDR_MODULE *)mod->InLoadOrderModuleList.Flink) {

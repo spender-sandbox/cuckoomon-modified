@@ -127,7 +127,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
 			LPSTARTUPINFOEXW lpExtStartupInfo = (LPSTARTUPINFOEXW)lpStartupInfo;
 			if (lpExtStartupInfo->lpAttributeList) {
 				for (i = 0; i < lpExtStartupInfo->lpAttributeList->Count; i++)
-					if (lpExtStartupInfo->lpAttributeList->Entries[i].Attribute & PARENT_PROCESS)
+					if (lpExtStartupInfo->lpAttributeList->Entries[i].Attribute == PROC_THREAD_ATTRIBUTE_PARENT_PROCESS)
 						ParentHandle = *(HANDLE *)lpExtStartupInfo->lpAttributeList->Entries[i].lpValue;
 			}
 			LOQspecial_bool("process", "uuhiippp", "ApplicationName", lpApplicationName,
