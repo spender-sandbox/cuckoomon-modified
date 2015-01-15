@@ -39,11 +39,14 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     // well, then the unicode string (which is located in the TEB) will be
     // overwritten, therefore we make a copy of it for our own use.
     //
+	lasterror_t lasterror;
 
     COPY_UNICODE_STRING(library, ModuleFileName);
 
     NTSTATUS ret = Old2_LdrLoadDll(PathToFile, Flags, ModuleFileName,
         ModuleHandle);
+
+	get_lasterrors(&lasterror);
 
 	/* Workaround for the case where we're being loaded twice in the same process
 	Logging the load could confuse a novice analyst into thinking there's unusual
@@ -78,6 +81,8 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 			*end = L'\0';
         set_hooks_dll(library.Buffer);
     }
+
+	set_lasterrors(&lasterror);
 
     return ret;
 }
@@ -177,7 +182,10 @@ HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 	char idbuf1[40];
 	char idbuf2[40];
 	char *known;
+	lasterror_t lasterror;
 	HRESULT ret = Old2_CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
+
+	get_lasterrors(&lasterror);
 
 	memcpy(&id1, rclsid, sizeof(id1));
 	memcpy(&id2, riid, sizeof(id2));
@@ -185,6 +193,8 @@ HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 		id1.Data4[0], id1.Data4[1], id1.Data4[2], id1.Data4[3], id1.Data4[4], id1.Data4[5], id1.Data4[6], id1.Data4[7]);
 	sprintf(idbuf2, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id2.Data1, id2.Data2, id2.Data3,
 		id2.Data4[0], id2.Data4[1], id2.Data4[2], id2.Data4[3], id2.Data4[4], id2.Data4[5], id2.Data4[6], id2.Data4[7]);
+
+	set_lasterrors(&lasterror);
 
 	if ((known = known_object(&id1, &id2)))
 		LOQspecial_hresult("com", "shss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);

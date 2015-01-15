@@ -283,6 +283,13 @@ HOOKDEF(BOOL, WINAPI, GetCursorPos,
 	return ret;
 }
 
+HOOKDEF(DWORD, WINAPI, GetLastError)
+{
+	DWORD ret = Old_GetLastError();
+	LOQ_void("misc", "");
+	return ret;
+}
+
 HOOKDEF(BOOL, WINAPI, GetComputerNameA,
     _Out_    LPSTR lpBuffer,
     _Inout_  LPDWORD lpnSize

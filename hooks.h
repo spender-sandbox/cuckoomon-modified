@@ -854,6 +854,8 @@ extern HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     __inout  SHELLEXECUTEINFOW *pExecInfo
 );
 
+extern HOOKDEF(DWORD, WINAPI, GetLastError);
+
 extern HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 	__in    REFCLSID rclsid,
 	__in	LPUNKNOWN pUnkOuter,

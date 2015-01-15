@@ -265,6 +265,9 @@ static hook_t g_hooks[] = {
     // Misc Hooks
     //
 
+	// for debugging only
+	//HOOK(kernel32, GetLastError),
+
     HOOK(user32, SetWindowsHookExA),
     HOOK(user32, SetWindowsHookExW),
     HOOK(user32, UnhookWindowsHookEx),
@@ -603,6 +606,10 @@ DWORD g_tls_hook_index;
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
     if(dwReason == DLL_PROCESS_ATTACH) {
 		unsigned int i;
 		DWORD pids[MAX_PROTECTED_PIDS];
@@ -618,7 +625,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #endif
 		if (((PUCHAR)ExitProcess)[0] == 0xff && ((PUCHAR)ExitProcess)[1] == 0x25) {
 			notify_successful_load();
-			return TRUE;
+			goto out;
 		}
 #else
 #if HOOKTYPE != HOOK_HOTPATCH_JMP_INDIRECT
@@ -626,7 +633,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #endif
 		if (((PUCHAR)ExitProcess)[0] == 0x8b && ((PUCHAR)ExitProcess)[1] == 0xff && ((PUCHAR)ExitProcess)[2] == 0xff && ((PUCHAR)ExitProcess)[3] == 0x25) {
 			notify_successful_load();
-			return TRUE;
+			goto out;
 		}
 #endif
 
@@ -645,12 +652,11 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		g_tls_hook_index = TlsAlloc();
 		if (g_tls_hook_index == TLS_OUT_OF_INDEXES)
-			return TRUE;
+			goto out;
 
 		// there's a small list of processes which we don't want to inject
-        if(is_ignored_process()) {
-            return TRUE;
-        }
+		if (is_ignored_process())
+			goto out;
 #if REPORT_EXCEPTIONS
 		AddVectoredExceptionHandler(1, cuckoomon_exception_handler);
 		SetUnhandledExceptionFilter(cuckoomon_exception_handler);
@@ -674,11 +680,11 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			;
 #else
 			// if we're not debugging, then failure to read the cuckoomon config should be a critical error
-			return TRUE;
+			goto out;
 #endif
         g_pipe_name = g_config.pipe_name;
 
-        // obtain all protected pids
+		// obtain all protected pids
         pipe2(pids, &length, "GETPIDS");
         for (i = 0; i < length / sizeof(pids[0]); i++) {
             add_protected_pid(pids[i]);
@@ -703,7 +709,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		// initialize our unhook detection
         unhook_init_detection();
 
-        // initialize all hooks
+		// initialize all hooks
         set_hooks();
 
 		notify_successful_load();
@@ -713,6 +719,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
     }
 
 	g_dll_main_complete = TRUE;
+
+out:
+	set_lasterrors(&lasterror);
 
 	return TRUE;
 }
