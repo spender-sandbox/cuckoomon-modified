@@ -94,6 +94,8 @@ static wchar_t *g_ignored_processpaths[] = {
     L"C:\\WINDOWS\\system32\\dwwin.exe",
     L"C:\\WINDOWS\\system32\\dumprep.exe",
     L"C:\\WINDOWS\\system32\\drwtsn32.exe",
+	L"C:\\WINDOWS\\system32\\WerFault.exe",
+	L"C:\\WINDOWS\\syswow64\\WerFault.exe"
 };
 
 int is_ignored_process()
