@@ -16,6 +16,9 @@ typedef NTSTATUS(WINAPI * _NtFreeVirtualMemory)(
 	_Inout_  PSIZE_T RegionSize,
 	_In_     ULONG FreeType);
 
+extern _NtAllocateVirtualMemory pNtAllocateVirtualMemory;
+extern _NtFreeVirtualMemory pNtFreeVirtualMemory;
+
 #define USE_PRIVATE_HEAP
 
 #ifdef USE_PRIVATE_HEAP
@@ -45,9 +48,6 @@ struct cm_alloc_header {
 	SIZE_T Used;
 	SIZE_T Max;
 };
-
-extern _NtAllocateVirtualMemory pNtAllocateVirtualMemory;
-extern _NtFreeVirtualMemory pNtFreeVirtualMemory;
 
 #define CM_ALLOC_METASIZE		(sizeof(struct cm_alloc_header))
 #define GET_CM_ALLOC_HEADER(x)	(struct cm_alloc_header *)((PCHAR)(x) - CM_ALLOC_METASIZE)

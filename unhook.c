@@ -179,7 +179,7 @@ static int _operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(U
 	return ret;
 }
 
-
+#ifndef _WIN64
 static DWORD WINAPI _watchdog_thread(LPVOID param)
 {
 	while (1) {
@@ -224,3 +224,4 @@ int init_watchdog()
 
 	return 0;
 }
+#endif
