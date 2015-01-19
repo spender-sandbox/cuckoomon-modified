@@ -602,7 +602,6 @@ static unsigned int our_stackwalk(ULONG_PTR retaddr, ULONG_PTR sp, PVOID *backtr
 
 int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR sp, int(*func)(ULONG_PTR))
 {
-	hook_info_t *hookinfo = hook_info();
 	int ret;
 	PVOID backtrace[HOOK_BACKTRACE_DEPTH];
 	lasterror_t lasterror;

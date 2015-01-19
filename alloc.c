@@ -1,6 +1,8 @@
 #include <Windows.h>
 #include "alloc.h"
 
+#ifndef USE_PRIVATE_HEAP
+
 void *cm_alloc(size_t size)
 {
 	PVOID BaseAddress = NULL;
@@ -60,3 +62,5 @@ void *cm_realloc(void *ptr, size_t size)
 	cm_free(ptr);
 	return buf;
 }
+
+#endif

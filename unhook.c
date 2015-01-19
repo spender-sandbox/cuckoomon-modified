@@ -85,7 +85,7 @@ static DWORD WINAPI _unhook_detect_thread(LPVOID param)
                 }
                 watcher_first = 0;
             }
-            Sleep(100);
+            raw_sleep(100);
         }
 
 		__try {
@@ -149,4 +149,78 @@ int unhook_init_detection()
 
     pipe("CRITICAL:Error initializing unhook detection threads!");
     return -1;
+}
+
+static ULONG_PTR cuckoomonaddrs[20];
+static int cuckoomonaddrs_num;
+
+static int find_cuckoomon_addrs(ULONG_PTR addr)
+{
+	if (cuckoomonaddrs_num < 20)
+		cuckoomonaddrs[cuckoomonaddrs_num++] = addr;
+	return 0;
+}
+
+static int _operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(ULONG_PTR))
+{
+	int ret;
+
+	while (_ebp)
+	{
+		// obtain the return address and the next value of ebp
+		ULONG_PTR addr = *(ULONG_PTR *)(_ebp + sizeof(ULONG_PTR));
+		_ebp = *(ULONG_PTR *)_ebp;
+
+		ret = func(addr);
+		if (ret)
+			return ret;
+	}
+
+	return ret;
+}
+
+
+static DWORD WINAPI _watchdog_thread(LPVOID param)
+{
+	while (1) {
+		char msg[1024];
+
+		CONTEXT ctx;
+		int suspendret, getcontextret, resumeret;
+		raw_sleep(1000);
+		memset(&cuckoomonaddrs, 0, sizeof(cuckoomonaddrs));
+		cuckoomonaddrs_num = 0;
+		memset(&ctx, 0, sizeof(ctx));
+		suspendret = SuspendThread((HANDLE)param);
+		ctx.ContextFlags = CONTEXT_FULL;
+		getcontextret = GetThreadContext((HANDLE)param, &ctx);
+		unsigned int off = 0;
+		char *dllname = convert_address_to_dll_name_and_offset(ctx.Eip, &off);
+		sprintf(msg, "INFO: PID %u thread: %p suspend: %d getcontext: %d resume: %d EIP: %s+%x(%p) EAX: %p EBX: %p ECX: %p EDX: %p ESI: %p EDI: %p EBP: %p ESP: %p\n", GetCurrentProcessId(), param, suspendret, getcontextret, resumeret, dllname ? dllname : "", off, ctx.Eip, ctx.Eax, ctx.Ebx, ctx.Ecx, ctx.Edx, ctx.Esi, ctx.Edi, ctx.Ebp, ctx.Esp);
+
+		_operate_on_backtrace(ctx.Eip, ctx.Ebp, find_cuckoomon_addrs);
+
+		for (int i = 0; i < cuckoomonaddrs_num; i++) {
+			char *dllname2 = convert_address_to_dll_name_and_offset(cuckoomonaddrs[i], &off);
+			sprintf(msg + strlen(msg), " %s+%x(%p)", dllname2 ? dllname2 : "", off, cuckoomonaddrs[i]);
+			if (dllname2)
+				free(dllname2);
+		}
+
+		if (dllname)
+			free(dllname);
+		resumeret = ResumeThread((HANDLE)param);
+		pipe(msg);
+	}
+}
+
+int init_watchdog()
+{
+	HANDLE mainthreadhandle;
+
+	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(), GetCurrentProcess(), &mainthreadhandle, THREAD_ALL_ACCESS, FALSE, 0);
+
+	CreateThread(NULL, 0, &_watchdog_thread, mainthreadhandle, 0, NULL);
+
+	return 0;
 }

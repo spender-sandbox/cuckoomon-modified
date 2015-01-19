@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sddl.h>
 #include "misc.h"
 #include "hooking.h"
+#include "log.h"
 #include "config.h"
 
 static _NtQueryInformationProcess pNtQueryInformationProcess;
@@ -31,6 +32,7 @@ static _RtlGenRandom pRtlGenRandom;
 static _NtQueryAttributesFile pNtQueryAttributesFile;
 static _NtQueryObject pNtQueryObject;
 static _NtQueryKey pNtQueryKey;
+static _NtDelayExecution pNtDelayExecution;
 _NtAllocateVirtualMemory pNtAllocateVirtualMemory;
 _NtFreeVirtualMemory pNtFreeVirtualMemory;
 
@@ -38,6 +40,7 @@ void resolve_runtime_apis(void)
 {
 	HMODULE ntdllbase = GetModuleHandle("ntdll");
 
+	*(FARPROC *)&pNtDelayExecution = GetProcAddress(ntdllbase, "NtDelayExecution");
 	*(FARPROC *)&pNtQueryInformationProcess = GetProcAddress(ntdllbase, "NtQueryInformationProcess");
 	*(FARPROC *)&pNtQueryInformationThread = GetProcAddress(ntdllbase, "NtQueryInformationThread");
 	*(FARPROC *)&pNtQueryObject = GetProcAddress(ntdllbase, "NtQueryObject");
@@ -50,6 +53,15 @@ void resolve_runtime_apis(void)
 
 ULONG_PTR g_our_dll_base;
 DWORD g_our_dll_size;
+
+void raw_sleep(int msecs)
+{
+	LARGE_INTEGER interval;
+	interval.QuadPart = -(msecs * 10000);
+
+	pNtDelayExecution(FALSE, &interval);
+
+}
 
 DWORD get_image_size(ULONG_PTR base)
 {
@@ -109,6 +121,9 @@ static BOOL cid_from_thread_handle(HANDLE thread_handle, PCLIENT_ID cid)
 	HANDLE dup_handle = thread_handle;
 	BOOL duped;
 	BOOL ret = FALSE;
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
 
 	memset(&tbi, 0, sizeof(tbi));
 
@@ -121,6 +136,8 @@ static BOOL cid_from_thread_handle(HANDLE thread_handle, PCLIENT_ID cid)
 
 	if (duped)
 		CloseHandle(dup_handle);
+
+	set_lasterrors(&lasterror);
 
 	return ret;
 }
@@ -281,7 +298,10 @@ uint32_t path_from_handle(HANDLE handle,
 	ULONG returnLength;
 	NTSTATUS status;
 	uint32_t length = 0;
-	
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
 	resolvedName = (POBJECT_NAME_INFORMATION)calloc(1, OBJECT_NAME_INFORMATION_REQUIRED_SIZE);
 
 	status = pNtQueryObject(handle, ObjectNameInformation,
@@ -297,6 +317,9 @@ uint32_t path_from_handle(HANDLE handle,
 		path[length] = L'\0';
 
 	free(resolvedName);
+
+	set_lasterrors(&lasterror);
+
 	return length;
 }
 
@@ -807,13 +830,22 @@ int is_shutting_down()
 	if (process_shutting_down)
 		return 1;
 
+	lasterror_t lasterror;
+	int ret = 0;
+
+	get_lasterrors(&lasterror);
+
 	HANDLE mutex_handle =
         OpenMutex(SYNCHRONIZE, FALSE, g_config.shutdown_mutex);
     if(mutex_handle != NULL) {
+		log_flush();
         CloseHandle(mutex_handle);
-        return 1;
+        ret = 1;
     }
-    return 0;
+
+	set_lasterrors(&lasterror);
+
+    return ret;
 }
 
 static char *g_specialnames_a[27];

@@ -39,6 +39,10 @@ typedef NTSTATUS(WINAPI *_NtQueryKey)(
 	PVOID  KeyInformation,
 	ULONG  Length,
 	PULONG  ResultLength);
+typedef NTSTATUS(WINAPI *_NtDelayExecution)(
+	BOOLEAN Alertable,
+	PLARGE_INTEGER Interval
+	);
 
 void resolve_runtime_apis(void);
 
@@ -47,6 +51,7 @@ DWORD pid_from_process_handle(HANDLE process_handle);
 DWORD pid_from_thread_handle(HANDLE thread_handle);
 DWORD tid_from_thread_handle(HANDLE thread_handle);
 DWORD random();
+void raw_sleep(int msecs);
 DWORD randint(DWORD min, DWORD max);
 BOOL is_directory_objattr(const OBJECT_ATTRIBUTES *obj);
 void hide_module_from_peb(HMODULE module_handle);

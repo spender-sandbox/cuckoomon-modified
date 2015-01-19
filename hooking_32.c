@@ -615,7 +615,6 @@ int hook_api(hook_t *h, int type)
 
 int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(ULONG_PTR))
 {
-	hook_info_t *hookinfo = hook_info();
 	int ret;
 
 	ULONG_PTR top = get_stack_top();

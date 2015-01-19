@@ -3,6 +3,21 @@
 
 #include <assert.h>
 
+typedef NTSTATUS(WINAPI * _NtAllocateVirtualMemory)(
+	_In_     HANDLE ProcessHandle,
+	_Inout_  PVOID *BaseAddress,
+	_In_     ULONG_PTR ZeroBits,
+	_Inout_  PSIZE_T RegionSize,
+	_In_     ULONG AllocationType,
+	_In_     ULONG Protect);
+typedef NTSTATUS(WINAPI * _NtFreeVirtualMemory)(
+	_In_     HANDLE ProcessHandle,
+	_Inout_  PVOID *BaseAddress,
+	_Inout_  PSIZE_T RegionSize,
+	_In_     ULONG FreeType);
+
+#define USE_PRIVATE_HEAP
+
 #ifdef USE_PRIVATE_HEAP
 extern HANDLE g_heap;
 static __inline void *cm_alloc(size_t size)
@@ -30,19 +45,6 @@ struct cm_alloc_header {
 	SIZE_T Used;
 	SIZE_T Max;
 };
-
-typedef NTSTATUS(WINAPI * _NtAllocateVirtualMemory)(
-	_In_     HANDLE ProcessHandle,
-	_Inout_  PVOID *BaseAddress,
-	_In_     ULONG_PTR ZeroBits,
-	_Inout_  PSIZE_T RegionSize,
-	_In_     ULONG AllocationType,
-	_In_     ULONG Protect);
-typedef NTSTATUS(WINAPI * _NtFreeVirtualMemory)(
-	_In_     HANDLE ProcessHandle,
-	_Inout_  PVOID *BaseAddress,
-	_Inout_  PSIZE_T RegionSize,
-	_In_     ULONG FreeType);
 
 extern _NtAllocateVirtualMemory pNtAllocateVirtualMemory;
 extern _NtFreeVirtualMemory pNtFreeVirtualMemory;

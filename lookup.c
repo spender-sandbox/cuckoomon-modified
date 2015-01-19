@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ntapi.h"
 #include <windows.h>
 #include "lookup.h"
+#include "pipe.h"
 
 #define ENTER() EnterCriticalSection(&d->cs)
 #define LEAVE() LeaveCriticalSection(&d->cs)

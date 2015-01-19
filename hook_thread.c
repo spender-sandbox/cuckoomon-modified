@@ -82,14 +82,19 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
     IN      LONG SizeOfStackReserve,
     OUT     PVOID lpBytesBuffer
 ) {
-    NTSTATUS ret = Old_NtCreateThreadEx(hThread, DesiredAccess,
+	pipe("PROCESS:%d", pid_from_process_handle(ProcessHandle));
+	
+	NTSTATUS ret = Old_NtCreateThreadEx(hThread, DesiredAccess,
         ObjectAttributes, ProcessHandle, lpStartAddress, lpParameter,
         CreateSuspended, StackZeroBits, SizeOfStackCommit, SizeOfStackReserve,
         lpBytesBuffer);
     LOQ_ntstatus("threading", "Pppi", "ThreadHandle", hThread, "ProcessHandle", ProcessHandle,
         "StartAddress", lpStartAddress, "CreateSuspended", CreateSuspended);
 
-    return ret;
+	if (NT_SUCCESS(ret))
+		disable_sleep_skip();
+	
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtOpenThread,
@@ -224,6 +229,15 @@ HOOKDEF(VOID, WINAPI, ExitThread,
     LOQ_void("threading", "h", "ExitCode", dwExitCode);
     Old_ExitThread(dwExitCode);
 }
+
+HOOKDEF(VOID, WINAPI, RtlExitUserThread,
+	__in  NTSTATUS ExitStatus
+	) {
+	int ret = 0;
+	LOQ_void("threading", "h", "ExitStatus", ExitStatus);
+	Old_RtlExitUserThread(ExitStatus);
+}
+
 
 HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
     IN HANDLE ProcessHandle,

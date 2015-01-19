@@ -77,6 +77,8 @@ void log_free();
 
 void debug_message(const char *msg);
 
+#define DEBUG_SOCKET 0xfffffffe
+
 int log_resolve_index(const char *funcname, int index);
 extern const char *logtbl[][2];
 extern int g_log_index;

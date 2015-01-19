@@ -237,11 +237,15 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
 ) {
 	// Process will terminate. Default logging will not work. Be aware: return value not valid
     NTSTATUS ret = 0;
-    LOQ_ntstatus("process", "pi", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
-	if (ProcessHandle == (HANDLE)0xffffffff) {
-		process_shutting_down = 1;
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+    LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
+	if (ProcessHandle == NULL || GetCurrentProcessId() == GetProcessId(ProcessHandle)) {
 		log_free();
+		process_shutting_down = 1;
 	}
+	set_lasterrors(&lasterror);
 
     ret = Old_NtTerminateProcess(ProcessHandle, ExitStatus);    
     return ret;
@@ -343,9 +347,9 @@ HOOKDEF(VOID, WINAPI, ExitProcess,
 ) {
     int ret = 0;
     LOQ_void("process", "h", "ExitCode", uExitCode);
-	process_shutting_down = 1;
 	log_free();
-    Old_ExitProcess(uExitCode);
+	process_shutting_down = 1;
+	Old_ExitProcess(uExitCode);
 }
 
 HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
@@ -390,13 +394,17 @@ HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
     __in     ULONG AllocationType,
     __in     ULONG Protect
 ) {
+	lasterror_t lasterror;
     NTSTATUS ret = Old_NtAllocateVirtualMemory(ProcessHandle, BaseAddress,
         ZeroBits, RegionSize, AllocationType, Protect);
-	if (Protect != PAGE_READWRITE || ProcessHandle != (HANDLE)0xffffffff) {
+
+	get_lasterrors(&lasterror);
+	if (Protect != PAGE_READWRITE || GetCurrentProcessId() != GetProcessId(ProcessHandle)) {
 		LOQ_ntstatus("process", "pPPh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 			"RegionSize", RegionSize, "Protection", Protect);
 	}
-    return ret;
+	set_lasterrors(&lasterror);
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtReadVirtualMemory,
@@ -504,12 +512,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtFreeVirtualMemory,
     IN OUT  PSIZE_T RegionSize,
     IN      ULONG FreeType
 ) {
+	lasterror_t lasterror;
     NTSTATUS ret = Old_NtFreeVirtualMemory(ProcessHandle, BaseAddress,
         RegionSize, FreeType);
-	if (ProcessHandle != (HANDLE)0xffffffff) {
+
+	get_lasterrors(&lasterror);
+	if (GetCurrentProcessId() != GetProcessId(ProcessHandle)) {
 		LOQ_ntstatus("process", "pPPh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 			"RegionSize", RegionSize, "FreeType", FreeType);
 	}
+	set_lasterrors(&lasterror);
     return ret;
 }
 

@@ -283,7 +283,9 @@ HOOKDEF(BOOL, WINAPI, GetCursorPos,
 	return ret;
 }
 
-HOOKDEF(DWORD, WINAPI, GetLastError)
+HOOKDEF(DWORD, WINAPI, GetLastError,
+	void
+)
 {
 	DWORD ret = Old_GetLastError();
 	LOQ_void("misc", "");

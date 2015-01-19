@@ -59,6 +59,31 @@ static HANDLE g_log_thread_handle;
 static HANDLE g_logwatcher_thread_handle;
 static HANDLE g_log_flush;
 
+// snprintf can end up acquiring the process' heap lock which will be unsafe in the context of a hooked
+// NtAllocate/FreeVirtualMemory
+static void num_to_string(char *buf, unsigned int buflen, unsigned int num)
+{
+	unsigned int dec = 1000000000;
+	unsigned int i = 0;
+
+	if (!buflen)
+		return;
+
+	while (dec) {
+		if (!i && ((num / dec) || dec == 1))
+			buf[i++] = '0' + (num / dec);
+		else if (i)
+			buf[i++] = '0' + (num / dec);
+		if (i == buflen - 1)
+			break;
+		num = num % dec;
+		dec /= 10;
+	}
+	buf[i] = '\0';
+}
+
+extern int process_shutting_down;
+
 static DWORD WINAPI _log_thread(LPVOID param)
 {
 	hook_disable();
@@ -69,9 +94,13 @@ static DWORD WINAPI _log_thread(LPVOID param)
 		while (g_idx > 0) {
 			int written = -1;
 
-			if (g_sock == INVALID_SOCKET) {
+			if (g_sock == DEBUG_SOCKET) {
 				char filename[64];
-				snprintf(filename, sizeof(filename), "c:\\debug%u.log", GetCurrentProcessId());
+				char pid[8];
+				strcpy(filename, "c:\\debug");
+				num_to_string(pid, sizeof(pid), GetCurrentProcessId());
+				strcat(filename, pid);
+				strcat(filename, ".log");
 				// will happen when we're in debug mode
 				FILE *f = fopen(filename, "ab");
 				if (f) {
@@ -82,6 +111,10 @@ static DWORD WINAPI _log_thread(LPVOID param)
 					// some non-admin debug case
 					written = g_idx;
 				}
+			}
+			else if (g_sock == INVALID_SOCKET) {
+				g_idx = 0;
+				continue;
 			}
 			else {
 				written = send(g_sock, g_buffer, g_idx, 0);
@@ -127,7 +160,7 @@ void log_flush()
 	*/
 	if (g_dll_main_complete) {
 		SetEvent(g_log_flush);
-		while (g_idx) Sleep(50);
+		while (g_idx && (g_sock != INVALID_SOCKET || !process_shutting_down)) raw_sleep(50);
 	}
 }
 
@@ -194,29 +227,6 @@ static void log_ptr(void *value)
 		log_int64((int64_t)value);
 	else
 		log_int32((int)value);
-}
-
-// snprintf can end up acquiring the process' heap lock which will be unsafe in the context of a hooked
-// NtAllocate/FreeVirtualMemory
-static void num_to_string(char *buf, unsigned int buflen, unsigned int num)
-{
-	unsigned int dec = 1000000000;
-	unsigned int i = 0;
-
-	if (!buflen)
-		return;
-
-	while (dec) {
-		if (!i && ((num / dec) || dec == 1))
-			buf[i++] = '0' + (num / dec);
-		else if (i)
-			buf[i++] = '0' + (num / dec);
-		if (i == buflen - 1)
-			break;
-		num = num % dec;
-		dec /= 10;
-	}
-	buf[i] = '\0';
 }
 
 static void log_string(const char *str, int length)
@@ -689,6 +699,8 @@ void loq(int index, const char *category, const char *name,
     bson_destroy( g_bson );
     LeaveCriticalSection(&g_mutex);
 
+	log_flush();
+
 	set_lasterrors(&lasterror);
 }
 
@@ -775,7 +787,7 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 	g_log_flush = CreateEvent(NULL, FALSE, FALSE, NULL);
 
 	if(debug != 0) {
-        g_sock = INVALID_SOCKET;
+        g_sock = DEBUG_SOCKET;
     }
     else {
         WSADATA wsa;
@@ -791,7 +803,7 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 
 		if (connect(g_sock, (struct sockaddr *) &addr, sizeof(addr))) {
 			closesocket(g_sock);
-			g_sock = INVALID_SOCKET;
+			g_sock = DEBUG_SOCKET;
 		}
     }
 
@@ -816,8 +828,9 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 void log_free()
 {
     log_flush();
-	if (g_sock != INVALID_SOCKET) {
+	if (g_sock != INVALID_SOCKET && g_sock != DEBUG_SOCKET) {
         closesocket(g_sock);
 		g_sock = INVALID_SOCKET;
+		WSACleanup();
     }
 }

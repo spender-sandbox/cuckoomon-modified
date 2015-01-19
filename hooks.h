@@ -854,7 +854,9 @@ extern HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     __inout  SHELLEXECUTEINFOW *pExecInfo
 );
 
-extern HOOKDEF(DWORD, WINAPI, GetLastError);
+extern HOOKDEF(DWORD, WINAPI, GetLastError,
+	void
+);
 
 extern HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 	__in    REFCLSID rclsid,
@@ -1039,6 +1041,10 @@ extern HOOKDEF(BOOL, WINAPI, TerminateThread,
 
 extern HOOKDEF(VOID, WINAPI, ExitThread,
     __in  DWORD dwExitCode
+);
+
+extern HOOKDEF(VOID, WINAPI, RtlExitUserThread,
+	__in NTSTATUS ExitStatus
 );
 
 extern HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,

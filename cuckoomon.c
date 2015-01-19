@@ -59,12 +59,11 @@ static hook_t g_hooks[] = {
     // In other words, do *NOT* place "special" hooks behind "normal" hooks.
     //
 
-    HOOK2(ntdll, LdrLoadDll, TRUE),
+	HOOK2(ntdll, LdrLoadDll, TRUE),
     HOOK2(kernel32, CreateProcessInternalW, TRUE),
 
 	// COM object creation hook
 	HOOK2(ole32, CoCreateInstance, TRUE),
-	
 	//
     // File Hooks
     //
@@ -185,9 +184,9 @@ static hook_t g_hooks[] = {
     // Window Hooks
     //
 
-	/* can't use these until we come up with a fool-proof method of logging them,
-	   as they might not return as in the upatre downloader
-	 */
+	// can't use these until we come up with a fool-proof method of logging them,
+	// as they might not return as in the upatre downloader
+
 	//HOOK(user32, CreateWindowExA, TRUE),
 	//HOOK(user32, CreateWindowExW, TRUE),
     HOOK(user32, FindWindowA),
@@ -203,7 +202,6 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtCreateMutant),
     HOOK(ntdll, NtOpenMutant),
     HOOK(ntdll, NtCreateNamedPipeFile),
-
     //
     // Process Hooks
     //
@@ -222,7 +220,6 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtMakeTemporaryObject),
     HOOK(ntdll, NtMakePermanentObject),
     HOOK(ntdll, NtOpenSection),
-    //HOOK(kernel32, CreateProcessInternalW),
     HOOK(ntdll, NtMapViewOfSection),
     HOOK(kernel32, ExitProcess),
 	HOOK(kernel32, WaitForDebugEvent),
@@ -242,11 +239,9 @@ static hook_t g_hooks[] = {
     //HOOK(kernel32, VirtualFreeEx),
 	
 	HOOK(msvcrt, system),
-
     //
     // Thread Hooks
     //
-
 	HOOK(ntdll, NtQueueApcThread),
     HOOK(ntdll, NtCreateThread),
     HOOK(ntdll, NtCreateThreadEx),
@@ -259,21 +254,21 @@ static hook_t g_hooks[] = {
     HOOK(kernel32, CreateThread),
     HOOK(kernel32, CreateRemoteThread),
     HOOK(kernel32, ExitThread),
+	HOOK(ntdll, RtlExitUserThread),
     HOOK(ntdll, RtlCreateUserThread),
 
-    //
+	//
     // Misc Hooks
     //
 
 	// for debugging only
 	//HOOK(kernel32, GetLastError),
 
-    HOOK(user32, SetWindowsHookExA),
+	HOOK(user32, SetWindowsHookExA),
     HOOK(user32, SetWindowsHookExW),
     HOOK(user32, UnhookWindowsHookEx),
     HOOK(kernel32, SetUnhandledExceptionFilter),
 	HOOK(kernel32, SetErrorMode),
-    //HOOK(ntdll, LdrLoadDll),
     HOOK(ntdll, LdrGetDllHandle),
     HOOK(ntdll, LdrGetProcedureAddress),
     HOOK(kernel32, DeviceIoControl),
@@ -289,11 +284,10 @@ static hook_t g_hooks[] = {
     HOOK(kernel32, GetComputerNameW),
     HOOK(advapi32, GetUserNameA),
     HOOK(advapi32, GetUserNameW),
-
-    //
+	
+	//
     // Network Hooks
     //
-
 	HOOK(netapi32, NetUserGetInfo),
     HOOK(urlmon, URLDownloadToFileW),
 	HOOK(urlmon, ObtainUserAgentString),
@@ -350,7 +344,6 @@ static hook_t g_hooks[] = {
     //
     // Sleep Hooks
     //
-
     HOOK(ntdll, NtDelayExecution),
     HOOK(kernel32, GetLocalTime),
     HOOK(kernel32, GetSystemTime),
@@ -360,10 +353,9 @@ static hook_t g_hooks[] = {
 	HOOK(user32, GetLastInputInfo),
 	HOOK(winmm, timeGetTime),
 
-    //
+	//
     // Socket Hooks
     //
-
     HOOK(ws2_32, WSAStartup),
     HOOK(ws2_32, gethostbyname),
     HOOK(ws2_32, socket),
@@ -396,7 +388,6 @@ static hook_t g_hooks[] = {
 
     HOOK(mswsock, ConnectEx),
     HOOK(mswsock, TransmitFile),
-
     //
     // Crypto Functions
     //
@@ -604,7 +595,7 @@ void init_private_heap(void)
 	bson_set_realloc_func(realloc_func);
 	bson_set_free_func(free_func);
 #ifdef USE_PRIVATE_HEAP
-	g_heap = HeapCreate(0, 16 * 1024 * 1024, 0);
+	g_heap = HeapCreate(0, 4 * 1024 * 1024, 0);
 #endif
 }
 
@@ -719,6 +710,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		// initialize all hooks
         set_hooks();
+
+		// initialize context watchdog
+		//init_watchdog();
 
 		notify_successful_load();
     }
