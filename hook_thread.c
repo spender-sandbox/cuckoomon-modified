@@ -230,15 +230,6 @@ HOOKDEF(VOID, WINAPI, ExitThread,
     Old_ExitThread(dwExitCode);
 }
 
-HOOKDEF(VOID, WINAPI, RtlExitUserThread,
-	__in  NTSTATUS ExitStatus
-	) {
-	int ret = 0;
-	LOQ_void("threading", "h", "ExitStatus", ExitStatus);
-	Old_RtlExitUserThread(ExitStatus);
-}
-
-
 HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
     IN HANDLE ProcessHandle,
     IN PSECURITY_DESCRIPTOR SecurityDescriptor OPTIONAL,

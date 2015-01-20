@@ -1043,10 +1043,6 @@ extern HOOKDEF(VOID, WINAPI, ExitThread,
     __in  DWORD dwExitCode
 );
 
-extern HOOKDEF(VOID, WINAPI, RtlExitUserThread,
-	__in NTSTATUS ExitStatus
-);
-
 extern HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
     IN HANDLE ProcessHandle,
     IN PSECURITY_DESCRIPTOR SecurityDescriptor OPTIONAL,
