@@ -943,6 +943,9 @@ void specialname_map_init(void)
 
 int is_wow64_fs_redirection_disabled(void)
 {
+#ifdef _WIN64
+	return 1;
+#else
 	if (is_64bit_os) {
 		__try {
 			PCHAR teb = (PCHAR)NtCurrentTeb();
@@ -957,6 +960,7 @@ int is_wow64_fs_redirection_disabled(void)
 		}
 	}
 	return 0;
+#endif
 }
 
 BOOLEAN is_suspended(DWORD pid, DWORD tid)
