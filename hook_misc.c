@@ -168,15 +168,37 @@ HOOKDEF(BOOL, WINAPI, ExitWindowsEx,
 static int num_isdebuggerpresent;
 
 HOOKDEF(BOOL, WINAPI, IsDebuggerPresent,
-    void
-) {
+	void
+	) {
 
-    BOOL ret = Old_IsDebuggerPresent();
+	BOOL ret = Old_IsDebuggerPresent();
 	num_isdebuggerpresent++;
 	if (num_isdebuggerpresent < 20)
 		LOQ_bool("system", "");
 	else if (num_isdebuggerpresent == 20)
 		LOQ_bool("system", "s", "Status", "Log limit reached");
+#ifndef _WIN64
+	else if (num_isdebuggerpresent == 1000) {
+		lasterror_t lasterror;
+
+		get_lasterrors(&lasterror);
+		__try {
+			hook_info_t *hookinfo = hook_info();
+			PUCHAR p = (PUCHAR)hookinfo->main_caller_retaddr - 6;
+			if (p[0] == 0xff && p[1] == 0x15 && p[6] == 0x49) {
+				DWORD oldprot;
+				VirtualProtect(p, 6, PAGE_EXECUTE_READWRITE, &oldprot);
+				memcpy(p, "\x31\xc0\x31\xc9\x41\x90", 6);
+				VirtualProtect(p, 6, oldprot, &oldprot);
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			;
+		}
+		set_lasterrors(&lasterror);
+	}
+#endif
+
 	return ret;
 }
 
