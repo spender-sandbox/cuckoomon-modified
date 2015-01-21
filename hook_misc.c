@@ -244,7 +244,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
         "SectionOffset", SectionOffset, "ViewSize", ViewSize, "Win32Protect", Win32Protect);
 
     if(NT_SUCCESS(ret)) {
-        pipe("PROCESS:%d", pid_from_process_handle(ProcessHandle));
+		DWORD pid = pid_from_process_handle(ProcessHandle);
+        pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
         disable_sleep_skip();
     }
     return ret;

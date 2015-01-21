@@ -52,6 +52,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     NTSTATUS ret = 0;
 	LONGLONG interval = -DelayInterval->QuadPart;
 	unsigned long milli = (unsigned long)(interval / 10000);
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
 
     // do we want to skip this sleep?
     if(interval >= 0LL) {
@@ -73,7 +76,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 				LOQ_ntstatus("system", "s", "Status", "Skipped log limit reached");
 				num_skipped++;
 			}
-            return ret;
+            goto skipcall;
 		}
 		/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
 		else if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
@@ -81,12 +84,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 			newint.QuadPart = -(10000 * 10000);
 			time_skipped.QuadPart -= interval - (10000 * 10000);
 			LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
+			set_lasterrors(&lasterror);
 			return Old_NtDelayExecution(Alertable, &newint);
 		}
 		else if (g_config.force_sleepskip > 0) {
 			time_skipped.QuadPart += interval;
 			LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
-			return ret;
+			goto skipcall;
 		}
         else {
             disable_sleep_skip();
@@ -105,30 +109,45 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 	else {
 		LOQ_ntstatus("system", "i", "Milliseconds", milli);
 	}
-    return Old_NtDelayExecution(Alertable, DelayInterval);
+	set_lasterrors(&lasterror);
+	return Old_NtDelayExecution(Alertable, DelayInterval);
+skipcall:
+	set_lasterrors(&lasterror);
+	return ret;
 }
 
 HOOKDEF(void, WINAPI, GetLocalTime,
     __out  LPSYSTEMTIME lpSystemTime
 ) {
+	lasterror_t lasterror;
     Old_GetLocalTime(lpSystemTime);
 
     LARGE_INTEGER li; FILETIME ft;
-    SystemTimeToFileTime(lpSystemTime, &ft);
+
+	get_lasterrors(&lasterror);
+
+	SystemTimeToFileTime(lpSystemTime, &ft);
     li.HighPart = ft.dwHighDateTime;
     li.LowPart = ft.dwLowDateTime;
     li.QuadPart += time_skipped.QuadPart;
     ft.dwHighDateTime = li.HighPart;
     ft.dwLowDateTime = li.LowPart;
     FileTimeToSystemTime(&ft, lpSystemTime);
+
+	set_lasterrors(&lasterror);
 }
 
 HOOKDEF(void, WINAPI, GetSystemTime,
     __out  LPSYSTEMTIME lpSystemTime
 ) {
+	lasterror_t lasterror;
+
     Old_GetSystemTime(lpSystemTime);
 
     LARGE_INTEGER li; FILETIME ft;
+
+	get_lasterrors(&lasterror);
+
     SystemTimeToFileTime(lpSystemTime, &ft);
     li.HighPart = ft.dwHighDateTime;
     li.LowPart = ft.dwLowDateTime;
@@ -136,6 +155,8 @@ HOOKDEF(void, WINAPI, GetSystemTime,
     ft.dwHighDateTime = li.HighPart;
     ft.dwLowDateTime = li.LowPart;
     FileTimeToSystemTime(&ft, lpSystemTime);
+
+	set_lasterrors(&lasterror);
 }
 
 HOOKDEF(DWORD, WINAPI, GetTickCount,

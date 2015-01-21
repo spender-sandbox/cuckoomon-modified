@@ -112,6 +112,10 @@ int read_config(void)
             else if(!strcmp(key, "force-sleepskip")) {
                 g_config.force_sleepskip = value[0] == '1';
             }
+			else if (!strcmp(key, "terminate-event")) {
+				strncpy(g_config.terminate_event_name, value,
+					ARRAYSIZE(g_config.terminate_event_name));
+			}
         }
     }
 

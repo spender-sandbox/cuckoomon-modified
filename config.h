@@ -38,6 +38,11 @@ struct _g_config {
 	// if this mutex exists then we're shutting down
     char shutdown_mutex[MAX_PATH];
 
+	// event set by analyzer when our process is potentially going to be terminated
+	// cuckoomon itself will flush logs at this point, but the analyzer may take additional
+	// actions, like process dumping
+	char terminate_event_name[MAX_PATH];
+
     // is this the first process or not?
     int first_process;
 

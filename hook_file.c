@@ -100,7 +100,12 @@ static void cache_file(HANDLE file_handle, const wchar_t *path,
 
 static void file_write(HANDLE file_handle)
 {
-    file_record_t *r = lookup_get(&g_files, (unsigned int) file_handle, NULL);
+	file_record_t *r;
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
+	r = lookup_get(&g_files, (unsigned int)file_handle, NULL);
     if(r != NULL) {
         UNICODE_STRING str = {
             // microsoft actually meant "size"
@@ -115,10 +120,16 @@ static void file_write(HANDLE file_handle)
         // delete the file record from the list
         lookup_del(&g_files, (unsigned int) file_handle);
     }
+
+	set_lasterrors(&lasterror);
 }
 
-void check_for_logging_resumption(const OBJECT_ATTRIBUTES *obj)
+static void check_for_logging_resumption(const OBJECT_ATTRIBUTES *obj)
 {
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
 	if (g_config.file_of_interest && g_config.suspend_logging) {
 		wchar_t *fname = calloc(1, 32768 * sizeof(wchar_t));
 		wchar_t *absolutename = malloc(32768 * sizeof(wchar_t));
@@ -134,10 +145,16 @@ void check_for_logging_resumption(const OBJECT_ATTRIBUTES *obj)
 		free(absolutename);
 		free(fname);
 	}
+
+	set_lasterrors(&lasterror);
 }
 
 static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 {
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
     if(is_directory_objattr(obj) == 0) {
 
         wchar_t *fname = calloc(1, 32768 * sizeof(wchar_t));
@@ -159,13 +176,18 @@ static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 				cache_file(file_handle, fname, lstrlenW(fname), obj->Attributes);
 		}
 		free(fname);
-
     }
+
+	set_lasterrors(&lasterror);
 }
 
 void file_close(HANDLE file_handle)
 {
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
     lookup_del(&g_files, (unsigned int) file_handle);
+	set_lasterrors(&lasterror);
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,

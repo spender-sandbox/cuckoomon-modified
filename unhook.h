@@ -20,5 +20,5 @@ void unhook_detect_add_region(const char *funcname, const uint8_t *addr,
     const uint8_t *orig, const uint8_t *our, uint32_t length);
 
 int unhook_init_detection();
-
+int terminate_event_init();
 int init_watchdog();

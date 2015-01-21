@@ -16,6 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+typedef NTSTATUS(WINAPI *_NtQuerySystemInformation)(
+	_In_ ULONG SystemInformationClass,
+	_Inout_ PVOID SystemInformation,
+	_In_ ULONG SystemInformationLength,
+	_Out_opt_ PULONG ReturnLength);
 typedef LONG(WINAPI *_NtQueryInformationProcess)(HANDLE ProcessHandle,
 	ULONG ProcessInformationClass, PVOID ProcessInformation,
 	ULONG ProcessInformationLength, PULONG ReturnLength);
@@ -55,6 +60,7 @@ void raw_sleep(int msecs);
 DWORD randint(DWORD min, DWORD max);
 BOOL is_directory_objattr(const OBJECT_ATTRIBUTES *obj);
 void hide_module_from_peb(HMODULE module_handle);
+BOOLEAN is_suspended(DWORD pid, DWORD tid);
 
 uint32_t path_from_handle(HANDLE handle,
     wchar_t *path, uint32_t path_buffer_len);

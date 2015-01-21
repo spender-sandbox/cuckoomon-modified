@@ -197,6 +197,44 @@ typedef struct _THREAD_BASIC_INFORMATION {
     KPRIORITY BasePriority;
 } THREAD_BASIC_INFORMATION, *PTHREAD_BASIC_INFORMATION;
 
+typedef struct _SYSTEM_THREAD {
+	LARGE_INTEGER           KernelTime;
+	LARGE_INTEGER           UserTime;
+	LARGE_INTEGER           CreateTime;
+	ULONG                   WaitTime;
+	PVOID                   StartAddress;
+	CLIENT_ID               ClientId;
+	KPRIORITY               Priority;
+	LONG                    BasePriority;
+	ULONG                   ContextSwitchCount;
+	ULONG                   State;
+	ULONG                   WaitReason;
+} SYSTEM_THREAD, *PSYSTEM_THREAD;
+
+typedef struct _SYSTEM_PROCESS_INFORMATION {
+	ULONG                   NextEntryOffset;
+	ULONG                   NumberOfThreads;
+	LARGE_INTEGER           Reserved[3];
+	LARGE_INTEGER           CreateTime;
+	LARGE_INTEGER           UserTime;
+	LARGE_INTEGER           KernelTime;
+	UNICODE_STRING          ImageName;
+	KPRIORITY               BasePriority;
+	HANDLE					UniqueProcessId;
+	HANDLE					InheritedFromProcessId;
+	ULONG					HandleCount;
+	BYTE					Reserved4[4];
+	PVOID					Reserved5[11];
+	SIZE_T					PeakPagefileUsage;
+	SIZE_T					PrivatePageCount;
+	LARGE_INTEGER			Reserved6[6];
+	SYSTEM_THREAD			Threads[0];
+} SYSTEM_PROCESS_INFORMATION, *PSYSTEM_PROCESS_INFORMATION;
+
+#define SystemProcessInformation 5
+#define Suspended 5
+#define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
+
 typedef struct _INITIAL_TEB {
   PVOID StackBase;
   PVOID StackLimit;

@@ -502,6 +502,8 @@ LONG WINAPI cuckoomon_exception_handler(
 
 	get_lasterrors(&lasterror);
 
+	log_flush();
+
 	dllname = convert_address_to_dll_name_and_offset(eip, &offset);
 
 	sprintf(msg, "Exception Caught! PID: %u EIP:", GetCurrentProcessId());
@@ -706,6 +708,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		// initialize our unhook detection
         unhook_init_detection();
+
+		// initialize terminate notification event
+		terminate_event_init();
 
 		// initialize all hooks
         set_hooks();

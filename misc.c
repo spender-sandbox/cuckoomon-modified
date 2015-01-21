@@ -33,6 +33,7 @@ static _NtQueryAttributesFile pNtQueryAttributesFile;
 static _NtQueryObject pNtQueryObject;
 static _NtQueryKey pNtQueryKey;
 static _NtDelayExecution pNtDelayExecution;
+static _NtQuerySystemInformation pNtQuerySystemInformation;
 _NtAllocateVirtualMemory pNtAllocateVirtualMemory;
 _NtFreeVirtualMemory pNtFreeVirtualMemory;
 
@@ -41,6 +42,7 @@ void resolve_runtime_apis(void)
 	HMODULE ntdllbase = GetModuleHandle("ntdll");
 
 	*(FARPROC *)&pNtDelayExecution = GetProcAddress(ntdllbase, "NtDelayExecution");
+	*(FARPROC *)&pNtQuerySystemInformation = GetProcAddress(ntdllbase, "NtQuerySystemInformation");
 	*(FARPROC *)&pNtQueryInformationProcess = GetProcAddress(ntdllbase, "NtQueryInformationProcess");
 	*(FARPROC *)&pNtQueryInformationThread = GetProcAddress(ntdllbase, "NtQueryInformationThread");
 	*(FARPROC *)&pNtQueryObject = GetProcAddress(ntdllbase, "NtQueryObject");
@@ -100,6 +102,9 @@ DWORD pid_from_process_handle(HANDLE process_handle)
 	HANDLE dup_handle = process_handle;
 	DWORD PID = 0;
 	BOOL duped;
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
 
 	memset(&pbi, 0, sizeof(pbi));
 	
@@ -110,6 +115,8 @@ DWORD pid_from_process_handle(HANDLE process_handle)
 
 	if (duped)
 		CloseHandle(dup_handle);
+
+	set_lasterrors(&lasterror);
 
 	return PID;
 }
@@ -163,8 +170,16 @@ DWORD tid_from_thread_handle(HANDLE thread_handle)
 
 DWORD random()
 {
-    DWORD ret;
-    return pRtlGenRandom(&ret, sizeof(ret)) ? ret : rand();
+    DWORD ret, realret;
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
+    realret = pRtlGenRandom(&ret, sizeof(ret)) ? ret : rand();
+
+	set_lasterrors(&lasterror);
+
+	return realret;
 }
 
 DWORD randint(DWORD min, DWORD max)
@@ -942,4 +957,46 @@ int is_wow64_fs_redirection_disabled(void)
 		}
 	}
 	return 0;
+}
+
+BOOLEAN is_suspended(DWORD pid, DWORD tid)
+{
+	ULONG length;
+	PSYSTEM_PROCESS_INFORMATION pspi, proc;
+	ULONG requestedlen = 16384;
+	lasterror_t lasterror;
+	BOOLEAN ret = FALSE;
+
+	get_lasterrors(&lasterror);
+
+	pspi = malloc(requestedlen);
+	if (pspi == NULL)
+		goto out;
+
+	while (pNtQuerySystemInformation(SystemProcessInformation, pspi, requestedlen, &length) == STATUS_INFO_LENGTH_MISMATCH) {
+		free(pspi);
+		requestedlen <<= 1;
+		pspi = malloc(requestedlen);
+		if (pspi == NULL)
+			goto out;
+	}
+	// now we have a valid list of process information
+	for (proc = pspi; proc->NextEntryOffset; proc = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)proc + proc->NextEntryOffset)) {
+		ULONG i;
+		if (proc->UniqueProcessId != (HANDLE)pid)
+			continue;
+		for (i = 0; i < proc->NumberOfThreads; i++) {
+			PSYSTEM_THREAD thread = &proc->Threads[i];
+			if (tid && thread->ClientId.UniqueThread != (HANDLE)tid)
+				continue;
+			if (thread->WaitReason != Suspended)
+				goto out;
+		}
+	}
+	free(pspi);
+	ret = TRUE;
+out:
+	set_lasterrors(&lasterror);
+
+	return ret;
 }

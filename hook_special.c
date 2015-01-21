@@ -108,7 +108,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
         lpCurrentDirectory, lpStartupInfo, lpProcessInformation, lpUnknown2);
 
     if(ret != FALSE) {
-        pipe("PROCESS:%d,%d", lpProcessInformation->dwProcessId,
+        pipe("PROCESS:%d:%d,%d", 1, lpProcessInformation->dwProcessId,
             lpProcessInformation->dwThreadId);
 
         // if the CREATE_SUSPENDED flag was not set, then we have to resume

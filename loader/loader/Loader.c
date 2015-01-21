@@ -28,8 +28,46 @@ static int grant_debug_privileges(void)
 	return ret;
 }
 
-static int inject(int pid, int tid, const char *dllpath, unsigned int injectmode)
+static BOOLEAN is_suspended(int pid, int tid)
 {
+	ULONG length;
+	PSYSTEM_PROCESS_INFORMATION pspi, proc;
+	ULONG requestedlen = 16384;
+	_NtQuerySystemInformation pNtQuerySystemInformation = (_NtQuerySystemInformation)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQuerySystemInformation");
+
+	pspi = malloc(requestedlen);
+	if (pspi == NULL)
+		return FALSE;
+
+	while (pNtQuerySystemInformation(SystemProcessInformation, pspi, requestedlen, &length) == STATUS_INFO_LENGTH_MISMATCH) {
+		free(pspi);
+		requestedlen <<= 1;
+		pspi = malloc(requestedlen);
+		if (pspi == NULL)
+			return FALSE;
+	}
+	// now we have a valid list of process information
+	for (proc = pspi; proc->NextEntryOffset; proc = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)proc + proc->NextEntryOffset)) {
+		ULONG i;
+		if (proc->UniqueProcessId != (HANDLE)pid)
+			continue;
+		for (i = 0; i < proc->NumberOfThreads; i++) {
+			PSYSTEM_THREAD thread = &proc->Threads[i];
+			if (tid && thread->ClientId.UniqueThread != (HANDLE)tid)
+				continue;
+			if (thread->WaitReason != Suspended)
+				return FALSE;
+		}
+	}
+	free(pspi);
+
+	return TRUE;
+}
+
+// returns -1 if injection failed, 0 if injection succeeded and process is alive, and 1 if we injected but the process is suspended, so we shouldn't wait for it
+static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
+{
+	unsigned int injectmode = INJECT_QUEUEUSERAPC;
 	HANDLE prochandle = NULL;
 	HANDLE threadhandle = NULL;
 	LPVOID dllpathbuf;
@@ -37,11 +75,11 @@ static int inject(int pid, int tid, const char *dllpath, unsigned int injectmode
 	SIZE_T byteswritten = 0;
 	int ret = -1;
 
-	if (pid <= 0 || tid < 0)
+	if (pid <= 0 || tid < 0 || (tid == 0 && suspended))
 		goto out;
 
-	if (injectmode == INJECT_QUEUEUSERAPC && tid == 0)
-		goto out;
+	if (tid == 0)
+		injectmode = INJECT_CREATEREMOTETHREAD;
 
 	prochandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
 	if (prochandle == NULL)
@@ -110,7 +148,10 @@ static int inject(int pid, int tid, const char *dllpath, unsigned int injectmode
 		goto out;
 
 success:
-	ret = 0;
+	if (suspended)
+		ret = 1;
+	else
+		ret = 0;
 out:
 	if (prochandle)
 		CloseHandle(prochandle);
@@ -128,16 +169,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		return -1;
 
 	if (!strcmp(__argv[1], "inject")) {
-		unsigned int injectmode;
-		if (__argc != 6)
+		BOOLEAN suspended;
+		int pid, tid;
+		if (__argc != 5)
 			return -1;
-		if (!strcmp(__argv[5], "createremotethread"))
-			injectmode = INJECT_CREATEREMOTETHREAD;
-		else if (!strcmp(__argv[5], "queueuserapc"))
-			injectmode = INJECT_QUEUEUSERAPC;
-		else
-			return -1;
-		return inject(atoi(__argv[2]), atoi(__argv[3]), __argv[4], injectmode);
+		pid = atoi(__argv[2]);
+		tid = atoi(__argv[3]);
+		suspended = is_suspended(pid, tid);
+		return inject(pid, tid, __argv[4], suspended);
 	}
 
 	return -1;

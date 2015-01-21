@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "pipe.h"
 #include "log.h"
 #include "misc.h"
+#include "config.h"
 
 #define UNHOOK_MAXCOUNT 2048
 #define UNHOOK_BUFSIZE 256
@@ -151,6 +152,37 @@ int unhook_init_detection()
     return -1;
 }
 
+static HANDLE g_terminate_event_thread_handle;
+static HANDLE g_terminate_event_handle;
+
+static DWORD WINAPI _terminate_event_thread(LPVOID param)
+{
+	hook_disable();
+
+	while (1) {
+		WaitForSingleObject(g_terminate_event_handle, INFINITE);
+		log_flush();
+	}
+
+	return 0;
+}
+
+
+int terminate_event_init()
+{
+	g_terminate_event_handle = CreateEventA(NULL, FALSE, FALSE, g_config.terminate_event_name);
+
+	g_terminate_event_thread_handle =
+		CreateThread(NULL, 0, &_terminate_event_thread, NULL, 0, NULL);
+
+	if (g_terminate_event_handle != NULL && g_terminate_event_thread_handle != NULL)
+		return 0;
+
+	pipe("CRITICAL:Error initializing terminate event thread!");
+	return -1;
+}
+
+#ifndef _WIN64
 static ULONG_PTR cuckoomonaddrs[20];
 static int cuckoomonaddrs_num;
 
@@ -179,24 +211,22 @@ static int _operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(U
 	return ret;
 }
 
-#ifndef _WIN64
 static DWORD WINAPI _watchdog_thread(LPVOID param)
 {
 	while (1) {
 		char msg[1024];
 
 		CONTEXT ctx;
-		int suspendret, getcontextret, resumeret;
 		raw_sleep(1000);
 		memset(&cuckoomonaddrs, 0, sizeof(cuckoomonaddrs));
 		cuckoomonaddrs_num = 0;
 		memset(&ctx, 0, sizeof(ctx));
-		suspendret = SuspendThread((HANDLE)param);
+		SuspendThread((HANDLE)param);
 		ctx.ContextFlags = CONTEXT_FULL;
-		getcontextret = GetThreadContext((HANDLE)param, &ctx);
+		GetThreadContext((HANDLE)param, &ctx);
 		unsigned int off = 0;
 		char *dllname = convert_address_to_dll_name_and_offset(ctx.Eip, &off);
-		sprintf(msg, "INFO: PID %u thread: %p suspend: %d getcontext: %d resume: %d EIP: %s+%x(%p) EAX: %p EBX: %p ECX: %p EDX: %p ESI: %p EDI: %p EBP: %p ESP: %p\n", GetCurrentProcessId(), param, suspendret, getcontextret, resumeret, dllname ? dllname : "", off, ctx.Eip, ctx.Eax, ctx.Ebx, ctx.Ecx, ctx.Edx, ctx.Esi, ctx.Edi, ctx.Ebp, ctx.Esp);
+		sprintf(msg, "INFO: PID %u thread: %p EIP: %s+%x(%p) EAX: %p EBX: %p ECX: %p EDX: %p ESI: %p EDI: %p EBP: %p ESP: %p\n", GetCurrentProcessId(), param, dllname ? dllname : "", off, ctx.Eip, ctx.Eax, ctx.Ebx, ctx.Ecx, ctx.Edx, ctx.Esi, ctx.Edi, ctx.Ebp, ctx.Esp);
 
 		_operate_on_backtrace(ctx.Eip, ctx.Ebp, find_cuckoomon_addrs);
 
@@ -209,7 +239,7 @@ static DWORD WINAPI _watchdog_thread(LPVOID param)
 
 		if (dllname)
 			free(dllname);
-		resumeret = ResumeThread((HANDLE)param);
+		ResumeThread((HANDLE)param);
 		pipe(msg);
 	}
 }
