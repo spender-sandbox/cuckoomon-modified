@@ -165,13 +165,19 @@ HOOKDEF(BOOL, WINAPI, ExitWindowsEx,
     return Old_ExitWindowsEx(uFlags, dwReason);
 }
 
+static int num_isdebuggerpresent;
+
 HOOKDEF(BOOL, WINAPI, IsDebuggerPresent,
     void
 ) {
 
     BOOL ret = Old_IsDebuggerPresent();
-    LOQ_bool("system", "");
-    return ret;
+	num_isdebuggerpresent++;
+	if (num_isdebuggerpresent < 20)
+		LOQ_bool("system", "");
+	else if (num_isdebuggerpresent == 20)
+		LOQ_bool("system", "s", "Status", "Log limit reached");
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, LookupPrivilegeValueW,

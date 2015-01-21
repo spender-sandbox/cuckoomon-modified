@@ -169,14 +169,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		return -1;
 
 	if (!strcmp(__argv[1], "inject")) {
-		BOOLEAN suspended;
 		int pid, tid;
 		if (__argc != 5)
 			return -1;
 		pid = atoi(__argv[2]);
 		tid = atoi(__argv[3]);
-		suspended = is_suspended(pid, tid);
-		return inject(pid, tid, __argv[4], suspended);
+		return inject(pid, tid, __argv[4], is_suspended(pid, tid));
 	}
 
 	return -1;
