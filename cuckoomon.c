@@ -533,13 +533,7 @@ LONG WINAPI cuckoomon_exception_handler(
 static void notify_successful_load(void)
 {
 	// notify analyzer.py that we've loaded
-	char name[64];
-	sprintf(name, "CuckooEvent%u", GetCurrentProcessId());
-	HANDLE event_handle = OpenEvent(EVENT_ALL_ACCESS, FALSE, name);
-	if (event_handle != NULL) {
-		SetEvent(event_handle);
-		CloseHandle(event_handle);
-	}
+	pipe("LOADED:%d", GetCurrentProcessId());
 }
 
 struct _g_config g_config;
