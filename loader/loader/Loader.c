@@ -64,7 +64,7 @@ static BOOLEAN is_suspended(int pid, int tid)
 	return TRUE;
 }
 
-// returns -1 if injection failed, 0 if injection succeeded and process is alive, and 1 if we injected but the process is suspended, so we shouldn't wait for it
+// returns < 0 if injection failed, 0 if injection succeeded and process is alive, and 1 if we injected but the process is suspended, so we shouldn't wait for it
 static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 {
 	unsigned int injectmode = INJECT_QUEUEUSERAPC;
@@ -73,7 +73,7 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 	LPVOID dllpathbuf;
 	LPVOID loadlibraryaddr;
 	SIZE_T byteswritten = 0;
-	int ret = -1;
+	int ret = ERROR_INVALID_PARAM;
 
 	if (pid <= 0 || tid < 0 || (tid == 0 && suspended))
 		goto out;
@@ -82,27 +82,37 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 		injectmode = INJECT_CREATEREMOTETHREAD;
 
 	prochandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-	if (prochandle == NULL)
+	if (prochandle == NULL) {
+		ret = ERROR_PROCESS_OPEN;
 		goto out;
+	}
 
 	if (tid > 0) {
 		threadhandle = OpenThread(THREAD_ALL_ACCESS, FALSE, tid);
-		if (threadhandle == NULL)
+		if (threadhandle == NULL) {
+			ret = ERROR_THREAD_OPEN;
 			goto out;
+		}
 	}
 
 	dllpathbuf = VirtualAllocEx(prochandle, NULL, strlen(dllpath) + 1, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-	if (dllpathbuf == NULL)
+	if (dllpathbuf == NULL) {
+		ret = ERROR_ALLOCATE;
 		goto out;
+	}
 
-	if (!WriteProcessMemory(prochandle, dllpathbuf, dllpath, strlen(dllpath) + 1, &byteswritten))
+	if (!WriteProcessMemory(prochandle, dllpathbuf, dllpath, strlen(dllpath) + 1, &byteswritten)) {
+		ret = ERROR_WRITEMEMORY;
 		goto out;
+	}
 
 	loadlibraryaddr = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
 
 	if (injectmode == INJECT_QUEUEUSERAPC) {
-		if (!QueueUserAPC(loadlibraryaddr, threadhandle, (ULONG_PTR)dllpathbuf))
+		if (!QueueUserAPC(loadlibraryaddr, threadhandle, (ULONG_PTR)dllpathbuf)) {
+			ret = ERROR_QUEUEUSERAPC;
 			goto out;
+		}
 	}
 	else if (injectmode == INJECT_CREATEREMOTETHREAD) {
 		DWORD threadid;
@@ -141,11 +151,14 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 				if (newhandle)
 					goto success;
 			}
+			ret = ERROR_CREATEREMOTETHREAD;
 			goto out;
 		}
 	}
-	else
+	else {
+		ret = ERROR_INJECTMODE;
 		goto out;
+	}
 
 success:
 	if (suspended)
@@ -163,19 +176,19 @@ out:
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	if (__argc < 2)
-		return -1;
+		return ERROR_ARGCOUNT;
 	
 	if (!grant_debug_privileges())
-		return -1;
+		return ERROR_DEBUGPRIV;
 
 	if (!strcmp(__argv[1], "inject")) {
 		int pid, tid;
 		if (__argc != 5)
-			return -1;
+			return ERROR_ARGCOUNT;
 		pid = atoi(__argv[2]);
 		tid = atoi(__argv[3]);
 		return inject(pid, tid, __argv[4], is_suspended(pid, tid));
 	}
 
-	return -1;
+	return ERROR_MODE;
 }

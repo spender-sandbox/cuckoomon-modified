@@ -131,7 +131,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtGetContextThread,
     __inout  LPCONTEXT Context
 ) {
     NTSTATUS ret = Old_NtGetContextThread(ThreadHandle, Context);
-    LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
+	if (Context->ContextFlags & CONTEXT_CONTROL)
+#ifdef _WIN64
+		LOQ_ntstatus("threading", "pp", "ThreadHandle", ThreadHandle, "InstructionPointer", Context->Rip);
+#else
+		LOQ_ntstatus("threading", "pp", "ThreadHandle", ThreadHandle, "InstructionPointer", Context->Eip);
+#endif
+	else
+		LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
     return ret;
 }
 
@@ -145,7 +152,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetContextThread,
 	pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
 
 	ret = Old_NtSetContextThread(ThreadHandle, Context);
-    LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
+	if (Context->ContextFlags & CONTEXT_CONTROL)
+#ifdef _WIN64
+		LOQ_ntstatus("threading", "pp", "ThreadHandle", ThreadHandle, "InstructionPointer", Context->Rip);
+#else
+		LOQ_ntstatus("threading", "pp", "ThreadHandle", ThreadHandle, "InstructionPointer", Context->Eip);
+#endif
+	else
+		LOQ_ntstatus("threading", "p", "ThreadHandle", ThreadHandle);
 
     return ret;
 }
