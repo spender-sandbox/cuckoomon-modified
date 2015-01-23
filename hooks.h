@@ -772,6 +772,10 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
     __in      NTSTATUS ExitStatus
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtResumeProcess,
+	__in  HANDLE ProcessHandle
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtCreateSection,
     __out     PHANDLE SectionHandle,
     __in      ACCESS_MASK DesiredAccess,
@@ -834,10 +838,6 @@ extern HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     __in        LPSTARTUPINFO lpStartupInfo,
     __out       LPPROCESS_INFORMATION lpProcessInformation,
     __in_opt    LPVOID lpUnknown2
-);
-
-extern HOOKDEF(VOID, WINAPI, ExitProcess,
-    __in  UINT uExitCode
 );
 
 extern HOOKDEF(BOOL, WINAPI, WaitForDebugEvent,
@@ -1037,10 +1037,6 @@ extern HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
 extern HOOKDEF(BOOL, WINAPI, TerminateThread,
     __inout  HANDLE hThread,
     __in     DWORD dwExitCode
-);
-
-extern HOOKDEF(VOID, WINAPI, ExitThread,
-    __in  DWORD dwExitCode
 );
 
 extern HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,

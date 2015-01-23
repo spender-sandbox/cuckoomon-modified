@@ -215,13 +215,13 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, RtlCreateUserProcess),
     HOOK(ntdll, NtOpenProcess),
     HOOK(ntdll, NtTerminateProcess),
-    HOOK(ntdll, NtCreateSection),
+	HOOK(ntdll, NtResumeProcess),
+	HOOK(ntdll, NtCreateSection),
 	HOOK(ntdll, NtDuplicateObject),
     HOOK(ntdll, NtMakeTemporaryObject),
     HOOK(ntdll, NtMakePermanentObject),
     HOOK(ntdll, NtOpenSection),
     HOOK(ntdll, NtMapViewOfSection),
-    HOOK(kernel32, ExitProcess),
 	HOOK(kernel32, WaitForDebugEvent),
 	HOOK(ntdll, DbgUiWaitStateChange),
 
@@ -253,7 +253,6 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtTerminateThread),
     HOOK(kernel32, CreateThread),
     HOOK(kernel32, CreateRemoteThread),
-    HOOK(kernel32, ExitThread),
     HOOK(ntdll, RtlCreateUserThread),
 
 	//
@@ -623,7 +622,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #if HOOKTYPE != HOOK_JMP_INDIRECT
 #error Update hook check
 #endif
-		if (((PUCHAR)ExitProcess)[0] == 0xff && ((PUCHAR)ExitProcess)[1] == 0x25) {
+		if (((PUCHAR)ReadProcessMemory)[0] == 0xff && ((PUCHAR)ReadProcessMemory)[1] == 0x25) {
 			notify_successful_load();
 			goto out;
 		}
@@ -631,7 +630,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #if HOOKTYPE != HOOK_HOTPATCH_JMP_INDIRECT
 #error Update hook check
 #endif
-		if (((PUCHAR)ExitProcess)[0] == 0x8b && ((PUCHAR)ExitProcess)[1] == 0xff && ((PUCHAR)ExitProcess)[2] == 0xff && ((PUCHAR)ExitProcess)[3] == 0x25) {
+		if (((PUCHAR)ReadProcessMemory)[0] == 0x8b && ((PUCHAR)ReadProcessMemory)[1] == 0xff && ((PUCHAR)ReadProcessMemory)[2] == 0xff && ((PUCHAR)ReadProcessMemory)[3] == 0x25) {
 			notify_successful_load();
 			goto out;
 		}

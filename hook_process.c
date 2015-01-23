@@ -220,6 +220,15 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,
 	return ret;
 }
 
+HOOKDEF(NTSTATUS, WINAPI, NtResumeProcess,
+	__in  HANDLE ProcessHandle
+) {
+	NTSTATUS ret = Old_NtResumeProcess(ProcessHandle);
+	LOQ_ntstatus("process", "p", "ProcessHandle", ProcessHandle);
+	return ret;
+}
+
+
 int process_shutting_down;
 
 HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
@@ -336,17 +345,6 @@ HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
         "ProcessHandle", lpProcessInformation->hProcess,
         "ThreadHandle", lpProcessInformation->hThread);
     return ret;
-}
-
-HOOKDEF(VOID, WINAPI, ExitProcess,
-    __in  UINT uExitCode
-) {
-    int ret = 0;
-    LOQ_void("process", "h", "ExitCode", uExitCode);
-	pipe("KILL:%d", GetCurrentProcessId());
-	log_free();
-	process_shutting_down = 1;
-	Old_ExitProcess(uExitCode);
 }
 
 HOOKDEF(BOOL, WINAPI, ShellExecuteExW,

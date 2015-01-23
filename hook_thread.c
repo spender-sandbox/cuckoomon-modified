@@ -241,14 +241,6 @@ HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
     return ret;
 }
 
-HOOKDEF(VOID, WINAPI, ExitThread,
-    __in  DWORD dwExitCode
-) {
-    int ret = 0;
-    LOQ_void("threading", "h", "ExitCode", dwExitCode);
-    Old_ExitThread(dwExitCode);
-}
-
 HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
     IN HANDLE ProcessHandle,
     IN PSECURITY_DESCRIPTOR SecurityDescriptor OPTIONAL,
