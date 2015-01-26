@@ -47,23 +47,35 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueueApcThread,
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtCreateThread,
-    __out     PHANDLE ThreadHandle,
-    __in      ACCESS_MASK DesiredAccess,
-    __in_opt  POBJECT_ATTRIBUTES ObjectAttributes,
-    __in      HANDLE ProcessHandle,
-    __out     PCLIENT_ID ClientId,
-    __in      PCONTEXT ThreadContext,
-    __in      PINITIAL_TEB InitialTeb,
-    __in      BOOLEAN CreateSuspended
-) {
+	__out     PHANDLE ThreadHandle,
+	__in      ACCESS_MASK DesiredAccess,
+	__in_opt  POBJECT_ATTRIBUTES ObjectAttributes,
+	__in      HANDLE ProcessHandle,
+	__out     PCLIENT_ID ClientId,
+	__in      PCONTEXT ThreadContext,
+	__in      PINITIAL_TEB InitialTeb,
+	__in      BOOLEAN CreateSuspended
+	) {
 	DWORD pid = pid_from_process_handle(ProcessHandle);
-    pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 
-    NTSTATUS ret = Old_NtCreateThread(ThreadHandle, DesiredAccess,
-        ObjectAttributes, ProcessHandle, ClientId, ThreadContext,
-        InitialTeb, CreateSuspended);
-    LOQ_ntstatus("threading", "PpO", "ThreadHandle", ThreadHandle, "ProcessHandle", ProcessHandle,
-        "ObjectAttributes", ObjectAttributes);
+	NTSTATUS ret = Old_NtCreateThread(ThreadHandle, DesiredAccess,
+		ObjectAttributes, ProcessHandle, ClientId, ThreadContext,
+		InitialTeb, TRUE);
+
+	if (NT_SUCCESS(ret)) {
+		DWORD tid;
+		tid = tid_from_thread_handle(ThreadHandle);
+		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
+		if (CreateSuspended == FALSE) {
+			lasterror_t lasterror;
+			get_lasterrors(&lasterror);
+			ResumeThread(ThreadHandle);
+			set_lasterrors(&lasterror);
+		}
+	}
+
+	LOQ_ntstatus("threading", "PpOi", "ThreadHandle", ThreadHandle, "ProcessHandle", ProcessHandle,
+        "ObjectAttributes", ObjectAttributes, "CreateSuspended", CreateSuspended);
 
 	if (NT_SUCCESS(ret))
         disable_sleep_skip();
@@ -84,13 +96,24 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
     OUT     PVOID lpBytesBuffer
 ) {
 	DWORD pid = pid_from_process_handle(ProcessHandle);
-	pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 	
 	NTSTATUS ret = Old_NtCreateThreadEx(hThread, DesiredAccess,
         ObjectAttributes, ProcessHandle, lpStartAddress, lpParameter,
-        CreateSuspended, StackZeroBits, SizeOfStackCommit, SizeOfStackReserve,
+        TRUE, StackZeroBits, SizeOfStackCommit, SizeOfStackReserve,
         lpBytesBuffer);
-    LOQ_ntstatus("threading", "Pppi", "ThreadHandle", hThread, "ProcessHandle", ProcessHandle,
+
+	if (NT_SUCCESS(ret)) {
+		DWORD tid;
+		tid = tid_from_thread_handle(hThread);
+		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
+		if (CreateSuspended == FALSE) {
+			lasterror_t lasterror;
+			get_lasterrors(&lasterror);
+			ResumeThread(hThread);
+			set_lasterrors(&lasterror);
+		}
+	}
+	LOQ_ntstatus("threading", "Pppi", "ThreadHandle", hThread, "ProcessHandle", ProcessHandle,
         "StartAddress", lpStartAddress, "CreateSuspended", CreateSuspended);
 
 	if (NT_SUCCESS(ret))
@@ -228,16 +251,29 @@ HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
     __out  LPDWORD lpThreadId
 ) {
 	DWORD pid = pid_from_process_handle(hProcess);
-	pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 
 	HANDLE ret = Old_CreateRemoteThread(hProcess, lpThreadAttributes,
-        dwStackSize, lpStartAddress, lpParameter, dwCreationFlags,
+        dwStackSize, lpStartAddress, lpParameter, dwCreationFlags | CREATE_SUSPENDED,
         lpThreadId);
-    LOQ_nonnull("threading", "ppphI", "ProcessHandle", hProcess, "StartRoutine", lpStartAddress,
+
+	if (ret != NULL) {
+		DWORD tid;
+		tid = tid_from_thread_handle(ret);
+		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
+		if (!(dwCreationFlags & CREATE_SUSPENDED)) {
+			lasterror_t lasterror;
+			get_lasterrors(&lasterror);
+			ResumeThread(ret);
+			set_lasterrors(&lasterror);
+		}
+	}
+
+	LOQ_nonnull("threading", "ppphI", "ProcessHandle", hProcess, "StartRoutine", lpStartAddress,
         "Parameter", lpParameter, "CreationFlags", dwCreationFlags,
         "ThreadId", lpThreadId);
-    if (ret != NULL)
-        disable_sleep_skip();
+
+	if (ret != NULL)
+		disable_sleep_skip();
     return ret;
 }
 
@@ -255,15 +291,26 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 ) {
     ENSURE_CLIENT_ID(ClientId);
 	DWORD pid = pid_from_process_handle(ProcessHandle);
-	pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 	
 	NTSTATUS ret = Old_RtlCreateUserThread(ProcessHandle, SecurityDescriptor,
-        CreateSuspended, StackZeroBits, StackReserved, StackCommit,
+        TRUE, StackZeroBits, StackReserved, StackCommit,
         StartAddress, StartParameter, ThreadHandle, ClientId);
     LOQ_ntstatus("threading", "pippPi", "ProcessHandle", ProcessHandle,
         "CreateSuspended", CreateSuspended, "StartAddress", StartAddress,
         "StartParameter", StartParameter, "ThreadHandle", ThreadHandle,
         "ThreadIdentifier", ClientId->UniqueThread);
+
+	if (NT_SUCCESS(ret)) {
+		DWORD tid;
+		tid = tid_from_thread_handle(ThreadHandle);
+		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
+		if (CreateSuspended == FALSE) {
+			lasterror_t lasterror;
+			get_lasterrors(&lasterror);
+			ResumeThread(ThreadHandle);
+			set_lasterrors(&lasterror);
+		}
+	}
 
 	if (NT_SUCCESS(ret))
 		disable_sleep_skip();
