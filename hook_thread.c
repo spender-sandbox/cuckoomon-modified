@@ -63,9 +63,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThread,
 		InitialTeb, TRUE);
 
 	if (NT_SUCCESS(ret)) {
-		DWORD tid;
-		tid = tid_from_thread_handle(ThreadHandle);
-		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
+		pipe("PROCESS:%d:%d,%d", is_suspended(pid, (DWORD)ClientId->UniqueThread), pid, (DWORD)ClientId->UniqueThread);
 		if (CreateSuspended == FALSE) {
 			lasterror_t lasterror;
 			get_lasterrors(&lasterror);
@@ -103,8 +101,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
         lpBytesBuffer);
 
 	if (NT_SUCCESS(ret)) {
-		DWORD tid;
-		tid = tid_from_thread_handle(hThread);
+		DWORD tid = tid_from_thread_handle(hThread);
 		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
 		if (CreateSuspended == FALSE) {
 			lasterror_t lasterror;
@@ -257,9 +254,7 @@ HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
         lpThreadId);
 
 	if (ret != NULL) {
-		DWORD tid;
-		tid = tid_from_thread_handle(ret);
-		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
+		pipe("PROCESS:%d:%d,%d", is_suspended(pid, *lpThreadId), pid, *lpThreadId);
 		if (!(dwCreationFlags & CREATE_SUSPENDED)) {
 			lasterror_t lasterror;
 			get_lasterrors(&lasterror);
@@ -301,9 +296,7 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
         "ThreadIdentifier", ClientId->UniqueThread);
 
 	if (NT_SUCCESS(ret)) {
-		DWORD tid;
-		tid = tid_from_thread_handle(ThreadHandle);
-		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
+		pipe("PROCESS:%d:%d,%d", is_suspended(pid, (DWORD)ClientId->UniqueThread), pid, (DWORD)ClientId->UniqueThread);
 		if (CreateSuspended == FALSE) {
 			lasterror_t lasterror;
 			get_lasterrors(&lasterror);
