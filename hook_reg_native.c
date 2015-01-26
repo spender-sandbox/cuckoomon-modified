@@ -208,8 +208,15 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryMultipleValueKey,
 ) {
     NTSTATUS ret = Old_NtQueryMultipleValueKey(KeyHandle, ValueEntries,
         EntryCount, ValueBuffer, BufferLength, RequiredBufferLength);
-    LOQ_ntstatus("registry", "poS", "KeyHandle", KeyHandle, "ValueName", ValueEntries->ValueName,
-        "ValueBuffer", *BufferLength, ValueBuffer);
+	ULONG i;
+	for (i = 0; i < EntryCount; i++) {
+		PKEY_VALUE_ENTRY tmp = &ValueEntries[i];
+		if (NT_SUCCESS(ret))
+			LOQ_ntstatus("registry", "poRk", "KeyHandle", KeyHandle, "ValueName", tmp->ValueName,
+			"ValueBuffer", tmp->Type, tmp->DataLength, (PCHAR)ValueBuffer + tmp->DataOffset, "FullName", KeyHandle, tmp->ValueName);
+		else
+			LOQ_ntstatus("registry", "pok", "KeyHandle", KeyHandle, "ValueName", tmp->ValueName, "FullName", KeyHandle, tmp->ValueName);
+	}
     return ret;
 }
 
