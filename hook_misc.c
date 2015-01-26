@@ -224,6 +224,40 @@ HOOKDEF(NTSTATUS, WINAPI, NtClose,
     return ret;
 }
 
+HOOKDEF(NTSTATUS, WINAPI, NtDuplicateObject,
+	__in       HANDLE SourceProcessHandle,
+	__in       HANDLE SourceHandle,
+	__in_opt   HANDLE TargetProcessHandle,
+	__out_opt  PHANDLE TargetHandle,
+	__in       ACCESS_MASK DesiredAccess,
+	__in       ULONG HandleAttributes,
+	__in       ULONG Options
+	) {
+	NTSTATUS ret = Old_NtDuplicateObject(SourceProcessHandle, SourceHandle, TargetProcessHandle,
+		TargetHandle, DesiredAccess, HandleAttributes, Options);
+	if (TargetHandle)
+		LOQ_ntstatus("system", "pP", "SourceHandle", SourceHandle, "TargetHandle", TargetHandle);
+	else
+		LOQ_ntstatus("system", "p", "SourceHandle", SourceHandle);
+	return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtMakeTemporaryObject,
+	__in     HANDLE ObjectHandle
+	) {
+	NTSTATUS ret = Old_NtMakeTemporaryObject(ObjectHandle);
+	LOQ_ntstatus("system", "p", "ObjectHandle", ObjectHandle);
+	return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtMakePermanentObject,
+	__in     HANDLE ObjectHandle
+	) {
+	NTSTATUS ret = Old_NtMakePermanentObject(ObjectHandle);
+	LOQ_ntstatus("system", "p", "ObjectHandle", ObjectHandle);
+	return ret;
+}
+
 HOOKDEF(BOOL, WINAPI, WriteConsoleA,
     _In_        HANDLE hConsoleOutput,
     _In_        const VOID *lpBuffer,
