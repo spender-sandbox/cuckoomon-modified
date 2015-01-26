@@ -1,8 +1,48 @@
-#include <Windows.h>
+#include "hooking.h"
 #include "alloc.h"
+#include <Windows.h>
 
-#ifndef USE_PRIVATE_HEAP
+#ifdef USE_PRIVATE_HEAP
+void *cm_alloc(size_t size)
+{
+	void *ret;
+	lasterror_t lasterror;
 
+	get_lasterrors(&lasterror);
+	ret = HeapAlloc(g_heap, 0, size);
+	set_lasterrors(&lasterror);
+	return ret;
+}
+
+void *cm_calloc(size_t count, size_t size)
+{
+	void *ret;
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+	ret = HeapAlloc(g_heap, HEAP_ZERO_MEMORY, count * size);
+	set_lasterrors(&lasterror);
+	return ret;
+}
+
+void *cm_realloc(void *ptr, size_t size)
+{
+	void *ret;
+	lasterror_t lasterror;
+	get_lasterrors(&lasterror);
+	ret = HeapReAlloc(g_heap, 0, ptr, size);
+	set_lasterrors(&lasterror);
+	return ret;
+}
+
+void cm_free(void *ptr)
+{
+	lasterror_t lasterror;
+	get_lasterrors(&lasterror);
+	HeapFree(g_heap, 0, ptr);
+	set_lasterrors(&lasterror);
+}
+#else
 void *cm_alloc(size_t size)
 {
 	PVOID BaseAddress = NULL;

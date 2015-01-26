@@ -23,25 +23,6 @@ extern _NtFreeVirtualMemory pNtFreeVirtualMemory;
 
 #ifdef USE_PRIVATE_HEAP
 extern HANDLE g_heap;
-static __inline void *cm_alloc(size_t size)
-{
-	return HeapAlloc(g_heap, 0, size);
-}
-
-static __inline void *cm_calloc(size_t count, size_t size)
-{
-	return HeapAlloc(g_heap, HEAP_ZERO_MEMORY, count * size);
-}
-
-static __inline void *cm_realloc(void *ptr, size_t size)
-{
-	return HeapReAlloc(g_heap, 0, ptr, size);
-}
-
-static __inline void cm_free(void *ptr)
-{
-	HeapFree(g_heap, 0, ptr);
-}
 #else
 struct cm_alloc_header {
 	DWORD Magic;
@@ -53,10 +34,14 @@ struct cm_alloc_header {
 #define GET_CM_ALLOC_HEADER(x)	(struct cm_alloc_header *)((PCHAR)(x) - CM_ALLOC_METASIZE)
 #define CM_ALLOC_MAGIC			0xdeadc01d
 
+#endif
+
 extern void *cm_alloc(size_t size);
 extern void *cm_realloc(void *ptr, size_t size);
 extern void cm_free(void *ptr);
-
+#ifdef USE_PRIVATE_HEAP
+extern void *cm_calloc(size_t count, size_t size);
+#else
 static __inline void *cm_calloc(size_t count, size_t size)
 {
 	char *buf = cm_alloc(count * size);
@@ -64,7 +49,6 @@ static __inline void *cm_calloc(size_t count, size_t size)
 		memset(buf, 0, count * size);
 	return buf;
 }
-
 #endif
 
 static __inline char *cm_strdup(char *ptr)

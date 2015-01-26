@@ -401,19 +401,23 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetInformationFile,
     __in   ULONG Length,
     __in   FILE_INFORMATION_CLASS FileInformationClass
 ) {
-    if(FileInformation != NULL && Length == sizeof(BOOLEAN) &&
+	wchar_t *fname = calloc(32768, sizeof(wchar_t));
+
+	path_from_handle(FileHandle, fname, 32768);
+	
+	if(FileInformation != NULL && Length == sizeof(BOOLEAN) &&
             FileInformationClass == FileDispositionInformation &&
             *(BOOLEAN *) FileInformation != FALSE) {
-
-        wchar_t path[MAX_PATH_PLUS_TOLERANCE];
-		path_from_handle(FileHandle, path, (unsigned int)MAX_PATH_PLUS_TOLERANCE);
-		pipe("FILE_DEL:%F", path);
+		pipe("FILE_DEL:%F", fname);
     }
 
     NTSTATUS ret = Old_NtSetInformationFile(FileHandle, IoStatusBlock,
         FileInformation, Length, FileInformationClass);
-	LOQ_ntstatus("filesystem", "pib", "FileHandle", FileHandle, "FileInformationClass", FileInformationClass,
+	LOQ_ntstatus("filesystem", "pFib", "FileHandle", FileHandle, "HandleName", fname, "FileInformationClass", FileInformationClass,
         "FileInformation", Length, FileInformation);
+
+	free(fname);
+
     return ret;
 }
 
