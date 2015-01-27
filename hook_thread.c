@@ -227,8 +227,10 @@ HOOKDEF(HANDLE, WINAPI, CreateThread,
     __in   LPTHREAD_START_ROUTINE lpStartAddress,
     __in   LPVOID lpParameter,
     __in   DWORD dwCreationFlags,
-    __out  LPDWORD lpThreadId
+    __out_opt  LPDWORD lpThreadId
 ) {
+	ENSURE_DWORD(lpThreadId);
+
 	HANDLE ret = Old_CreateThread(lpThreadAttributes, dwStackSize,
         lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
     LOQ_nonnull("threading", "pphI", "StartRoutine", lpStartAddress, "Parameter", lpParameter,

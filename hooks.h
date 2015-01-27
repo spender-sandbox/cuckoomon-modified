@@ -1021,7 +1021,7 @@ extern HOOKDEF(HANDLE, WINAPI, CreateThread,
     __in   LPTHREAD_START_ROUTINE lpStartAddress,
     __in   LPVOID lpParameter,
     __in   DWORD dwCreationFlags,
-    __out  LPDWORD lpThreadId
+    __out_opt  LPDWORD lpThreadId
 );
 
 extern HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
