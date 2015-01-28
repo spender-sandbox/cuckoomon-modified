@@ -144,8 +144,15 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenServiceA,
     __in  LPCTSTR lpServiceName,
     __in  DWORD dwDesiredAccess
 ) {
-    SC_HANDLE ret = Old_OpenServiceA(hSCManager, lpServiceName,
+	lasterror_t lasterror;
+	SC_HANDLE ret;
+	get_lasterrors(&lasterror);
+	ret = Old_OpenServiceA(hSCManager, lpServiceName,
 		dwDesiredAccess | SERVICE_QUERY_CONFIG);
+	if (ret != NULL)
+		set_lasterrors(&lasterror);
+	else
+		ret = Old_OpenServiceA(hSCManager, lpServiceName, dwDesiredAccess);
     LOQ_nonnull("services", "psh", "ServiceControlManager", hSCManager,
         "ServiceName", lpServiceName, "DesiredAccess", dwDesiredAccess);
     return ret;
@@ -156,8 +163,16 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenServiceW,
     __in  LPWSTR lpServiceName,
     __in  DWORD dwDesiredAccess
 ) {
-    SC_HANDLE ret = Old_OpenServiceW(hSCManager, lpServiceName,
+	lasterror_t lasterror;
+	SC_HANDLE ret;
+	get_lasterrors(&lasterror);
+	ret = Old_OpenServiceW(hSCManager, lpServiceName,
 		dwDesiredAccess | SERVICE_QUERY_CONFIG);
+	if (ret != NULL)
+		set_lasterrors(&lasterror);
+	else
+		ret = Old_OpenServiceW(hSCManager, lpServiceName, dwDesiredAccess);
+
     LOQ_nonnull("services", "puh", "ServiceControlManager", hSCManager,
         "ServiceName", lpServiceName, "DesiredAccess", dwDesiredAccess);
     return ret;
