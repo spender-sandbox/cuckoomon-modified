@@ -1,6 +1,6 @@
 /*
 Cuckoo Sandbox - Automated Malware Analysis
-Copyright (C) 2010-2014 Cuckoo Sandbox Developers
+Copyright (C) 2010-2015 Cuckoo Sandbox Developers, Accuvant, Inc. (bspengler@accuvant.com)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -46,6 +46,34 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenMutant,
     LOQ_ntstatus("synchronization", "Po", "Handle", MutantHandle,
         "MutexName", unistr_from_objattr(ObjectAttributes));
     return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtCreateEvent,
+	__out		PHANDLE EventHandle,
+	__in		ACCESS_MASK DesiredAccess,
+	__in_opt	POBJECT_ATTRIBUTES ObjectAttributes,
+	__in		DWORD EventType,
+	__in		BOOLEAN InitialState
+) {
+	NTSTATUS ret = Old_NtCreateEvent(EventHandle, DesiredAccess,
+		ObjectAttributes, EventType, InitialState);
+	LOQ_ntstatus("synchronization", "Poii", "Handle", EventHandle,
+		"EventName", unistr_from_objattr(ObjectAttributes),
+		"EventType", EventType, "InitialState", InitialState);
+	return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtOpenEvent,
+	__out		PHANDLE EventHandle,
+	__in		ACCESS_MASK DesiredAccess,
+	__in		POBJECT_ATTRIBUTES ObjectAttributes
+) {
+	NTSTATUS ret = Old_NtOpenEvent(EventHandle, DesiredAccess,
+		ObjectAttributes);
+	LOQ_ntstatus("synchronization", "Po", "Handle", EventHandle,
+		"EventName", unistr_from_objattr(ObjectAttributes));
+	return ret;
+
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtCreateNamedPipeFile,

@@ -674,6 +674,20 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtOpenMutant,
     __in        POBJECT_ATTRIBUTES ObjectAttributes
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtCreateEvent,
+	__out		PHANDLE EventHandle,
+	__in		ACCESS_MASK DesiredAccess,
+	__in_opt	POBJECT_ATTRIBUTES ObjectAttributes,
+	__in		DWORD EventType,
+	__in		BOOLEAN InitialState
+);
+
+extern HOOKDEF(NTSTATUS, WINAPI, NtOpenEvent,
+	__out		PHANDLE EventHandle,
+	__in		ACCESS_MASK DesiredAccess,
+	__in		POBJECT_ATTRIBUTES ObjectAttributes
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtCreateNamedPipeFile,
     OUT         PHANDLE NamedPipeFileHandle,
     IN          ACCESS_MASK DesiredAccess,

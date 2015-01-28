@@ -201,7 +201,9 @@ static hook_t g_hooks[] = {
 
     HOOK(ntdll, NtCreateMutant),
     HOOK(ntdll, NtOpenMutant),
-    HOOK(ntdll, NtCreateNamedPipeFile),
+	HOOK(ntdll, NtCreateEvent),
+	HOOK(ntdll, NtOpenEvent),
+	HOOK(ntdll, NtCreateNamedPipeFile),
     //
     // Process Hooks
     //
