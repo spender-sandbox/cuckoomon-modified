@@ -96,7 +96,7 @@ HOOKDEF(SC_HANDLE, WINAPI, CreateServiceA,
     __in_opt   LPCSTR lpPassword
 ) {
     SC_HANDLE ret = Old_CreateServiceA(hSCManager, lpServiceName,
-        lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType,
+		lpDisplayName, dwDesiredAccess | SERVICE_QUERY_CONFIG, dwServiceType, dwStartType,
         dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId,
         lpDependencies, lpServiceStartName, lpPassword);
 	LOQ_nonnull("services", "pssh3i3s", "ServiceControlHandle", hSCManager,
