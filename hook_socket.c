@@ -147,7 +147,7 @@ HOOKDEF(int, WSAAPI, recv,
     __in   int flags
 ) {
     int ret = Old_recv(s, buf, len, flags);
-    LOQ_sockerr("network", "ib", "socket", s, "buffer", ret < 1 ? 0 : len, buf);
+    LOQ_sockerr("network", "ib", "socket", s, "buffer", ret < 1 ? 0 : ret, buf);
     return ret;
 }
 
