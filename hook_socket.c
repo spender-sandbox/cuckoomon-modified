@@ -297,11 +297,17 @@ HOOKDEF(int, WSAAPI, WSARecv,
 ) {
     int ret = Old_WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd,
         lpFlags, lpOverlapped, lpCompletionRoutine);
-	DWORD outlen;
-	PVOID buf = alloc_combined_wsabuf(lpBuffers, dwBufferCount, &outlen);
-    LOQ_sockerr("network", "ib", "socket", s, "Buffer", outlen, buf);
-	if (buf)
-		free(buf);
+	if (lpOverlapped == NULL && lpCompletionRoutine == NULL) {
+		DWORD outlen;
+		PVOID buf = alloc_combined_wsabuf(lpBuffers, dwBufferCount, &outlen);
+		LOQ_sockerr("network", "iBI", "socket", s, "Buffer", lpNumberOfBytesRecvd, buf, "NumberOfBytesReceived", lpNumberOfBytesRecvd);
+		if (buf)
+			free(buf);
+	}
+	else {
+		// TODO: handle completion routine case
+		LOQ_sockerr("network", "i", "socket", s);
+	}
     return ret;
 }
 
@@ -316,17 +322,22 @@ HOOKDEF(int, WSAAPI, WSARecvFrom,
     __in     LPWSAOVERLAPPED lpOverlapped,
     __in     LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
 ) {
-	// TODO: handle completion routine case, as we might not return
     int ret = Old_WSARecvFrom(s, lpBuffers, dwBufferCount,
         lpNumberOfBytesRecvd, lpFlags, lpFrom, lpFromlen, lpOverlapped,
         lpCompletionRoutine);
     const char *ip = NULL; int port = 0;
     get_ip_port(lpFrom, &ip, &port);
-	DWORD outlen;
-	PVOID buf = alloc_combined_wsabuf(lpBuffers, dwBufferCount, &outlen);
-	LOQ_sockerr("network", "isib", "socket", s, "ip", ip, "port", port, "Buffer", outlen, buf);
-	if (buf)
-		free(buf);
+	if (lpOverlapped == NULL && lpCompletionRoutine == NULL) {
+		DWORD outlen;
+		PVOID buf = alloc_combined_wsabuf(lpBuffers, dwBufferCount, &outlen);
+		LOQ_sockerr("network", "isiBI", "socket", s, "ip", ip, "port", port, "Buffer", lpNumberOfBytesRecvd, buf, "NumberOfBytesReceived", lpNumberOfBytesRecvd);
+		if (buf)
+			free(buf);
+	}
+	else {
+		// TODO: handle completion routine case
+		LOQ_sockerr("network", "isi", "socket", s, "ip", ip, "port", port);
+	}
 	return ret;
 }
 
@@ -339,7 +350,8 @@ HOOKDEF(int, WSAAPI, WSASend,
     __in   LPWSAOVERLAPPED lpOverlapped,
     __in   LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
 ) {
-    int ret = Old_WSASend(s, lpBuffers, dwBufferCount, lpNumberOfBytesSent,
+	// TODO: handle completion routine case
+	int ret = Old_WSASend(s, lpBuffers, dwBufferCount, lpNumberOfBytesSent,
         dwFlags, lpOverlapped, lpCompletionRoutine);
 	DWORD outlen;
 	PVOID buf = alloc_combined_wsabuf(lpBuffers, dwBufferCount, &outlen);
@@ -360,7 +372,7 @@ HOOKDEF(int, WSAAPI, WSASendTo,
     __in   LPWSAOVERLAPPED lpOverlapped,
     __in   LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
 ) {
-	// TODO: handle completion routine case, as we might not return
+	// TODO: handle completion routine case
     const char *ip = NULL; int port = 0;
     get_ip_port(lpTo, &ip, &port);
 
