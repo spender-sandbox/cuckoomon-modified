@@ -223,6 +223,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,
 HOOKDEF(NTSTATUS, WINAPI, NtResumeProcess,
 	__in  HANDLE ProcessHandle
 ) {
+	DWORD pid = pid_from_process_handle(ProcessHandle);
+	pipe("RESUME:%d", pid);
+
 	NTSTATUS ret = Old_NtResumeProcess(ProcessHandle);
 	LOQ_ntstatus("process", "p", "ProcessHandle", ProcessHandle);
 	return ret;

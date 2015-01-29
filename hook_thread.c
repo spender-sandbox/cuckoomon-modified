@@ -204,6 +204,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtResumeThread,
     __out_opt   ULONG *SuspendCount
 ) {
     ENSURE_ULONG(SuspendCount);
+	DWORD pid = pid_from_thread_handle(ThreadHandle);
+	DWORD tid = tid_from_thread_handle(ThreadHandle);
+	pipe("RESUME:%d,%d", pid, tid);
 
     NTSTATUS ret = Old_NtResumeThread(ThreadHandle, SuspendCount);
     LOQ_ntstatus("threading", "pI", "ThreadHandle", ThreadHandle, "SuspendCount", SuspendCount);
