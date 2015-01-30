@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include "ntapi.h"
 #include "hooking.h"
+#include "misc.h"
+#include "pipe.h"
 #include "log.h"
 
 HOOKDEF(HWND, WINAPI, FindWindowA,
@@ -96,6 +98,14 @@ HOOKDEF(BOOL, WINAPI, SendNotifyMessageA,
 	_In_  WPARAM wParam,
 	_In_  LPARAM lParam
 ) {
+	DWORD pid;
+	lasterror_t lasterror;
+	get_lasterrors(&lasterror);
+	GetWindowThreadProcessId(hWnd, &pid);
+	if (pid != GetCurrentProcessId())
+		pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
+	set_lasterrors(&lasterror);
+
 	BOOL ret = Old_SendNotifyMessageA(hWnd, Msg, wParam, lParam);
 
 	LOQ_bool("windows", "ph", "WindowHandle", hWnd, "Message", Msg);
@@ -109,6 +119,14 @@ HOOKDEF(BOOL, WINAPI, SendNotifyMessageW,
 	_In_  WPARAM wParam,
 	_In_  LPARAM lParam
 	) {
+	DWORD pid;
+	lasterror_t lasterror;
+	get_lasterrors(&lasterror);
+	GetWindowThreadProcessId(hWnd, &pid);
+	if (pid != GetCurrentProcessId())
+		pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
+	set_lasterrors(&lasterror);
+
 	BOOL ret = Old_SendNotifyMessageW(hWnd, Msg, wParam, lParam);
 
 	LOQ_bool("windows", "ph", "WindowHandle", hWnd, "Message", Msg);
