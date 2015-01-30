@@ -250,10 +250,10 @@ HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
     __in   LPTHREAD_START_ROUTINE lpStartAddress,
     __in   LPVOID lpParameter,
     __in   DWORD dwCreationFlags,
-    __out  LPDWORD lpThreadId
+    __out_opt  LPDWORD lpThreadId
 ) {
+	ENSURE_DWORD(lpThreadId);
 	DWORD pid = pid_from_process_handle(hProcess);
-
 	HANDLE ret = Old_CreateRemoteThread(hProcess, lpThreadAttributes,
         dwStackSize, lpStartAddress, lpParameter, dwCreationFlags | CREATE_SUSPENDED,
         lpThreadId);
