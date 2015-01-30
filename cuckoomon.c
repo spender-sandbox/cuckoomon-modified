@@ -194,6 +194,8 @@ static hook_t g_hooks[] = {
     HOOK(user32, FindWindowExA),
     HOOK(user32, FindWindowExW),
     HOOK(user32, EnumWindows),
+	HOOK(user32, SendNotifyMessageA),
+	HOOK(user32, SendNotifyMessageW),
 
     //
     // Sync Hooks
@@ -491,7 +493,11 @@ LONG WINAPI cuckoomon_exception_handler(
 	DWORD *teb = (DWORD *)__readfsdword(0x18);
 	ULONG_PTR eip = (ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
 	PUCHAR eipptr = (PUCHAR)eip;
+#ifdef _WIN64
+	ULONG_PTR *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Rsp);
+#else
 	DWORD *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
+#endif
 	lasterror_t lasterror;
 
 #if REPORT_ALL_EXCEPTIONS == 0
@@ -510,11 +516,12 @@ LONG WINAPI cuckoomon_exception_handler(
 	sprintf(msg, "Exception Caught! PID: %u EIP:", GetCurrentProcessId());
 	if (dllname)
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
-	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %08x, Fault Address: %08x, Esp: %08x, Exception Code: %08x, ",
-		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (DWORD)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
-	if (is_valid_address_range((ULONG_PTR)stack, 10 * sizeof(DWORD))) {
-		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Stack Dump: %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x, ",
-		stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
+	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %.08x, Fault Address: %.08x, Esp: %.08x, Exception Code: %08x, ",
+		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (ULONG_PTR)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
+	if (is_valid_address_range((ULONG_PTR)stack, 10 * sizeof(ULONG_PTR))) 
+	{
+		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Stack Dump: %.08x %.08x %.08x %.08x %.08x %.08x %.08x %.08x %.08x %.08x, ",
+			stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
 	}
 	if (is_valid_address_range(eip, 16)) {
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Bytes at EIP: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",

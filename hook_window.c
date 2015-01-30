@@ -90,6 +90,33 @@ HOOKDEF(HWND, WINAPI, FindWindowExW,
     return ret;
 }
 
+HOOKDEF(BOOL, WINAPI, SendNotifyMessageA,
+	_In_  HWND hWnd,
+	_In_  UINT Msg,
+	_In_  WPARAM wParam,
+	_In_  LPARAM lParam
+) {
+	BOOL ret = Old_SendNotifyMessageA(hWnd, Msg, wParam, lParam);
+
+	LOQ_bool("windows", "ph", "WindowHandle", hWnd, "Message", Msg);
+
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, SendNotifyMessageW,
+	_In_  HWND hWnd,
+	_In_  UINT Msg,
+	_In_  WPARAM wParam,
+	_In_  LPARAM lParam
+	) {
+	BOOL ret = Old_SendNotifyMessageW(hWnd, Msg, wParam, lParam);
+
+	LOQ_bool("windows", "ph", "WindowHandle", hWnd, "Message", Msg);
+
+	return ret;
+}
+
+
 HOOKDEF(BOOL, WINAPI, EnumWindows,
     _In_  WNDENUMPROC lpEnumFunc,
     _In_  LPARAM lParam
