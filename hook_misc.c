@@ -149,8 +149,15 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
             lpOutBuffer);
 
 	/* Fake harddrive size to 256GB */
-	if (lpOutBuffer && nOutBufferSize >= sizeof(GET_LENGTH_INFORMATION) && dwIoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
+	if (ret && lpOutBuffer && nOutBufferSize >= sizeof(GET_LENGTH_INFORMATION) && dwIoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
 		((PGET_LENGTH_INFORMATION)lpOutBuffer)->Length.QuadPart = 256060514304L;
+	}
+	/* fake model name */
+	if (ret && dwIoControlCode == IOCTL_STORAGE_QUERY_PROPERTY && lpOutBuffer && nOutBufferSize > 4) {
+		for (ULONG i = 0; i < nOutBufferSize - 4; i++) {
+			if (!memcmp(&((PCHAR)lpOutBuffer)[i], "QEMU", 4))
+				memcpy(&((PCHAR)lpOutBuffer)[i], "DELL", 4);
+		}
 	}
 
 	return ret;

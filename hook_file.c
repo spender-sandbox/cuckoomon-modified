@@ -326,10 +326,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
         "OutputBuffer", IoStatusBlock->Information, OutputBuffer);
 
 	/* Fake harddrive size to 256GB */
-	if (OutputBuffer && OutputBufferLength >= sizeof(GET_LENGTH_INFORMATION) && IoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
+	if (NT_SUCCESS(ret) && OutputBuffer && OutputBufferLength >= sizeof(GET_LENGTH_INFORMATION) && IoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
 		((PGET_LENGTH_INFORMATION)OutputBuffer)->Length.QuadPart = 256060514304L;
 	}
-
+	/* fake model name */
+	if (NT_SUCCESS(ret) && IoControlCode == IOCTL_STORAGE_QUERY_PROPERTY && OutputBuffer && OutputBufferLength > 4) {
+		for (ULONG i = 0; i < OutputBufferLength - 4; i++) {
+			if (!memcmp(&((PCHAR)OutputBuffer)[i], "QEMU", 4))
+				memcpy(&((PCHAR)OutputBuffer)[i], "DELL", 4);
+		}
+	}
 	return ret;
 }
 
