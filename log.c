@@ -292,6 +292,8 @@ static void log_buffer(const char *buf, size_t length) {
     bson_append_binary( g_bson, g_istr, BSON_BIN_BINARY, buf, trunclength );
 }
 
+static lastlog_t lastlog;
+
 void loq(int index, const char *category, const char *name,
     int is_success, ULONG_PTR return_value, const char *fmt, ...)
 {
@@ -299,6 +301,8 @@ void loq(int index, const char *category, const char *name,
     const char * fmtbak = fmt;
     int argnum = 2;
     int count = 1; char key = 0;
+	unsigned int repeat_offset = 0;
+	unsigned int compare_offset = 0;
 	lasterror_t lasterror;
 
 	if (index >= LOG_ID_ANOMALY && g_config.suspend_logging)
@@ -450,7 +454,13 @@ void loq(int index, const char *category, const char *name,
 	// return parent location of malware callsite
 	bson_append_ptr(g_bson, "P", hookinfo->parent_caller_retaddr);
 	bson_append_int(g_bson, "T", GetCurrentThreadId());
-    bson_append_int( g_bson, "t", GetTickCount() - g_starttick );
+    bson_append_int(g_bson, "t", GetTickCount() - g_starttick );
+	// number of times this log was repeated -- we'll modify this 
+	bson_append_int(g_bson, "r", 0);
+
+	compare_offset = (unsigned int )(g_bson->cur - bson_data(g_bson));
+	// the repeated value is encoded immediately before the stream we want to compare
+	repeat_offset = compare_offset - 4;
 
 	bson_append_start_array(g_bson, "args");
     bson_append_int( g_bson, "0", is_success );
@@ -695,7 +705,28 @@ void loq(int index, const char *category, const char *name,
 
     bson_append_finish_array( g_bson );
     bson_finish( g_bson );
-    log_raw_direct(bson_data( g_bson ), bson_size( g_bson ));
+
+	if (lastlog.buf) {
+		unsigned int our_len = bson_size(g_bson) - compare_offset;
+		if (lastlog.compare_len == our_len && !memcmp(lastlog.compare_ptr, bson_data(g_bson) + compare_offset, our_len)) {
+			// we're about to log a duplicate of the last log message, just increment the previous log's repeated count
+			(*lastlog.repeated_ptr)++;
+		}
+		else {
+			log_raw_direct(lastlog.buf, lastlog.len);
+			free(lastlog.buf);
+			lastlog.buf = NULL;
+		}
+	}
+	if (lastlog.buf == NULL) {
+		lastlog.len = bson_size(g_bson);
+		lastlog.buf = malloc(lastlog.len);
+		memcpy(lastlog.buf, bson_data(g_bson), lastlog.len);
+		lastlog.compare_len = lastlog.len - compare_offset;
+		lastlog.compare_ptr = lastlog.buf + compare_offset;
+		lastlog.repeated_ptr = (int *)(lastlog.buf + repeat_offset);
+	}
+
     bson_destroy( g_bson );
     LeaveCriticalSection(&g_mutex);
 
@@ -837,6 +868,12 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 
 void log_free()
 {
+	// racy: fix me later
+	if (lastlog.buf != NULL) {
+		log_raw_direct(lastlog.buf, lastlog.len);
+		free(lastlog.buf);
+		lastlog.buf = NULL;
+	}
     log_flush();
 	if (g_sock != INVALID_SOCKET && g_sock != DEBUG_SOCKET) {
         closesocket(g_sock);

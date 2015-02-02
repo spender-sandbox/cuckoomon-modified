@@ -127,3 +127,11 @@ extern int g_log_index;
 
 #define ENSURE_STRUCT(param, type) \
     type _##param; memset(&_##param, 0, sizeof(_##param)); if(param == NULL) param = &_##param
+
+typedef struct _lastlog_t {
+	unsigned char *buf;
+	unsigned int len;
+	unsigned int compare_len;
+	int *repeated_ptr;
+	unsigned char *compare_ptr;
+} lastlog_t;
