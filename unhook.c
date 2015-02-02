@@ -36,7 +36,7 @@ static uint32_t g_index = 0;
 static uint32_t g_length[UNHOOK_MAXCOUNT];
 
 // Address of the region.
-static const uint8_t *g_addr[UNHOOK_MAXCOUNT];
+static uint8_t *g_addr[UNHOOK_MAXCOUNT];
 
 // Function name of the region.
 static char g_funcname[UNHOOK_MAXCOUNT][64];
@@ -50,7 +50,7 @@ static uint8_t g_our[UNHOOK_BUFSIZE][UNHOOK_BUFSIZE];
 // If the region has been modified, did we report this already?
 static uint8_t g_hook_reported[UNHOOK_MAXCOUNT];
 
-void unhook_detect_add_region(const char *funcname, const uint8_t *addr,
+void unhook_detect_add_region(const char *funcname, uint8_t *addr,
     const uint8_t *orig, const uint8_t *our, uint32_t length)
 {
     if(g_index == UNHOOK_MAXCOUNT) {
@@ -69,6 +69,30 @@ void unhook_detect_add_region(const char *funcname, const uint8_t *addr,
     memcpy(g_our[g_index], our, MIN(length, UNHOOK_BUFSIZE));
     g_index++;
 }
+
+void restore_hooks_on_range(ULONG_PTR start, ULONG_PTR end)
+{
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
+	__try {
+		for (uint32_t idx = 0; idx < g_index; idx++) {
+			if ((ULONG_PTR)g_addr[idx] < start || ((ULONG_PTR)g_addr[idx] + g_length[idx]) > end)
+				continue;
+			if (!memcmp(g_orig[idx], g_addr[idx], g_length[idx])) {
+				memcpy(g_addr[idx], g_our[idx], g_length[idx]);
+				log_hook_restoration(g_funcname[idx]);
+			}
+		}
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		;
+	}
+
+	set_lasterrors(&lasterror);
+}
+
 
 static DWORD WINAPI _unhook_detect_thread(LPVOID param)
 {

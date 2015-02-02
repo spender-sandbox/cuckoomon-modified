@@ -70,6 +70,7 @@ void log_anomaly(const char *subcategory, int success,
     const char *funcname, const char *msg);
 void log_hook_modification(const char *funcname, const char *origbytes, const char *newbytes, unsigned int len);
 void log_hook_removal(const char *funcname);
+void log_hook_restoration(const char *funcname);
 
 void log_init(unsigned int ip, unsigned short port, int debug);
 void log_flush();

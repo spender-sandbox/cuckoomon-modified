@@ -777,6 +777,16 @@ void log_hook_removal(const char *funcname)
 		"UnhookType", "removal");
 }
 
+void log_hook_restoration(const char *funcname)
+{
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "lsss",
+		"ThreadIdentifier", GetCurrentThreadId(),
+		"Subcategory", "unhook",
+		"FunctionName", funcname,
+		"UnhookType", "restored");
+}
+
+
 void log_init(unsigned int ip, unsigned short port, int debug)
 {
 	g_buffer = calloc(1, BUFFERSIZE);

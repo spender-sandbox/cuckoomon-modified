@@ -22,3 +22,4 @@ void unhook_detect_add_region(const char *funcname, const uint8_t *addr,
 int unhook_init_detection();
 int terminate_event_init();
 int init_watchdog();
+void restore_hooks_on_range(ULONG_PTR start, ULONG_PTR end);

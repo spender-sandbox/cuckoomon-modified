@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "misc.h"
 #include "ignore.h"
 #include "hook_sleep.h"
+#include "unhook.h"
 
 HOOKDEF(HANDLE, WINAPI, CreateToolhelp32Snapshot,
 	__in DWORD dwFlags,
@@ -446,7 +447,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
     IN      ULONG NewAccessProtection,
     OUT     PULONG OldAccessProtection
 ) {
-    NTSTATUS ret = Old_NtProtectVirtualMemory(ProcessHandle, BaseAddress,
+	if (NewAccessProtection == PAGE_EXECUTE_READ && BaseAddress && NumberOfBytesToProtect &&
+		GetCurrentProcessId() == GetProcessId(ProcessHandle) && is_in_dll_range((ULONG_PTR)*BaseAddress))
+		restore_hooks_on_range((ULONG_PTR)*BaseAddress, (ULONG_PTR)*BaseAddress + *NumberOfBytesToProtect);
+	
+	NTSTATUS ret = Old_NtProtectVirtualMemory(ProcessHandle, BaseAddress,
         NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
     LOQ_ntstatus("process", "pPHhH", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "NumberOfBytesProtected", NumberOfBytesToProtect,
@@ -462,6 +467,10 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
     __in   DWORD flNewProtect,
     __out  PDWORD lpflOldProtect
 ) {
+	if (flNewProtect == PAGE_EXECUTE_READ && GetCurrentProcessId() == GetProcessId(hProcess) &&
+		is_in_dll_range((ULONG_PTR)lpAddress))
+		restore_hooks_on_range((ULONG_PTR)lpAddress, (ULONG_PTR)lpAddress + dwSize);
+
 	BOOL ret = Old_VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect,
         lpflOldProtect);
     LOQ_bool("process", "ppph", "ProcessHandle", hProcess, "Address", lpAddress,
