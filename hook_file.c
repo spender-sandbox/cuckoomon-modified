@@ -679,6 +679,12 @@ HOOKDEF(BOOL, WINAPI, GetVolumeNameForVolumeMountPointW,
 ) {
 	BOOL ret = Old_GetVolumeNameForVolumeMountPointW(lpszVolumeMountPoint, lpszVolumeName, cchBufferLength);
 	LOQ_bool("filesystem", "uu", "VolumeMountPoint", lpszVolumeMountPoint, "VolumeName", lpszVolumeName);
+	if (ret && lpszVolumeName && cchBufferLength > 4) {
+		for (DWORD i = 0; i < cchBufferLength - 4; i++) {
+			if (!memcmp(&lpszVolumeName[i], L"QEMU", 8))
+				memcpy(&lpszVolumeName[i], L"DELL", 8);
+		}
+	}
 	return ret;
 }
 
