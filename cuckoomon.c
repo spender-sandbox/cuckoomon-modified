@@ -490,7 +490,7 @@ LONG WINAPI cuckoomon_exception_handler(
 	char msg[1024];
 	char *dllname;
 	unsigned int offset;
-	DWORD *teb = (DWORD *)__readfsdword(0x18);
+	DWORD *teb = (DWORD *)NtCurrentTeb();
 	ULONG_PTR eip = (ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
 	PUCHAR eipptr = (PUCHAR)eip;
 #ifdef _WIN64
