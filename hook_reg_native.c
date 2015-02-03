@@ -188,6 +188,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryValueKey,
 			memcpy(Data, "DELL", 4);
 		}
 
+		// fake the manufacturer name
+		if (keypath && Data && DataLength >= 4 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\SystemInformation\\SystemManufacturer") && !memcmp(Data, "QEMU", 4)) {
+			memcpy(Data, "DELL", 4);
+		}
+
+
 		free(keybuf);
 	}
     else {
