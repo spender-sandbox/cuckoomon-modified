@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // the size of the logging buffer
 #define BUFFERSIZE 16 * 1024 * 1024
 #define BUFFER_LOG_MAX 256
+#define BUFFER_REGVAL_MAX 512
 
 static CRITICAL_SECTION g_mutex;
 static CRITICAL_SECTION g_writing_log_buffer_mutex;
@@ -652,7 +653,10 @@ void loq(int index, const char *category, const char *name,
             unsigned long size = va_arg(args, unsigned long);
             unsigned char *data = va_arg(args, unsigned char *);
 
-            // bson_append_start_object( g_bson, g_istr );
+			if (size > BUFFER_REGVAL_MAX)
+				size = BUFFER_REGVAL_MAX;
+			
+			// bson_append_start_object( g_bson, g_istr );
             // bson_append_int( g_bson, "type", type );
 
             // strncpy(g_istr, "val", 4);
