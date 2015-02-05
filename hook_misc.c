@@ -398,10 +398,19 @@ HOOKDEF(BOOL, WINAPI, GetUserNameW,
     return ret;
 }
 
+static unsigned int asynckeystate_logcount;
+
 HOOKDEF(SHORT, WINAPI, GetAsyncKeyState,
 	__in int vKey
 ) {
 	SHORT ret = Old_GetAsyncKeyState(vKey);
-	LOQ_nonzero("windows", "i", "KeyCode", vKey);
+	if (asynckeystate_logcount < 50) {
+		asynckeystate_logcount++;
+		LOQ_nonzero("windows", "i", "KeyCode", vKey);
+	}
+	else if (asynckeystate_logcount == 50) {
+		asynckeystate_logcount++;
+		LOQ_nonzero("windows", "is", "KeyCode", vKey, "Status", "Log limit reached");
+	}
 	return ret;
 }
