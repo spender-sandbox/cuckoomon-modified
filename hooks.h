@@ -1085,6 +1085,10 @@ extern HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 // Misc Hooks
 //
 
+extern HOOKDEF(SHORT, WINAPI, GetAsyncKeyState,
+	__in int vKey
+);
+
 extern HOOKDEF(HHOOK, WINAPI, SetWindowsHookExA,
     __in  int idHook,
     __in  HOOKPROC lpfn,

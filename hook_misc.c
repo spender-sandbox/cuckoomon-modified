@@ -397,3 +397,11 @@ HOOKDEF(BOOL, WINAPI, GetUserNameW,
     LOQ_bool("misc", "u", "Name", lpBuffer);
     return ret;
 }
+
+HOOKDEF(SHORT, WINAPI, GetAsyncKeyState,
+	__in int vKey
+) {
+	SHORT ret = Old_GetAsyncKeyState(vKey);
+	LOQ_nonzero("windows", "i", "KeyCode", vKey);
+	return ret;
+}
