@@ -1085,6 +1085,10 @@ extern HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 // Misc Hooks
 //
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtLoadDriver,
+	PUNICODE_STRING DriverServiceNAme
+);
+
 extern HOOKDEF(SHORT, WINAPI, GetAsyncKeyState,
 	__in int vKey
 );

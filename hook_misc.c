@@ -398,6 +398,14 @@ HOOKDEF(BOOL, WINAPI, GetUserNameW,
     return ret;
 }
 
+HOOKDEF(NTSTATUS, WINAPI, NtLoadDriver,
+	__in PUNICODE_STRING DriverServiceName
+) {
+	NTSTATUS ret = Old_NtLoadDriver(DriverServiceName);
+	LOQ_ntstatus("misc", "o", "DriverServiceName", DriverServiceName);
+	return ret;
+}
+
 static unsigned int asynckeystate_logcount;
 
 HOOKDEF(SHORT, WINAPI, GetAsyncKeyState,

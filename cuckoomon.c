@@ -287,6 +287,7 @@ static hook_t g_hooks[] = {
     HOOK(advapi32, GetUserNameA),
     HOOK(advapi32, GetUserNameW),
 	HOOK(user32, GetAsyncKeyState),
+	HOOK(ntdll, NtLoadDriver),
 	
 	//
     // Network Hooks
