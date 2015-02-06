@@ -31,6 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // the size of the logging buffer
 #define BUFFERSIZE 16 * 1024 * 1024
 #define BUFFER_LOG_MAX 256
+#define LARGE_BUFFER_LOG_MAX 64 * 1024
 #define BUFFER_REGVAL_MAX 512
 
 static CRITICAL_SECTION g_mutex;
@@ -293,6 +294,16 @@ static void log_buffer(const char *buf, size_t length) {
     bson_append_binary( g_bson, g_istr, BSON_BIN_BINARY, buf, trunclength );
 }
 
+static void log_large_buffer(const char *buf, size_t length) {
+	size_t trunclength = min(length, LARGE_BUFFER_LOG_MAX);
+
+	if (buf == NULL) {
+		trunclength = 0;
+	}
+
+	bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY, buf, trunclength);
+}
+
 static lastlog_t lastlog;
 
 void loq(int index, const char *category, const char *name,
@@ -540,6 +551,16 @@ void loq(int index, const char *category, const char *name,
             const char *s = va_arg(args, const char *);
             log_buffer(s, len == NULL ? 0 : *len);
         }
+		else if (key == 'c') {
+			size_t len = va_arg(args, size_t);
+			const char *s = va_arg(args, const char *);
+			log_large_buffer(s, len);
+		}
+		else if (key == 'C') {
+			size_t *len = va_arg(args, size_t *);
+			const char *s = va_arg(args, const char *);
+			log_large_buffer(s, len == NULL ? 0 : *len);
+		}
 		else if (key == 'i' || key == 'h') {
 			int value = va_arg(args, int);
             log_int32(value);
