@@ -51,6 +51,8 @@ static char logtbl_explained[256] = {0};
 #define LOG_ID_PROCESS 0
 #define LOG_ID_THREAD 1
 #define LOG_ID_ANOMALY 2
+#define LOG_ID_ANOMALY_EXTRA 3
+
 int g_log_index = 10;  // index must start after the special IDs (see defines)
 
 //
@@ -815,7 +817,7 @@ void log_hook_modification(const char *funcname, const char *origbytes, const ch
 		sprintf(p, "%02X ", (unsigned char)newbytes[i]);
 	}
 
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "lsssss",
+	loq(LOG_ID_ANOMALY_EXTRA, "__notification__", "__anomaly__", 1, 0, "lsssss",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
 		"FunctionName", funcname,
