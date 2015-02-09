@@ -293,33 +293,6 @@ HOOKDEF(BOOL, WINAPI, WriteConsoleW,
     return ret;
 }
 
-HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
-    _In_     HANDLE SectionHandle,
-    _In_     HANDLE ProcessHandle,
-    __inout  PVOID *BaseAddress,
-    _In_     ULONG_PTR ZeroBits,
-    _In_     SIZE_T CommitSize,
-    __inout  PLARGE_INTEGER SectionOffset,
-    __inout  PSIZE_T ViewSize,
-    __in     UINT InheritDisposition,
-    __in     ULONG AllocationType,
-    __in     ULONG Win32Protect
-) {
-    NTSTATUS ret = Old_NtMapViewOfSection(SectionHandle, ProcessHandle,
-        BaseAddress, ZeroBits, CommitSize, SectionOffset, ViewSize,
-        InheritDisposition, AllocationType, Win32Protect);
-    LOQ_ntstatus("process", "ppPpPh", "SectionHandle", SectionHandle,
-        "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-        "SectionOffset", SectionOffset, "ViewSize", ViewSize, "Win32Protect", Win32Protect);
-
-    if(NT_SUCCESS(ret)) {
-		DWORD pid = pid_from_process_handle(ProcessHandle);
-        pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
-        disable_sleep_skip();
-    }
-    return ret;
-}
-
 HOOKDEF(int, WINAPI, GetSystemMetrics,
     _In_  int nIndex
 ) {

@@ -338,15 +338,53 @@ HOOKDEF(NTSTATUS, WINAPI, NtUnmapViewOfSection,
     _In_opt_  PVOID BaseAddress
 ) {
     SIZE_T map_size = 0; MEMORY_BASIC_INFORMATION mbi;
-    if(VirtualQueryEx(ProcessHandle, BaseAddress, &mbi,
+	DWORD pid = pid_from_process_handle(ProcessHandle);
+	DWORD protect = PAGE_READWRITE;
+
+	if (VirtualQueryEx(ProcessHandle, BaseAddress, &mbi,
             sizeof(mbi)) == sizeof(mbi)) {
         map_size = mbi.RegionSize;
+		protect = mbi.Protect;
     }
     NTSTATUS ret = Old_NtUnmapViewOfSection(ProcessHandle, BaseAddress);
 
-	LOQ_ntstatus("process", "ppp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-		"RegionSize", map_size);
+	
+	if (pid != GetCurrentProcessId() || protect != PAGE_READWRITE) {
+		LOQ_ntstatus("process", "ppp", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+			"RegionSize", map_size);
+	}
 
+	return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
+	_In_     HANDLE SectionHandle,
+	_In_     HANDLE ProcessHandle,
+	__inout  PVOID *BaseAddress,
+	_In_     ULONG_PTR ZeroBits,
+	_In_     SIZE_T CommitSize,
+	__inout  PLARGE_INTEGER SectionOffset,
+	__inout  PSIZE_T ViewSize,
+	__in     UINT InheritDisposition,
+	__in     ULONG AllocationType,
+	__in     ULONG Win32Protect
+	) {
+	NTSTATUS ret = Old_NtMapViewOfSection(SectionHandle, ProcessHandle,
+		BaseAddress, ZeroBits, CommitSize, SectionOffset, ViewSize,
+		InheritDisposition, AllocationType, Win32Protect);
+	DWORD pid = pid_from_process_handle(ProcessHandle);
+
+	if ((pid != GetCurrentProcessId()) || Win32Protect != PAGE_READWRITE)
+		LOQ_ntstatus("process", "ppPpPh", "SectionHandle", SectionHandle,
+		"ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+		"SectionOffset", SectionOffset, "ViewSize", ViewSize, "Win32Protect", Win32Protect);
+
+	if (NT_SUCCESS(ret)) {
+		if (pid != GetCurrentProcessId()) {
+			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
+			disable_sleep_skip();
+		}
+	}
 	return ret;
 }
 

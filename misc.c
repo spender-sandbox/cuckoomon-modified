@@ -106,6 +106,11 @@ DWORD pid_from_process_handle(HANDLE process_handle)
 
 	get_lasterrors(&lasterror);
 
+	if (process_handle == GetCurrentProcess()) {
+		PID = GetCurrentProcessId();
+		goto out;
+	}
+
 	memset(&pbi, 0, sizeof(pbi));
 	
 	duped = DuplicateHandle(GetCurrentProcess(), process_handle, GetCurrentProcess(), &dup_handle, PROCESS_QUERY_INFORMATION, FALSE, 0);
@@ -116,6 +121,7 @@ DWORD pid_from_process_handle(HANDLE process_handle)
 	if (duped)
 		CloseHandle(dup_handle);
 
+out:
 	set_lasterrors(&lasterror);
 
 	return PID;
