@@ -67,7 +67,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThread,
 		if (CreateSuspended == FALSE) {
 			lasterror_t lasterror;
 			get_lasterrors(&lasterror);
-			ResumeThread(ThreadHandle);
+			ResumeThread(*ThreadHandle);
 			set_lasterrors(&lasterror);
 		}
 	}
@@ -101,12 +101,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
         lpBytesBuffer);
 
 	if (NT_SUCCESS(ret)) {
-		DWORD tid = tid_from_thread_handle(hThread);
+		DWORD tid = tid_from_thread_handle(*hThread);
 		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
 		if (CreateSuspended == FALSE) {
 			lasterror_t lasterror;
 			get_lasterrors(&lasterror);
-			ResumeThread(hThread);
+			ResumeThread(*hThread);
 			set_lasterrors(&lasterror);
 		}
 	}
