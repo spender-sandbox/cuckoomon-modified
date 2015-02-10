@@ -362,9 +362,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryFile,
         ApcRoutine, ApcContext, IoStatusBlock, FileInformation,
         Length, FileInformationClass, ReturnSingleEntry,
         FileName, RestartScan);
-	LOQ_ntstatus("filesystem", "pbOi", "FileHandle", FileHandle,
-        "FileInformation", IoStatusBlock->Information, FileInformation,
-        "FileName", &objattr, "FileInformationClass", FileInformationClass);
+	/* don't log the resulting buffer, otherwise we can't turn these calls into simple duplicates */
+	if (FileInformationClass == FileNamesInformation) {
+		LOQ_ntstatus("filesystem", "pOi", "FileHandle", FileHandle,
+			"FileName", &objattr, "FileInformationClass", FileInformationClass);
+	}
+	else {
+		LOQ_ntstatus("filesystem", "pbOi", "FileHandle", FileHandle,
+			"FileInformation", IoStatusBlock->Information, FileInformation,
+			"FileName", &objattr, "FileInformationClass", FileInformationClass);
+	}
     return ret;
 }
 

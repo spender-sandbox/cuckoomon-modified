@@ -169,6 +169,7 @@ HOOKDEF(BOOL, WINAPI, ExitWindowsEx,
 ) {
     BOOL ret = 0;
     LOQ_bool("system", "hi", "Flags", uFlags, "Reason", dwReason);
+	log_flush();
     return Old_ExitWindowsEx(uFlags, dwReason);
 }
 
