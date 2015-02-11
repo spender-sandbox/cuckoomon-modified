@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "misc.h"
 #include "hooking.h"
 #include "log.h"
+#include "pipe.h"
 #include "config.h"
 
 static _NtQueryInformationProcess pNtQueryInformationProcess;
@@ -65,6 +66,29 @@ void raw_sleep(int msecs)
 
 }
 
+// snprintf can end up acquiring the process' heap lock which will be unsafe in the context of a hooked
+// NtAllocate/FreeVirtualMemory
+void num_to_string(char *buf, unsigned int buflen, unsigned int num)
+{
+	unsigned int dec = 1000000000;
+	unsigned int i = 0;
+
+	if (!buflen)
+		return;
+
+	while (dec) {
+		if (!i && ((num / dec) || dec == 1))
+			buf[i++] = '0' + (num / dec);
+		else if (i)
+			buf[i++] = '0' + (num / dec);
+		if (i == buflen - 1)
+			break;
+		num = num % dec;
+		dec /= 10;
+	}
+	buf[i] = '\0';
+}
+
 DWORD get_image_size(ULONG_PTR base)
 {
 	PIMAGE_DOS_HEADER doshdr = (PIMAGE_DOS_HEADER)base;
@@ -79,10 +103,16 @@ BOOLEAN is_valid_address_range(ULONG_PTR start, DWORD len)
 	if (!VirtualQuery((LPCVOID)start, &meminfo, sizeof(meminfo)))
 		return FALSE;
 
-	if (start >= (ULONG_PTR)meminfo.AllocationBase && (start + len) <= ((ULONG_PTR)meminfo.AllocationBase + meminfo.RegionSize) && !(meminfo.Protect & (PAGE_NOACCESS|PAGE_GUARD)))
-		return TRUE;
+	if (start < (ULONG_PTR)meminfo.BaseAddress || (start + len) > ((ULONG_PTR)meminfo.BaseAddress + meminfo.RegionSize))
+		return FALSE;
 
-	return FALSE;
+	if (!(meminfo.State & MEM_COMMIT))
+		return FALSE;
+
+	if (meminfo.Protect & (PAGE_NOACCESS | PAGE_GUARD))
+		return FALSE;
+
+	return TRUE;
 }
 
 ULONG_PTR parent_process_id() // By Napalm @ NetCore2K (rohitab.com)

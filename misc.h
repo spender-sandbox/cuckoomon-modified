@@ -120,4 +120,6 @@ BOOLEAN is_valid_address_range(ULONG_PTR start, DWORD len);
 extern ULONG_PTR g_our_dll_base;
 extern DWORD g_our_dll_size;
 
+void num_to_string(char *buf, unsigned int buflen, unsigned int num);
+
 DWORD get_image_size(ULONG_PTR base);

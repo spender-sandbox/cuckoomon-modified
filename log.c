@@ -63,29 +63,6 @@ static HANDLE g_log_thread_handle;
 static HANDLE g_logwatcher_thread_handle;
 static HANDLE g_log_flush;
 
-// snprintf can end up acquiring the process' heap lock which will be unsafe in the context of a hooked
-// NtAllocate/FreeVirtualMemory
-static void num_to_string(char *buf, unsigned int buflen, unsigned int num)
-{
-	unsigned int dec = 1000000000;
-	unsigned int i = 0;
-
-	if (!buflen)
-		return;
-
-	while (dec) {
-		if (!i && ((num / dec) || dec == 1))
-			buf[i++] = '0' + (num / dec);
-		else if (i)
-			buf[i++] = '0' + (num / dec);
-		if (i == buflen - 1)
-			break;
-		num = num % dec;
-		dec /= 10;
-	}
-	buf[i] = '\0';
-}
-
 extern int process_shutting_down;
 
 static DWORD WINAPI _log_thread(LPVOID param)
@@ -757,7 +734,7 @@ void loq(int index, const char *category, const char *name,
     bson_destroy( g_bson );
     LeaveCriticalSection(&g_mutex);
 
-	//log_flush();
+	log_flush();
 
 	set_lasterrors(&lasterror);
 }

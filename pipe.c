@@ -134,7 +134,7 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
         }
         else if(*fmt == 'd') {
             char s[32];
-            sprintf(s, "%d", va_arg(args, int));
+			num_to_string(s, sizeof(s), va_arg(args, int));
 			ret += _pipe_ascii(&out, s, (int)strlen(s));
         }
         else if(*fmt == 'x') {

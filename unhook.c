@@ -113,36 +113,47 @@ static DWORD WINAPI _unhook_detect_thread(LPVOID param)
             raw_sleep(100);
         }
 
-		__try {
-			for (uint32_t idx = 0; idx < g_index; idx++) {
-				int is_modification = 1;
-				// Check whether this memory region still equals what we made it.
-				if (!memcmp(g_addr[idx], g_our[idx], g_length[idx])) {
+		for (uint32_t idx = 0; idx < g_index; idx++) {
+			if (g_hook_reported[idx] == 0) {
+				char *tmpbuf = NULL;
+				if (!is_valid_address_range((ULONG_PTR)g_addr[idx], g_length[idx])) {
 					continue;
 				}
+				__try {
+					int is_modification = 1;
+					// Check whether this memory region still equals what we made it.
+					if (!memcmp(g_addr[idx], g_our[idx], g_length[idx])) {
+						continue;
+					}
 
-				// If the memory region matches the original contents, then it
-				// has been restored to its original state.
-				if (!memcmp(g_orig[idx], g_addr[idx], g_length[idx]))
-					is_modification = 0;
+					// If the memory region matches the original contents, then it
+					// has been restored to its original state.
+					if (!memcmp(g_orig[idx], g_addr[idx], g_length[idx]))
+						is_modification = 0;
 
-				if (g_hook_reported[idx] == 0) {
-					if (is_shutting_down() == 0) {
-						if (is_modification)
-							log_hook_modification(g_funcname[idx], g_our[idx], g_addr[idx], g_length[idx]);
+					if (is_shutting_down() == 2) {
+						if (is_modification) {
+							char *tmpbuf2;
+							tmpbuf2 = tmpbuf = malloc(g_length[idx]);
+							memcpy(tmpbuf, g_addr[idx], g_length[idx]);
+							log_hook_modification(g_funcname[idx], g_our[idx], tmpbuf, g_length[idx]);
+							tmpbuf = NULL;
+							free(tmpbuf2);
+						} 
 						else
 							log_hook_removal(g_funcname[idx]);
 					}
 					g_hook_reported[idx] = 1;
 				}
+				__except (EXCEPTION_EXECUTE_HANDLER) {
+					// cuckoo currently has no handling for FreeLibrary, so if a hooked DLL ends up
+					// being unloaded we would crash in the code above
+					if (tmpbuf)
+						free(tmpbuf);
+				}
 			}
 		}
-		__except (EXCEPTION_EXECUTE_HANDLER) {
-			// cuckoo currently has no handling for FreeLibrary, so if a hooked DLL ends up
-			// being unloaded we would crash in the code above
-			;
-		}
-    }
+	}
 
     return 0;
 }

@@ -297,11 +297,19 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
 HOOKDEF(NTSTATUS, WINAPI, NtDeleteFile,
     __in  POBJECT_ATTRIBUTES ObjectAttributes
 ) {
-	pipe("FILE_DEL:%O", ObjectAttributes);
+	wchar_t path[MAX_PATH_PLUS_TOLERANCE];
+	wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
+	path_from_object_attributes(ObjectAttributes, path, MAX_PATH_PLUS_TOLERANCE);
+	ensure_absolute_unicode_path(absolutepath, path);
+
+	pipe("FILE_DEL:%Z", absolutepath);
 
     NTSTATUS ret = Old_NtDeleteFile(ObjectAttributes);
-	LOQ_ntstatus("filesystem", "O", "FileName", ObjectAttributes);
-    return ret;
+	LOQ_ntstatus("filesystem", "u", "FileName", absolutepath);
+
+	free(absolutepath);
+
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
@@ -481,16 +489,28 @@ HOOKDEF(BOOL, WINAPI, CreateDirectoryExW,
 HOOKDEF(BOOL, WINAPI, RemoveDirectoryA,
     __in  LPCSTR lpPathName
 ) {
+	char path[MAX_PATH];
+
+	ensure_absolute_ascii_path(path, lpPathName);
+
     BOOL ret = Old_RemoveDirectoryA(lpPathName);
-	LOQ_bool("filesystem", "f", "DirectoryName", lpPathName);
+	LOQ_bool("filesystem", "s", "DirectoryName", path);
+
     return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, RemoveDirectoryW,
     __in  LPWSTR lpPathName
 ) {
+	wchar_t *path = malloc(32768 * sizeof(wchar_t));
+
+	ensure_absolute_unicode_path(path, lpPathName);
+
     BOOL ret = Old_RemoveDirectoryW(lpPathName);
-	LOQ_bool("filesystem", "F", "DirectoryName", lpPathName);
+	LOQ_bool("filesystem", "u", "DirectoryName", path);
+
+	free(path);
+
     return ret;
 }
 
@@ -501,20 +521,27 @@ HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
     __in_opt  LPVOID lpData,
     __in      DWORD dwFlags
 ) {
+	wchar_t *path = malloc(32768 * sizeof(wchar_t));
+
+	ensure_absolute_unicode_path(path, lpExistingFileName);
+
     BOOL ret = Old_MoveFileWithProgressW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, dwFlags);
-	LOQ_bool("filesystem", "FFh", "ExistingFileName", lpExistingFileName,
+	LOQ_bool("filesystem", "uFh", "ExistingFileName", path,
         "NewFileName", lpNewFileName, "Flags", dwFlags);
     if (ret != FALSE) {
 		if (lpNewFileName)
-			pipe("FILE_MOVE:%F::%F", lpExistingFileName, lpNewFileName);
+			pipe("FILE_MOVE:%Z::%F", path, lpNewFileName);
 		else {
 			// we can do this here because it's not scheduled for deletion until reboot
-			pipe("FILE_DEL:%F", lpExistingFileName);
+			pipe("FILE_DEL:%Z", path);
 		}
 
     }
-    return ret;
+
+	free(path);
+
+	return ret;
 }
 
 HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
