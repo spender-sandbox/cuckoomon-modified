@@ -252,11 +252,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
 	}
 	else {
 		DWORD PID = pid_from_process_handle(ProcessHandle);
+		if (is_protected_pid(PID)) {
+			ret = STATUS_ACCESS_DENIED;
+			LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
+			return ret;
+		}
 		pipe("KILL:%d", PID);
 	}
 	set_lasterrors(&lasterror);
 
-    ret = Old_NtTerminateProcess(ProcessHandle, ExitStatus);    
+	ret = Old_NtTerminateProcess(ProcessHandle, ExitStatus);
     return ret;
 }
 
