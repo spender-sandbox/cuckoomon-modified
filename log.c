@@ -65,55 +65,60 @@ static HANDLE g_log_flush;
 
 extern int process_shutting_down;
 
+static void _send_log(void)
+{
+	EnterCriticalSection(&g_writing_log_buffer_mutex);
+	while (g_idx > 0) {
+		int written = -1;
+
+		if (g_sock == DEBUG_SOCKET) {
+			char filename[64];
+			char pid[8];
+			strcpy(filename, "c:\\debug");
+			num_to_string(pid, sizeof(pid), GetCurrentProcessId());
+			strcat(filename, pid);
+			strcat(filename, ".log");
+			// will happen when we're in debug mode
+			FILE *f = fopen(filename, "ab");
+			if (f) {
+				written = (int)fwrite(g_buffer, 1, g_idx, f);
+				fclose(f);
+			}
+			else {
+				// some non-admin debug case
+				written = g_idx;
+			}
+		}
+		else if (g_sock == INVALID_SOCKET) {
+			g_idx = 0;
+			continue;
+		}
+		else {
+			written = send(g_sock, g_buffer, g_idx, 0);
+		}
+
+		if (written < 0)
+			continue;
+
+		// if this call didn't write the entire buffer, then we have to move
+		// around some stuff in the buffer
+		if (written < g_idx) {
+			memmove(g_buffer, g_buffer + written, g_idx - written);
+		}
+
+		// subtract the amount of written bytes from the index
+		g_idx -= written;
+	}
+	LeaveCriticalSection(&g_writing_log_buffer_mutex);
+}
+
 static DWORD WINAPI _log_thread(LPVOID param)
 {
 	hook_disable();
 
 	while (1) {
 		WaitForSingleObject(g_log_flush, 500);
-		EnterCriticalSection(&g_writing_log_buffer_mutex);
-		while (g_idx > 0) {
-			int written = -1;
-
-			if (g_sock == DEBUG_SOCKET) {
-				char filename[64];
-				char pid[8];
-				strcpy(filename, "c:\\debug");
-				num_to_string(pid, sizeof(pid), GetCurrentProcessId());
-				strcat(filename, pid);
-				strcat(filename, ".log");
-				// will happen when we're in debug mode
-				FILE *f = fopen(filename, "ab");
-				if (f) {
-					written = (int)fwrite(g_buffer, 1, g_idx, f);
-					fclose(f);
-				}
-				else {
-					// some non-admin debug case
-					written = g_idx;
-				}
-			}
-			else if (g_sock == INVALID_SOCKET) {
-				g_idx = 0;
-				continue;
-			}
-			else {
-				written = send(g_sock, g_buffer, g_idx, 0);
-			}
-
-			if (written < 0)
-				continue;
-
-			// if this call didn't write the entire buffer, then we have to move
-			// around some stuff in the buffer
-			if (written < g_idx) {
-				memmove(g_buffer, g_buffer + written, g_idx - written);
-			}
-
-			// subtract the amount of written bytes from the index
-			g_idx -= written;
-		}
-		LeaveCriticalSection(&g_writing_log_buffer_mutex);
+		_send_log();
 	}
 }
 
@@ -142,6 +147,12 @@ void log_flush()
 	if (g_dll_main_complete) {
 		SetEvent(g_log_flush);
 		while (g_idx && (g_sock != INVALID_SOCKET || !process_shutting_down)) raw_sleep(50);
+	}
+	else {
+		/* if we're in main() still, then send the logs immediately just in case something bad
+		   happens early in execution of the malware's code
+		 */
+		_send_log();
 	}
 }
 
