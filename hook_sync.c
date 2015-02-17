@@ -57,9 +57,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateEvent,
 ) {
 	NTSTATUS ret = Old_NtCreateEvent(EventHandle, DesiredAccess,
 		ObjectAttributes, EventType, InitialState);
-	LOQ_ntstatus("synchronization", "Poii", "Handle", EventHandle,
-		"EventName", unistr_from_objattr(ObjectAttributes),
-		"EventType", EventType, "InitialState", InitialState);
+	UNICODE_STRING *eventname = unistr_from_objattr(ObjectAttributes);
+	if (eventname && eventname->Length) {
+		LOQ_ntstatus("synchronization", "Poii", "Handle", EventHandle,
+			"EventName", eventname, "EventType", EventType, "InitialState", InitialState);
+	}
 	return ret;
 }
 
