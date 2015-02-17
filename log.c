@@ -745,7 +745,7 @@ void loq(int index, const char *category, const char *name,
     bson_destroy( g_bson );
     LeaveCriticalSection(&g_mutex);
 
-	log_flush();
+	//log_flush();
 
 	set_lasterrors(&lasterror);
 }
