@@ -120,9 +120,10 @@ HOOKDEF(void, WINAPI, GetLocalTime,
     __out  LPSYSTEMTIME lpSystemTime
 ) {
 	lasterror_t lasterror;
-    Old_GetLocalTime(lpSystemTime);
+	LARGE_INTEGER li; FILETIME ft;
+	
+	Old_GetLocalTime(lpSystemTime);
 
-    LARGE_INTEGER li; FILETIME ft;
 
 	get_lasterrors(&lasterror);
 
@@ -141,10 +142,9 @@ HOOKDEF(void, WINAPI, GetSystemTime,
     __out  LPSYSTEMTIME lpSystemTime
 ) {
 	lasterror_t lasterror;
+	LARGE_INTEGER li; FILETIME ft;
 
     Old_GetSystemTime(lpSystemTime);
-
-    LARGE_INTEGER li; FILETIME ft;
 
 	get_lasterrors(&lasterror);
 

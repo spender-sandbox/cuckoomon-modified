@@ -374,12 +374,15 @@ HOOKDEF(int, WSAAPI, WSASendTo,
 ) {
 	// TODO: handle completion routine case
     const char *ip = NULL; int port = 0;
+	BOOL ret;
+	DWORD outlen;
+	PVOID buf;
+
     get_ip_port(lpTo, &ip, &port);
 
-    BOOL ret = Old_WSASendTo(s, lpBuffers, dwBufferCount, lpNumberOfBytesSent,
+    ret = Old_WSASendTo(s, lpBuffers, dwBufferCount, lpNumberOfBytesSent,
         dwFlags, lpTo, iToLen, lpOverlapped, lpCompletionRoutine);
-	DWORD outlen;
-	PVOID buf = alloc_combined_wsabuf(lpBuffers, dwBufferCount, &outlen);
+	buf = alloc_combined_wsabuf(lpBuffers, dwBufferCount, &outlen);
 	LOQ_sockerr("network", "isib", "socket", s, "ip", ip, "port", port, "Buffer", outlen, buf);
 	if (buf)
 		free(buf);

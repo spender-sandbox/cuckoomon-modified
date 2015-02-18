@@ -25,9 +25,12 @@ int read_config(void)
 {
     // TODO unicode support
     char buf[512], config_fname[MAX_PATH];
+	FILE *fp;
+	unsigned int i;
+
     sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
 
-    FILE *fp = fopen(config_fname, "r");
+    fp = fopen(config_fname, "r");
 	if (fp == NULL)
 		return 0;
 
@@ -43,9 +46,9 @@ int read_config(void)
         // split key=value
         p = strchr(buf, '=');
         if(p != NULL) {
-            *p = 0;
+			const char *key = buf, *value = p + 1;
 
-            const char *key = buf, *value = p + 1;
+			*p = 0;
 
             if(!strcmp(key, "pipe")) {
                 strncpy(g_config.pipe_name, value,
@@ -63,9 +66,10 @@ int read_config(void)
 						char *tmp = calloc(1, MAX_PATH);
 						wchar_t *utmp = calloc(1, MAX_PATH * sizeof(wchar_t));
 						unsigned int full_len;
+
 						ensure_absolute_ascii_path(tmp, value);
 						full_len = (unsigned int)strlen(tmp);
-						for (unsigned int i = 0; i < full_len; i++)
+						for (i = 0; i < full_len; i++)
 							utmp[i] = (wchar_t)(unsigned short)tmp[i];
 						free(tmp);
 
@@ -78,7 +82,7 @@ int read_config(void)
 						// is a URL
 						wchar_t *utmp = calloc(1, 512 * sizeof(wchar_t));
 						unsigned int url_len = (unsigned int)strlen(value);
-						for (unsigned int i = 0; i < url_len; i++)
+						for (i = 0; i < url_len; i++)
 							utmp[i] = (wchar_t)(unsigned short)value[i];
 						g_config.url_of_interest = utmp;
 						g_config.suspend_logging = TRUE;
@@ -88,7 +92,7 @@ int read_config(void)
 			else if (!strcmp(key, "analyzer")) {
                 strncpy(g_config.analyzer, value,
                     ARRAYSIZE(g_config.analyzer));
-				for (unsigned int i = 0; i < ARRAYSIZE(g_config.analyzer); i++)
+				for (i = 0; i < ARRAYSIZE(g_config.analyzer); i++)
 					g_config.dllpath[i] = (wchar_t)(unsigned short)g_config.analyzer[i];
 				if (wcslen(g_config.dllpath) < ARRAYSIZE(g_config.dllpath) - 5)
 					wcscat(g_config.dllpath, L"\\dll\\");

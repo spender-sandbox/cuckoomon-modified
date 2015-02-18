@@ -32,8 +32,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateKey,
     __in        ULONG CreateOptions,
     __out_opt   PULONG Disposition
 ) {
+	NTSTATUS ret;
 	ENSURE_ULONG(Disposition);
-	NTSTATUS ret = Old_NtCreateKey(KeyHandle, DesiredAccess, ObjectAttributes,
+	ret = Old_NtCreateKey(KeyHandle, DesiredAccess, ObjectAttributes,
         TitleIndex, Class, CreateOptions, Disposition);
     LOQ_ntstatus("registry", "PhpoKoI", "KeyHandle", KeyHandle, "DesiredAccess", DesiredAccess,
 		"ObjectAttributesHandle", handle_from_objattr(ObjectAttributes),
@@ -152,9 +153,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryValueKey,
     __in       ULONG Length,
     __out      PULONG ResultLength
 ) {
+	NTSTATUS ret;
     ENSURE_ULONG_ZERO(ResultLength);
 
-    NTSTATUS ret = Old_NtQueryValueKey(KeyHandle, ValueName,
+    ret = Old_NtQueryValueKey(KeyHandle, ValueName,
         KeyValueInformationClass, KeyValueInformation, Length, ResultLength);
     if(NT_SUCCESS(ret) && KeyValueInformation && 
             *ResultLength >= sizeof(ULONG) * 3) {

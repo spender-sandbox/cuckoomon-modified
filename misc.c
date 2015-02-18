@@ -188,18 +188,22 @@ static BOOL cid_from_thread_handle(HANDLE thread_handle, PCLIENT_ID cid)
 DWORD pid_from_thread_handle(HANDLE thread_handle)
 {
 	CLIENT_ID cid;
+	BOOL ret;
+
 	memset(&cid, 0, sizeof(cid));
 
-	BOOL ret = cid_from_thread_handle(thread_handle, &cid);
+	ret = cid_from_thread_handle(thread_handle, &cid);
 	return (DWORD)cid.UniqueProcess;
 }
 
 DWORD tid_from_thread_handle(HANDLE thread_handle)
 {
 	CLIENT_ID cid;
+	BOOL ret;
+
 	memset(&cid, 0, sizeof(cid));
 
-	BOOL ret = cid_from_thread_handle(thread_handle, &cid);
+	ret = cid_from_thread_handle(thread_handle, &cid);
 	return (DWORD)cid.UniqueThread;
 }
 
@@ -250,7 +254,8 @@ static void add_dll_range(ULONG_PTR start, ULONG_PTR end)
 
 BOOL is_in_dll_range(ULONG_PTR addr)
 {
-	for (DWORD i = 0; i < loaded_dlls; i++)
+	DWORD i;
+	for (i = 0; i < loaded_dlls; i++)
 		if (addr >= dll_ranges[i].start && addr < dll_ranges[i].end)
 			return TRUE;
 	return FALSE;
@@ -297,10 +302,12 @@ char *convert_address_to_dll_name_and_offset(ULONG_PTR addr, unsigned int *offse
 	for (mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
 		mod->BaseAddress != NULL;
 		mod = (LDR_MODULE *)mod->InLoadOrderModuleList.Flink) {
+		char *buf;
+		unsigned int i;
+
 		if (addr < (ULONG_PTR)mod->BaseAddress || addr >= ((ULONG_PTR)mod->BaseAddress + mod->SizeOfImage))
 			continue;
-		char *buf = calloc(1, (mod->BaseDllName.Length / sizeof(wchar_t)) + 1);
-		unsigned int i;
+		buf = calloc(1, (mod->BaseDllName.Length / sizeof(wchar_t)) + 1);
 		if (buf == NULL)
 			return NULL;
 		for (i = 0; i < (mod->BaseDllName.Length / sizeof(wchar_t)); i++)
@@ -377,14 +384,14 @@ uint32_t path_from_handle(HANDLE handle,
 uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
     wchar_t *path, uint32_t buffer_length)
 {
-	uint32_t copylen;
+	uint32_t copylen, obj_length, length;
 
     if (obj->ObjectName == NULL || obj->ObjectName->Buffer == NULL) {
 		return path_from_handle(obj->RootDirectory, path, buffer_length);;
     }
 
     // ObjectName->Length is actually the size in bytes.
-    uint32_t obj_length = obj->ObjectName->Length / sizeof(wchar_t);
+    obj_length = obj->ObjectName->Length / sizeof(wchar_t);
 
 	copylen = min(obj_length, buffer_length - 1);
 
@@ -394,7 +401,7 @@ uint32_t path_from_object_attributes(const OBJECT_ATTRIBUTES *obj,
         return copylen;
     }
 
-    uint32_t length = path_from_handle(obj->RootDirectory,
+    length = path_from_handle(obj->RootDirectory,
         path, buffer_length);
 
 	
@@ -878,16 +885,17 @@ extern int process_shutting_down;
 
 int is_shutting_down()
 {
+	lasterror_t lasterror;
+	int ret = 0;
+	HANDLE mutex_handle;
+
 	if (process_shutting_down)
 		return 1;
 
-	lasterror_t lasterror;
-	int ret = 0;
 
 	get_lasterrors(&lasterror);
 
-	HANDLE mutex_handle =
-        OpenMutex(SYNCHRONIZE, FALSE, g_config.shutdown_mutex);
+	mutex_handle = OpenMutex(SYNCHRONIZE, FALSE, g_config.shutdown_mutex);
     if(mutex_handle != NULL) {
 		log_flush();
         CloseHandle(mutex_handle);

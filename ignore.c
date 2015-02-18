@@ -71,7 +71,8 @@ static struct _ignored_file_t {
 int is_ignored_file_unicode(const wchar_t *fname, unsigned int length)
 {
     struct _ignored_file_t *f = g_ignored_files;
-    for (unsigned int i = 0; i < ARRAYSIZE(g_ignored_files); i++, f++) {
+	unsigned int i;
+    for (i = 0; i < ARRAYSIZE(g_ignored_files); i++, f++) {
         if(f->flags == FLAG_NONE && length == f->length &&
                 !wcsnicmp(fname, f->unicode, length)) {
             return 1;
@@ -100,7 +101,8 @@ static wchar_t *g_ignored_processpaths[] = {
 
 int is_ignored_process()
 {
-    for (int i = 0; i < ARRAYSIZE(g_ignored_processpaths); i++) {
+	int i;
+    for (i = 0; i < ARRAYSIZE(g_ignored_processpaths); i++) {
         if(!wcsicmp(g_ignored_processpaths[i], our_process_path)) {
             return 1;
         }

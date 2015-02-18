@@ -91,6 +91,7 @@ static int hook_create_trampoline(unsigned char *addr, int len,
         // it's a (conditional) jump or call with 32bit relative offset
         if(*addr == 0xe9 || *addr == 0xe8 || (*addr == 0x0f &&
                 addr[1] >= 0x80 && addr[1] < 0x90)) {
+			unsigned long jmp_addr;
 
             // copy the jmp or call instruction (conditional jumps are two
             // bytes, the rest is one byte)
@@ -104,8 +105,7 @@ static int hook_create_trampoline(unsigned char *addr, int len,
             // calculated address, so that's our target address as well.
             // (note that `addr' is already increased by one or two, so the
             // 4 represents the 32bit offset of this particular instruction)
-            unsigned long jmp_addr = *(int *) addr + 4 +
-                (unsigned long) addr;
+            jmp_addr = *(int *) addr + 4 + (unsigned long) addr;
             addr += 4;
 
             // trampoline is already filled with the opcode itself (the jump
@@ -461,6 +461,10 @@ hook_data_t *alloc_hookdata_near(void *addr)
 
 int hook_api(hook_t *h, int type)
 {
+	unsigned char *addr;
+	int ret = -1;
+	DWORD old_protect;
+
     // table with all possible hooking types
     static struct {
         int(*hook)(hook_t *h, unsigned char *from, unsigned char *to);
@@ -492,7 +496,7 @@ int hook_api(hook_t *h, int type)
     }
 
     // resolve the address to hook
-    unsigned char *addr = h->addr;
+    addr = h->addr;
 
     if(addr == NULL && h->library != NULL && h->funcname != NULL) {
         addr = (unsigned char *) GetProcAddress(GetModuleHandleW(h->library),
@@ -502,8 +506,6 @@ int hook_api(hook_t *h, int type)
 		// function doesn't exist in this DLL, not a critical error
 		return 0;
     }
-
-	int ret = -1;
 
 	// windows 7 has a DLL called kernelbase.dll which basically acts
 	// as a layer between the program and kernel32 (and related?) it
@@ -558,8 +560,6 @@ int hook_api(hook_t *h, int type)
 		pipe("WARNING: Provided invalid hook type: %d", type);
 		return ret;
 	}
-
-	DWORD old_protect;
 
 	// make the address writable
 	if (VirtualProtect(addr, hook_types[type].len, PAGE_EXECUTE_READWRITE,

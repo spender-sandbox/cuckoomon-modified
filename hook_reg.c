@@ -61,8 +61,9 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExA,
     __out       PHKEY phkResult,
     __out_opt   LPDWORD lpdwDisposition
 ) {
+	LONG ret;
 	ENSURE_DWORD(lpdwDisposition);
-	LONG ret = Old_RegCreateKeyExA(hKey, lpSubKey, Reserved, lpClass,
+	ret = Old_RegCreateKeyExA(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
     LOQ_zero("registry", "psshPeI", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
@@ -82,8 +83,9 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExW,
     __out       PHKEY phkResult,
     __out_opt   LPDWORD lpdwDisposition
 ) {
+	LONG ret;
 	ENSURE_DWORD(lpdwDisposition);
-	LONG ret = Old_RegCreateKeyExW(hKey, lpSubKey, Reserved, lpClass,
+	ret = Old_RegCreateKeyExW(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
     LOQ_zero("registry", "puuhPEI", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
@@ -169,8 +171,9 @@ HOOKDEF(LONG, WINAPI, RegEnumValueA,
     __out_opt    LPBYTE lpData,
     __inout_opt  LPDWORD lpcbData
 ) {
+	LONG ret;
 	ENSURE_DWORD(lpType);
-    LONG ret = Old_RegEnumValueA(hKey, dwIndex, lpValueName, lpcchValueName,
+    ret = Old_RegEnumValueA(hKey, dwIndex, lpValueName, lpcchValueName,
         lpReserved, lpType, lpData, lpcbData);
     if(ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {
@@ -196,8 +199,9 @@ HOOKDEF(LONG, WINAPI, RegEnumValueW,
     __out_opt    LPBYTE lpData,
     __inout_opt  LPDWORD lpcbData
 ) {
+	LONG ret;
 	ENSURE_DWORD(lpType);
-    LONG ret = Old_RegEnumValueW(hKey, dwIndex, lpValueName, lpcchValueName,
+    ret = Old_RegEnumValueW(hKey, dwIndex, lpValueName, lpcchValueName,
         lpReserved, lpType, lpData, lpcbData);
     if(ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {
@@ -265,8 +269,9 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExA,
     __out_opt    LPBYTE lpData,
     __inout_opt  LPDWORD lpcbData
 ) {
+	LONG ret;
 	ENSURE_DWORD(lpType);
-    LONG ret = Old_RegQueryValueExA(hKey, lpValueName, lpReserved, lpType,
+    ret = Old_RegQueryValueExA(hKey, lpValueName, lpReserved, lpType,
         lpData, lpcbData);
     if(ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {
@@ -305,8 +310,9 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExW,
     __out_opt    LPBYTE lpData,
     __inout_opt  LPDWORD lpcbData
 ) {
+	LONG ret;
 	ENSURE_DWORD(lpType);
-    LONG ret = Old_RegQueryValueExW(hKey, lpValueName, lpReserved, lpType,
+    ret = Old_RegQueryValueExW(hKey, lpValueName, lpReserved, lpType,
         lpData, lpcbData);
     if (ret == ERROR_SUCCESS && lpType != NULL && lpData != NULL &&
             lpcbData != NULL) {

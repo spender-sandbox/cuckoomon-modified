@@ -55,9 +55,10 @@ HOOKDEF(BOOL, WINAPI, CryptProtectData,
     _In_      DWORD dwFlags,
     _Out_     DATA_BLOB *pDataOut
 ) {
+	BOOL ret;
     ENSURE_STRUCT(pDataIn, DATA_BLOB);
 
-    BOOL ret = 1;
+    ret = 1;
     LOQ_bool("crypto", "b", "Buffer", pDataIn->cbData, pDataIn->pbData);
     return Old_CryptProtectData(pDataIn, szDataDescr, pOptionalEntropy,
         pvReserved, pPromptStruct, dwFlags, pDataOut);
@@ -72,10 +73,14 @@ HOOKDEF(BOOL, WINAPI, CryptUnprotectData,
     _In_        DWORD dwFlags,
     _Out_       DATA_BLOB *pDataOut
 ) {
+	BOOL ret;
+	DATA_BLOB _pOptionalEntropy;
     ENSURE_STRUCT(pDataOut, DATA_BLOB);
-    ENSURE_STRUCT(pOptionalEntropy, DATA_BLOB);
+	memset(&_pOptionalEntropy, 0, sizeof(_pOptionalEntropy));
+	if (pOptionalEntropy == NULL)
+		pOptionalEntropy = &_pOptionalEntropy;
 
-    BOOL ret = Old_CryptUnprotectData(pDataIn, ppszDataDescr,
+    ret = Old_CryptUnprotectData(pDataIn, ppszDataDescr,
         pOptionalEntropy, pvReserved, pPromptStruct, dwFlags, pDataOut);
 	LOQ_bool("crypto", "bb", "Entropy", pOptionalEntropy->cbData, pOptionalEntropy->pbData,
         "Buffer", pDataOut->cbData, pDataOut->pbData);
@@ -209,19 +214,24 @@ HOOKDEF(BOOL, WINAPI, CryptHashMessage,
     _Inout_opt_  DWORD *pcbComputedHash
 ) {
     DWORD length = 0;
-    for (DWORD i = 0; i < cToBeHashed; i++) {
+	DWORD i;
+	BOOL ret;
+	uint8_t *mem;
+
+    for (i = 0; i < cToBeHashed; i++) {
         length += rgcbToBeHashed[i];
     }
 
-    uint8_t *mem = malloc(length);
+    mem = malloc(length);
     if(mem != NULL) {
-        for (DWORD i = 0, off = 0; i < cToBeHashed; i++) {
+		unsigned int off = 0;
+        for (i = 0, off = 0; i < cToBeHashed; i++) {
             memcpy(mem + off, rgpbToBeHashed[i], rgcbToBeHashed[i]);
             off += rgcbToBeHashed[i];
         }
     }
 
-    BOOL ret = Old_CryptHashMessage(pHashPara, fDetachedHash, cToBeHashed,
+    ret = Old_CryptHashMessage(pHashPara, fDetachedHash, cToBeHashed,
         rgpbToBeHashed, rgcbToBeHashed, pbHashedBlob, pcbHashedBlob,
         pbComputedHash, pcbComputedHash);
 	LOQ_bool("crypto", "b", "Buffer", length, mem);

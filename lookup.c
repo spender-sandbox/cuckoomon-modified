@@ -49,11 +49,10 @@ void *lookup_add(lookup_t *d, unsigned int id, unsigned int size)
 {
     entry_t *t = (entry_t *) malloc(sizeof(entry_t) + size);
     ENTER();
-    *t = (entry_t) {
-        .next = d->root,
-        .id   = id,
-        .size = size,
-    };
+	memset(t, 0, sizeof(*t));
+	t->next = d->root;
+	t->id = id;
+	t->size = size;
     d->root = t;
     LEAVE();
     return t->data;
@@ -61,13 +60,15 @@ void *lookup_add(lookup_t *d, unsigned int id, unsigned int size)
 
 void *lookup_get(lookup_t *d, unsigned int id, unsigned int *size)
 {
+	entry_t *p;
     ENTER();
-    for (entry_t *p = d->root; p != NULL; p = p->next) {
+    for (p = d->root; p != NULL; p = p->next) {
         if(p->id == id) {
+			void *data;
             if(size != NULL) {
                 *size = p->size;
             }
-            void *data = p->data;
+            data = p->data;
             LEAVE();
             return data;
         }
@@ -78,8 +79,11 @@ void *lookup_get(lookup_t *d, unsigned int id, unsigned int *size)
 
 void lookup_del(lookup_t *d, unsigned int id)
 {
+	entry_t *p;
+	entry_t *last;
+
     ENTER();
-    entry_t *p = d->root;
+    p = d->root;
     // edge case; we want to delete the first entry
     if(p != NULL && p->id == id) {
         entry_t *t = p->next;
@@ -88,7 +92,7 @@ void lookup_del(lookup_t *d, unsigned int id)
         LEAVE();
         return;
     }
-    for (entry_t *last = NULL; p != NULL; last = p, p = p->next) {
+    for (last = NULL; p != NULL; last = p, p = p->next) {
         if(p->id == id) {
             last->next = p->next;
             free(p);

@@ -33,10 +33,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueueApcThread,
 ) {
 	DWORD PID = pid_from_thread_handle(ThreadHandle);
 	DWORD TID = tid_from_thread_handle(ThreadHandle);
+	NTSTATUS ret;
 
 	pipe("PROCESS:%d:%d,%d", is_suspended(PID, TID), PID, TID);
 
-	NTSTATUS ret = Old_NtQueueApcThread(ThreadHandle, ApcRoutine,
+	ret = Old_NtQueueApcThread(ThreadHandle, ApcRoutine,
 		ApcRoutineContext, ApcStatusBlock, ApcReserved);
 
 	LOQ_ntstatus("threading", "iip", "ProcessId", PID, "ThreadId", TID, "ThreadHandle", ThreadHandle);
@@ -188,12 +189,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtSuspendThread,
     __in        HANDLE ThreadHandle,
     __out_opt   ULONG *PreviousSuspendCount
 ) {
-    ENSURE_ULONG(PreviousSuspendCount);
 	DWORD pid = pid_from_thread_handle(ThreadHandle);
 	DWORD tid = tid_from_thread_handle(ThreadHandle);
+	NTSTATUS ret;
+	ENSURE_ULONG(PreviousSuspendCount);
 	pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
 
-	NTSTATUS ret = Old_NtSuspendThread(ThreadHandle, PreviousSuspendCount);
+	ret = Old_NtSuspendThread(ThreadHandle, PreviousSuspendCount);
     LOQ_ntstatus("threading", "pL", "ThreadHandle", ThreadHandle,
         "SuspendCount", PreviousSuspendCount);
     return ret;
@@ -203,12 +205,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtResumeThread,
     __in        HANDLE ThreadHandle,
     __out_opt   ULONG *SuspendCount
 ) {
-    ENSURE_ULONG(SuspendCount);
 	DWORD pid = pid_from_thread_handle(ThreadHandle);
 	DWORD tid = tid_from_thread_handle(ThreadHandle);
+	NTSTATUS ret;
+	ENSURE_ULONG(SuspendCount);
 	pipe("RESUME:%d,%d", pid, tid);
 
-    NTSTATUS ret = Old_NtResumeThread(ThreadHandle, SuspendCount);
+    ret = Old_NtResumeThread(ThreadHandle, SuspendCount);
     LOQ_ntstatus("threading", "pI", "ThreadHandle", ThreadHandle, "SuspendCount", SuspendCount);
     return ret;
 }
@@ -232,9 +235,10 @@ HOOKDEF(HANDLE, WINAPI, CreateThread,
     __in   DWORD dwCreationFlags,
     __out_opt  LPDWORD lpThreadId
 ) {
+	HANDLE ret;
 	ENSURE_DWORD(lpThreadId);
 
-	HANDLE ret = Old_CreateThread(lpThreadAttributes, dwStackSize,
+	ret = Old_CreateThread(lpThreadAttributes, dwStackSize,
         lpStartAddress, lpParameter, dwCreationFlags, lpThreadId);
     LOQ_nonnull("threading", "pphI", "StartRoutine", lpStartAddress, "Parameter", lpParameter,
         "CreationFlags", dwCreationFlags, "ThreadId", lpThreadId);
@@ -252,9 +256,12 @@ HOOKDEF(HANDLE, WINAPI, CreateRemoteThread,
     __in   DWORD dwCreationFlags,
     __out_opt  LPDWORD lpThreadId
 ) {
+	DWORD pid;
+	HANDLE ret;
 	ENSURE_DWORD(lpThreadId);
-	DWORD pid = pid_from_process_handle(hProcess);
-	HANDLE ret = Old_CreateRemoteThread(hProcess, lpThreadAttributes,
+
+	pid = pid_from_process_handle(hProcess);
+	ret = Old_CreateRemoteThread(hProcess, lpThreadAttributes,
         dwStackSize, lpStartAddress, lpParameter, dwCreationFlags | CREATE_SUSPENDED,
         lpThreadId);
 
@@ -289,10 +296,13 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
     OUT PHANDLE ThreadHandle,
     OUT PCLIENT_ID ClientId
 ) {
-    ENSURE_CLIENT_ID(ClientId);
-	DWORD pid = pid_from_process_handle(ProcessHandle);
+	DWORD pid;
+	NTSTATUS ret;
+	ENSURE_CLIENT_ID(ClientId);
+
+	pid = pid_from_process_handle(ProcessHandle);
 	
-	NTSTATUS ret = Old_RtlCreateUserThread(ProcessHandle, SecurityDescriptor,
+	ret = Old_RtlCreateUserThread(ProcessHandle, SecurityDescriptor,
         TRUE, StackZeroBits, StackReserved, StackCommit,
         StartAddress, StartParameter, ThreadHandle, ClientId);
     LOQ_ntstatus("threading", "pippPi", "ProcessHandle", ProcessHandle,

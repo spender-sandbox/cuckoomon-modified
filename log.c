@@ -74,12 +74,14 @@ static void _send_log(void)
 		if (g_sock == DEBUG_SOCKET) {
 			char filename[64];
 			char pid[8];
+			FILE *f;
+
 			strcpy(filename, "c:\\debug");
 			num_to_string(pid, sizeof(pid), GetCurrentProcessId());
 			strcat(filename, pid);
 			strcat(filename, ".log");
 			// will happen when we're in debug mode
-			FILE *f = fopen(filename, "ab");
+			f = fopen(filename, "ab");
 			if (f) {
 				written = (int)fwrite(g_buffer, 1, g_idx, f);
 				fclose(f);
@@ -223,13 +225,16 @@ static void log_ptr(void *value)
 
 static void log_string(const char *str, int length)
 {
-    if (str == NULL) {
+	int ret;
+	char *utf8s;
+	int utf8len;
+	
+	if (str == NULL) {
         bson_append_string_n( g_bson, g_istr, "", 0 );
         return;
     }
-    int ret;
-    char * utf8s = utf8_string(str, length);
-    int utf8len = * (int *) utf8s;
+    utf8s = utf8_string(str, length);
+    utf8len = * (int *) utf8s;
     ret = bson_append_binary( g_bson, g_istr, BSON_BIN_BINARY, utf8s+4, utf8len );
     if (ret == BSON_ERROR) {
 		bson_append_string_n(g_bson, g_istr, "", 0);
@@ -239,13 +244,16 @@ static void log_string(const char *str, int length)
 
 static void log_wstring(const wchar_t *str, int length)
 {
+	int ret;
+	char *utf8s;
+	int utf8len;
+
     if (str == NULL) {
         bson_append_string_n( g_bson, g_istr, "", 0 );
         return;
     }
-    int ret;
-    char * utf8s = utf8_wstring(str, length);
-    int utf8len = * (int *) utf8s;
+    utf8s = utf8_wstring(str, length);
+    utf8len = * (int *) utf8s;
     ret = bson_append_binary( g_bson, g_istr, BSON_BIN_BINARY, utf8s+4, utf8len );
     if (ret == BSON_ERROR) {
 		bson_append_string_n(g_bson, g_istr, "", 0);
@@ -254,9 +262,11 @@ static void log_wstring(const wchar_t *str, int length)
 }
 
 static void log_argv(int argc, const char ** argv) {
+	int i;
+
     bson_append_start_array( g_bson, g_istr );
 
-    for (int i=0; i<argc; i++) {
+    for (i = 0; i < argc; i++) {
 		num_to_string(g_istr, 4, i);
         log_string(argv[i], -1);
     }
@@ -264,9 +274,11 @@ static void log_argv(int argc, const char ** argv) {
 }
 
 static void log_wargv(int argc, const wchar_t ** argv) {
+	int i;
+
     bson_append_start_array( g_bson, g_istr );
 
-    for (int i=0; i<argc; i++) {
+    for (i = 0; i < argc; i++) {
 		num_to_string(g_istr, 4, i);
 		log_wstring(argv[i], -1);
     }
@@ -306,6 +318,7 @@ void loq(int index, const char *category, const char *name,
 	unsigned int repeat_offset = 0;
 	unsigned int compare_offset = 0;
 	lasterror_t lasterror;
+	hook_info_t *hookinfo;
 
 	if (index >= LOG_ID_ANOMALY && g_config.suspend_logging)
 		return;
@@ -315,9 +328,10 @@ void loq(int index, const char *category, const char *name,
 	EnterCriticalSection(&g_mutex);
 
 	if(logtbl_explained[index] == 0) {
-        logtbl_explained[index] = 1;
         const char * pname;
         bson b[1];
+
+		logtbl_explained[index] = 1;
 
 		va_start(args, fmt);
 
@@ -449,7 +463,7 @@ void loq(int index, const char *category, const char *name,
 
     bson_init( g_bson );
     bson_append_int( g_bson, "I", index );
-	hook_info_t *hookinfo = hook_info();
+	hookinfo = hook_info();
 	bson_append_ptr(g_bson, "C", hookinfo->return_address);
 	// return location of malware callsite
 	bson_append_ptr(g_bson, "R", hookinfo->main_caller_retaddr);
@@ -460,7 +474,7 @@ void loq(int index, const char *category, const char *name,
 	// number of times this log was repeated -- we'll modify this 
 	bson_append_int(g_bson, "r", 0);
 
-	compare_offset = (unsigned int )(g_bson->cur - bson_data(g_bson));
+	compare_offset = (unsigned int)(g_bson->cur - bson_data(g_bson));
 	// the repeated value is encoded immediately before the stream we want to compare
 	repeat_offset = compare_offset - 4;
 
@@ -760,9 +774,9 @@ void announce_netlog()
 
 void log_new_process()
 {
-    g_starttick = GetTickCount();
+	FILETIME st;
+	g_starttick = GetTickCount();
 
-    FILETIME st;
     GetSystemTimeAsFileTime(&st);
 
     loq(LOG_ID_PROCESS, "__notification__", "__process__", 1, 0, "llllu",
@@ -847,15 +861,16 @@ void log_init(unsigned int ip, unsigned short port, int debug)
     }
     else {
         WSADATA wsa;
+		struct sockaddr_in addr;
+
         WSAStartup(MAKEWORD(2, 2), &wsa);
 
         g_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-        struct sockaddr_in addr = {
-            .sin_family         = AF_INET,
-            .sin_addr.s_addr    = ip,
-            .sin_port           = htons(port),
-        };
+		memset(&addr, 0, sizeof(addr));
+		addr.sin_family = AF_INET;
+		addr.sin_addr.s_addr = ip;
+		addr.sin_port = htons(port);
 
 		if (connect(g_sock, (struct sockaddr *) &addr, sizeof(addr))) {
 			closesocket(g_sock);

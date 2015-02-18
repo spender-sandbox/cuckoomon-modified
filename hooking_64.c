@@ -205,10 +205,12 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 	// our trampoline should contain at least enough bytes to fit the given
 	// length
 	while (len > 0) {
+		int length;
+
 		insn = get_insn(addr);
 		if (insn == NULL)
 			goto error;
-		int length = insn->size;
+		length = insn->size;
 
 		// how many bytes left?
 		len -= length;
@@ -289,6 +291,11 @@ static void hook_create_pre_tramp(hook_t *h)
 {
 	unsigned char *p;
 	unsigned int off;
+	RUNTIME_FUNCTION *functable;
+	UNWIND_INFO *unwindinfo;
+	BYTE regs1[] = { 11, 10, 9, 8 };
+	BYTE regs2[] = { 3, 2, 1, 0 };
+	int i;
 
 	unsigned char pre_tramp1[] = {
 #if DISABLE_HOOK_CONTENT
@@ -376,8 +383,8 @@ static void hook_create_pre_tramp(hook_t *h)
 	   times with the same pointer value, you'll end up with completely broken unwind information that fails
 	   in spectacular ways.
 	 */
-	RUNTIME_FUNCTION *functable = malloc(sizeof(RUNTIME_FUNCTION));
-	UNWIND_INFO *unwindinfo = &h->hookdata->unwind_info;
+	functable = malloc(sizeof(RUNTIME_FUNCTION));
+	unwindinfo = &h->hookdata->unwind_info;
 
 	functable->BeginAddress = offsetof(hook_data_t, pre_tramp);
 	functable->EndAddress = offsetof(hook_data_t, pre_tramp) + sizeof(h->hookdata->pre_tramp);
@@ -394,16 +401,13 @@ static void hook_create_pre_tramp(hook_t *h)
 	unwindinfo->UnwindCode[0].CodeOffset = 38;
 	unwindinfo->UnwindCode[0].OpInfo = 4; // (4 + 1) * 8 = 0x28
 
-	BYTE regs1[] = { 11, 10, 9, 8 };
-	BYTE regs2[] = { 3, 2, 1, 0 };
-
-	for (int i = 0; i < ARRAYSIZE(regs1); i++) {
+	for (i = 0; i < ARRAYSIZE(regs1); i++) {
 		unwindinfo->UnwindCode[1 + i].UnwindOp = UWOP_PUSH_NONVOL;
 		unwindinfo->UnwindCode[1 + i].CodeOffset = 12 - (2 * i);
 		unwindinfo->UnwindCode[1 + i].OpInfo = regs1[i];
 	}
 
-	for (int i = 0; i < ARRAYSIZE(regs2); i++) {
+	for (i = 0; i < ARRAYSIZE(regs2); i++) {
 		unwindinfo->UnwindCode[5 + i].UnwindOp = UWOP_PUSH_NONVOL;
 		unwindinfo->UnwindCode[5 + i].CodeOffset = 4 - i;
 		unwindinfo->UnwindCode[5 + i].OpInfo = regs2[i];
@@ -457,6 +461,10 @@ hook_data_t *alloc_hookdata_near(void *addr)
 
 int hook_api(hook_t *h, int type)
 {
+	DWORD old_protect;
+	int ret = -1;
+	unsigned char *addr;
+	OSVERSIONINFO os_info;
 	// table with all possible hooking types
 	static struct {
 		int(*hook)(hook_t *h, unsigned char *from, unsigned char *to);
@@ -472,7 +480,7 @@ int hook_api(hook_t *h, int type)
 	}
 
 	// resolve the address to hook
-	unsigned char *addr = h->addr;
+	addr = h->addr;
 
 	if (addr == NULL && h->library != NULL && h->funcname != NULL) {
 		addr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library),
@@ -483,9 +491,8 @@ int hook_api(hook_t *h, int type)
 		return 0;
 	}
 
-	int ret = -1;
-
-	OSVERSIONINFO os_info = { sizeof(OSVERSIONINFO) };
+	memset(&os_info, 0, sizeof(os_info));
+	os_info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	if (GetVersionEx(&os_info) && os_info.dwMajorVersion >= 6) {
 		if (addr[0] == 0xeb) {
 			PUCHAR target = (PUCHAR)get_short_rel_target(addr);
@@ -520,8 +527,6 @@ int hook_api(hook_t *h, int type)
 		pipe("WARNING: Provided invalid hook type: %d", type);
 		return ret;
 	}
-
-	DWORD old_protect;
 
 	// make the address writable
 	if (VirtualProtect(addr, hook_types[type].len, PAGE_EXECUTE_READWRITE,

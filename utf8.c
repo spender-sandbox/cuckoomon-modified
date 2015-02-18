@@ -48,10 +48,11 @@ int utf8_length(unsigned short x)
 
 int utf8_strlen_ascii(const char *s, int len)
 {
+	int ret = 0;
+
     if(len < 0)
 		len = (int)strlen(s);
 
-    int ret = 0;
     while (len-- != 0) {
         ret += utf8_length(*s++);
     }
@@ -60,9 +61,11 @@ int utf8_strlen_ascii(const char *s, int len)
 
 int utf8_strlen_unicode(const wchar_t *s, int len)
 {
-    if(len < 0) len = lstrlenW(s);
+	int ret = 0;
 
-    int ret = 0;
+    if(len < 0)
+		len = lstrlenW(s);
+
     while (len-- != 0) {
         ret += utf8_length(*s++);
     }
@@ -71,13 +74,16 @@ int utf8_strlen_unicode(const wchar_t *s, int len)
 
 char * utf8_string(const char *str, int length)
 {
+	int encoded_length;
+	char *utf8string;
+	int pos = 4;
+
 	if (length == -1)
 		length = (int)strlen(str);
 
-    int encoded_length = utf8_strlen_ascii(str, length);
-    char * utf8string = (char *) malloc(encoded_length+4);
+    encoded_length = utf8_strlen_ascii(str, length);
+    utf8string = (char *) malloc(encoded_length+4);
     *((int *) utf8string) = encoded_length;
-    int pos = 4;
 
     while (length-- != 0) {
         pos += utf8_encode(*str++, (unsigned char *) &utf8string[pos]);
@@ -87,12 +93,14 @@ char * utf8_string(const char *str, int length)
 
 char * utf8_wstring(const wchar_t *str, int length)
 {
+	int encoded_length;
+	char *utf8string;
+	int pos = 4;
     if (length == -1) length = lstrlenW(str);
     
-    int encoded_length = utf8_strlen_unicode(str, length);
-    char * utf8string = (char *) malloc(encoded_length+4);
+    encoded_length = utf8_strlen_unicode(str, length);
+	utf8string = (char *) malloc(encoded_length+4);
     *((int *) utf8string) = encoded_length;
-    int pos = 4;
 
     while (length-- != 0) {
         pos += utf8_encode(*str++, (unsigned char *) &utf8string[pos]);

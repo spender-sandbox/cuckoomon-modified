@@ -40,10 +40,11 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     // overwritten, therefore we make a copy of it for our own use.
     //
 	lasterror_t lasterror;
+	NTSTATUS ret;
 
     COPY_UNICODE_STRING(library, ModuleFileName);
 
-    NTSTATUS ret = Old2_LdrLoadDll(PathToFile, Flags, ModuleFileName,
+    ret = Old2_LdrLoadDll(PathToFile, Flags, ModuleFileName,
         ModuleHandle);
 
 	get_lasterrors(&lasterror);
@@ -67,6 +68,8 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     //
 
     if(NT_SUCCESS(ret)) {
+		PWCHAR end;
+
 		// inform the call below not to add this DLL to the list of system DLLs if it's
 		// the DLL of interest
 		if (g_config.file_of_interest && !wcsicmp(library.Buffer, g_config.file_of_interest))
@@ -76,7 +79,7 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 		add_all_dlls_to_dll_ranges();
 		// we ensure null termination via the COPY_UNICODE_STRING macro above, so we don't need a length
 		// first strip off the .dll
-		PWCHAR end = wcsrchr(library.Buffer, L'.');
+		end = wcsrchr(library.Buffer, L'.');
 		if (end && !wcsicmp(end, L".dll"))
 			*end = L'\0';
         set_hooks_dll(library.Buffer);

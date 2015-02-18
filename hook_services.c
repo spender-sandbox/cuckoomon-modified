@@ -185,9 +185,11 @@ HOOKDEF(BOOL, WINAPI, StartServiceA,
 ) {
 	PWCHAR servicename = calloc(1, 0x1000);
 	BOOLEAN dispret = servicename_from_handle(hService, servicename);
+	BOOL ret;
+
 	if (dispret)
 		pipe("SERVICE:%Z", servicename);
-	BOOL ret = Old_StartServiceA(hService, dwNumServiceArgs,
+	ret = Old_StartServiceA(hService, dwNumServiceArgs,
         lpServiceArgVectors);
     LOQ_bool("services", "pua", "ServiceHandle", hService, "ServiceName", servicename, "Arguments", dwNumServiceArgs,
         lpServiceArgVectors);
@@ -202,9 +204,11 @@ HOOKDEF(BOOL, WINAPI, StartServiceW,
 ) {
 	PWCHAR servicename = calloc(1, 0x1000);
 	BOOLEAN dispret = servicename_from_handle(hService, servicename);
+	BOOL ret;
+
 	if (dispret)
 		pipe("SERVICE:%Z", servicename);
-    BOOL ret = Old_StartServiceW(hService, dwNumServiceArgs,
+    ret = Old_StartServiceW(hService, dwNumServiceArgs,
         lpServiceArgVectors);
     LOQ_bool("services", "puA", "ServiceHandle", hService, "ServiceName", servicename, "Arguments", dwNumServiceArgs,
         lpServiceArgVectors);
@@ -218,8 +222,9 @@ HOOKDEF(BOOL, WINAPI, ControlService,
     __out  LPSERVICE_STATUS lpServiceStatus
 ) {
 	PWCHAR servicename = calloc(1, 0x1000);
+	BOOL ret;
 	servicename_from_handle(hService, servicename);
-	BOOL ret = Old_ControlService(hService, dwControl, lpServiceStatus);
+	ret = Old_ControlService(hService, dwControl, lpServiceStatus);
     LOQ_bool("services", "pui", "ServiceHandle", hService, "ServiceName", servicename, "ControlCode", dwControl);
 	free(servicename);
     return ret;
@@ -229,8 +234,9 @@ HOOKDEF(BOOL, WINAPI, DeleteService,
     __in  SC_HANDLE hService
 ) {
 	PWCHAR servicename = calloc(1, 0x1000);
+	BOOL ret;
 	servicename_from_handle(hService, servicename);
-	BOOL ret = Old_DeleteService(hService);
+	ret = Old_DeleteService(hService);
     LOQ_bool("services", "pu", "ServiceHandle", hService, "ServiceName", servicename);
 	free(servicename);
     return ret;

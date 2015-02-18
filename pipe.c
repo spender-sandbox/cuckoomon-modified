@@ -116,10 +116,12 @@ static int _pipe_sprintf(char *out, const char *fmt, va_list args)
         }
         else if(*fmt == 'O') {
             OBJECT_ATTRIBUTES *obj = va_arg(args, OBJECT_ATTRIBUTES *);
+			wchar_t path[MAX_PATH_PLUS_TOLERANCE];
+			wchar_t *absolutepath;
+
             if(obj == NULL || obj->ObjectName == NULL) return -1;
 
-            wchar_t path[MAX_PATH_PLUS_TOLERANCE];
-			wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
+			absolutepath = malloc(32768 * sizeof(wchar_t));
 			if (absolutepath) {
 				path_from_object_attributes(obj, path, (unsigned int)MAX_PATH_PLUS_TOLERANCE);
 
@@ -199,9 +201,10 @@ int pipe(const char *fmt, ...)
 int pipe2(void *out, int *outlen, const char *fmt, ...)
 {
     va_list args;
-    va_start(args, fmt);
-    int len = _pipe_sprintf(NULL, fmt, args);
+	int len;
 	int ret = -1;
+    va_start(args, fmt);
+    len = _pipe_sprintf(NULL, fmt, args);
     if(len > 0) {
         char *buf = calloc(1, len + 1);
         _pipe_sprintf(buf, fmt, args);

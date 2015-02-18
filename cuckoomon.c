@@ -425,7 +425,8 @@ static hook_t g_hooks[] = {
 
 void set_hooks_dll(const wchar_t *library)
 {
-    for (int i = 0; i < ARRAYSIZE(g_hooks); i++) {
+	int i;
+    for (i = 0; i < ARRAYSIZE(g_hooks); i++) {
         if(!wcsicmp(g_hooks[i].library, library)) {
 			if (hook_api(&g_hooks[i], HOOKTYPE) < 0)
 				pipe("WARNING:Unable to hook %z", g_hooks[i].funcname);
@@ -435,10 +436,6 @@ void set_hooks_dll(const wchar_t *library)
 
 void set_hooks()
 {
-    // the hooks contain executable code as well, so they have to be RWX
-    DWORD old_protect;
-    VirtualProtect(g_hooks, sizeof(g_hooks), PAGE_EXECUTE_READWRITE,
-        &old_protect);
 
 	// before modifying any DLLs, let's first freeze all other threads in our process
 	// otherwise our racy modifications can cause the task to crash prematurely
@@ -451,6 +448,12 @@ void set_hooks()
 	THREADENTRY32 threadInfo;
 	DWORD our_tid = GetCurrentThreadId();
 	DWORD our_pid = GetCurrentProcessId();
+	// the hooks contain executable code as well, so they have to be RWX
+	DWORD old_protect;
+	VirtualProtect(g_hooks, sizeof(g_hooks), PAGE_EXECUTE_READWRITE,
+		&old_protect);
+
+
 	memset(&threadInfo, 0, sizeof(threadInfo));
 	threadInfo.dwSize = sizeof(threadInfo);
 
@@ -469,7 +472,7 @@ void set_hooks()
 	} while (Thread32Next(hSnapShot, &threadInfo));
 
     // now, hook each api :)
-    for (int i = 0; i < ARRAYSIZE(g_hooks); i++) {
+    for (i = 0; i < ARRAYSIZE(g_hooks); i++) {
 		//pipe("INFO:Hooking %z", g_hooks[i].funcname);
 		if (hook_api(&g_hooks[i], HOOKTYPE) < 0)
 			pipe("WARNING:Unable to hook %z", g_hooks[i].funcname);

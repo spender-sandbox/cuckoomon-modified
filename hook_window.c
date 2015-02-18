@@ -100,13 +100,15 @@ HOOKDEF(BOOL, WINAPI, SendNotifyMessageA,
 ) {
 	DWORD pid;
 	lasterror_t lasterror;
+	BOOL ret;
+
 	get_lasterrors(&lasterror);
 	GetWindowThreadProcessId(hWnd, &pid);
 	if (pid != GetCurrentProcessId())
 		pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 	set_lasterrors(&lasterror);
 
-	BOOL ret = Old_SendNotifyMessageA(hWnd, Msg, wParam, lParam);
+	ret = Old_SendNotifyMessageA(hWnd, Msg, wParam, lParam);
 
 	LOQ_bool("windows", "ph", "WindowHandle", hWnd, "Message", Msg);
 
@@ -121,13 +123,15 @@ HOOKDEF(BOOL, WINAPI, SendNotifyMessageW,
 	) {
 	DWORD pid;
 	lasterror_t lasterror;
+	BOOL ret;
+
 	get_lasterrors(&lasterror);
 	GetWindowThreadProcessId(hWnd, &pid);
 	if (pid != GetCurrentProcessId())
 		pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 	set_lasterrors(&lasterror);
 
-	BOOL ret = Old_SendNotifyMessageW(hWnd, Msg, wParam, lParam);
+	ret = Old_SendNotifyMessageW(hWnd, Msg, wParam, lParam);
 
 	LOQ_bool("windows", "ph", "WindowHandle", hWnd, "Message", Msg);
 
