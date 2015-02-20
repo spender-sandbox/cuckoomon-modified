@@ -187,6 +187,26 @@ void file_close(HANDLE file_handle)
 	set_lasterrors(&lasterror);
 }
 
+static BOOLEAN is_protected_objattr(POBJECT_ATTRIBUTES obj)
+{
+	wchar_t path[MAX_PATH_PLUS_TOLERANCE];
+	wchar_t *absolutepath = malloc(32768 * sizeof(wchar_t));
+	if (absolutepath) {
+		path_from_object_attributes(obj, path, MAX_PATH_PLUS_TOLERANCE);
+		ensure_absolute_unicode_path(absolutepath, path);
+		if (!wcsnicmp(g_config.w_analyzer, absolutepath, wcslen(g_config.w_analyzer))) {
+			lasterror_t lasterror;
+			lasterror.NtstatusError = STATUS_ACCESS_DENIED;
+			lasterror.Win32Error = ERROR_ACCESS_DENIED;
+			set_lasterrors(&lasterror);
+			free(absolutepath);
+			return TRUE;
+		}
+		free(absolutepath);
+	}
+	return FALSE;
+}
+
 HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
     __out     PHANDLE FileHandle,
     __in      ACCESS_MASK DesiredAccess,
@@ -203,6 +223,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
 	NTSTATUS ret;
 
 	check_for_logging_resumption(ObjectAttributes);
+
+	if (is_protected_objattr(ObjectAttributes))
+		return STATUS_ACCESS_DENIED;
 
     ret = Old_NtCreateFile(FileHandle, DesiredAccess,
         ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes,
@@ -227,6 +250,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
 	NTSTATUS ret;
 	
 	check_for_logging_resumption(ObjectAttributes);
+
+	if (is_protected_objattr(ObjectAttributes))
+		return STATUS_ACCESS_DENIED;
 
 	ret = Old_NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes,
 		IoStatusBlock, ShareAccess | FILE_SHARE_READ, OpenOptions);

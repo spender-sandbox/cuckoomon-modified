@@ -26,6 +26,9 @@ struct _g_config {
     // analyzer directory, has to be hidden
     char analyzer[MAX_PATH];
 
+	// analyzer directory, has to be hidden
+	wchar_t w_analyzer[MAX_PATH];
+
 	// cuckoomon DLL directory
 	wchar_t dllpath[MAX_PATH];
 

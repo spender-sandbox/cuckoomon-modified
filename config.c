@@ -91,11 +91,13 @@ int read_config(void)
 			}
 			else if (!strcmp(key, "analyzer")) {
                 strncpy(g_config.analyzer, value,
-                    ARRAYSIZE(g_config.analyzer));
+                    ARRAYSIZE(g_config.analyzer)-2);
+				strcat(g_config.analyzer, "\\");
 				for (i = 0; i < ARRAYSIZE(g_config.analyzer); i++)
-					g_config.dllpath[i] = (wchar_t)(unsigned short)g_config.analyzer[i];
-				if (wcslen(g_config.dllpath) < ARRAYSIZE(g_config.dllpath) - 5)
-					wcscat(g_config.dllpath, L"\\dll\\");
+					g_config.w_analyzer[i] = (wchar_t)(unsigned short)g_config.analyzer[i];
+				wcscpy(g_config.dllpath, g_config.w_analyzer);
+				if (wcslen(g_config.dllpath) < ARRAYSIZE(g_config.dllpath) - 4)
+					wcscat(g_config.dllpath, L"dll\\");
             }
             else if(!strcmp(key, "shutdown-mutex")) {
                 strncpy(g_config.shutdown_mutex, value,
