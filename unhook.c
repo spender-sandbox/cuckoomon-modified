@@ -133,7 +133,7 @@ static DWORD WINAPI _unhook_detect_thread(LPVOID param)
 					if (!memcmp(g_orig[idx], g_addr[idx], g_length[idx]))
 						is_modification = 0;
 
-					if (is_shutting_down() == 2) {
+					if (is_shutting_down() == 0) {
 						if (is_modification) {
 							char *tmpbuf2;
 							tmpbuf2 = tmpbuf = malloc(g_length[idx]);

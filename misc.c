@@ -892,7 +892,6 @@ int is_shutting_down()
 	if (process_shutting_down)
 		return 1;
 
-
 	get_lasterrors(&lasterror);
 
 	mutex_handle = OpenMutex(SYNCHRONIZE, FALSE, g_config.shutdown_mutex);
