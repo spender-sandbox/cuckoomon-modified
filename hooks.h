@@ -1085,6 +1085,15 @@ extern HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 // Misc Hooks
 //
 
+extern HOOKDEF(NTSTATUS, WINAPI, RtlDecompressBuffer,
+	__in USHORT CompressionFormat,
+	__out PUCHAR UncompressedBuffer,
+	__in ULONG UncompressedBufferSize,
+	__in PUCHAR CompressedBuffer,
+	__in ULONG CompressedBufferSize,
+	__out PULONG FinalUncompressedSize
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtLoadDriver,
 	PUNICODE_STRING DriverServiceNAme
 );
