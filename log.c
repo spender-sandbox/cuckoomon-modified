@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // the size of the logging buffer
 #define BUFFERSIZE 16 * 1024 * 1024
 #define BUFFER_LOG_MAX 256
-#define LARGE_BUFFER_LOG_MAX 64 * 1024
+#define LARGE_BUFFER_LOG_MAX 2048
 #define BUFFER_REGVAL_MAX 512
 
 static CRITICAL_SECTION g_mutex;
