@@ -469,7 +469,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteVirtualMemory,
 
     LOQ_ntstatus("process", "ppB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "Buffer", NumberOfBytesWritten, Buffer);
-    return ret;
+
+	if (NT_SUCCESS(ret)) {
+		DWORD pid = pid_from_process_handle(ProcessHandle);
+		if (pid != GetCurrentProcessId()) {
+			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
+			disable_sleep_skip();
+		}
+	}
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
@@ -487,7 +496,16 @@ HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
 
     LOQ_bool("process", "ppB", "ProcessHandle", hProcess, "BaseAddress", lpBaseAddress,
         "Buffer", lpNumberOfBytesWritten, lpBuffer);
-    return ret;
+
+	if (ret) {
+		DWORD pid = pid_from_process_handle(hProcess);
+		if (pid != GetCurrentProcessId()) {
+			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
+			disable_sleep_skip();
+		}
+	}
+
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
