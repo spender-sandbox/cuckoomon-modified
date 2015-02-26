@@ -145,7 +145,7 @@ HOOKDEF(BOOL, WINAPI, CryptHashData,
     _In_  DWORD dwFlags
 ) {
     BOOL ret = Old_CryptHashData(hHash, pbData, dwDataLen, dwFlags);
-	LOQ_bool("crypto", "pb", "CryptHash", hHash, "Buffer", dwDataLen, pbData);
+	LOQ_bool("crypto", "pc", "CryptHash", hHash, "Buffer", dwDataLen, pbData);
     return ret;
 }
 
