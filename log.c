@@ -405,11 +405,11 @@ void loq(int index, const char *category, const char *name,
 				(void)va_arg(args, HKEY);
 				(void)va_arg(args, const PUNICODE_STRING);
 			}
-			else if (key == 'b') {
+			else if (key == 'b' || key == 'c') {
                 (void) va_arg(args, size_t);
                 (void) va_arg(args, const char *);
             }
-            else if(key == 'B') {
+            else if(key == 'B' || key == 'C') {
                 (void) va_arg(args, size_t *);
                 (void) va_arg(args, const char *);
             }
