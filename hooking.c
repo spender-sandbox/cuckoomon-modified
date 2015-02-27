@@ -19,8 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stddef.h>
 #include "ntapi.h"
-#include "capstone/include/capstone.h"
-#include "capstone/include/x86.h"
 #include "hooking.h"
 #include "ignore.h"
 #include "unhook.h"
