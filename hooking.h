@@ -108,7 +108,6 @@ typedef struct _lasterror_t {
 } lasterror_t;
 
 int lde(void *addr);
-void init_capstone(void);
 
 hook_data_t *alloc_hookdata_near(void *addr);
 

@@ -90,14 +90,14 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\bson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\bson;.\distorm3.2-package\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <Link>
       <TargetMachine>MachineX86</TargetMachine>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;bson.lib;capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;bson.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)\Debug</AdditionalLibraryDirectories>
       <BaseAddress>0x30000000</BaseAddress>
       <SetChecksum>true</SetChecksum>
@@ -114,13 +114,13 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.\bson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\bson;.\distorm3.2-package\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>Default</CompileAs>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;bson.lib;capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;bson.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)x64\Debug</AdditionalLibraryDirectories>
       <BaseAddress>0x30000000</BaseAddress>
       <SetChecksum>true</SetChecksum>
@@ -136,7 +136,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>.\bson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\bson;.\distorm3.2-package\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
@@ -146,7 +146,7 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;bson.lib;capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;bson.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)\Release</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -164,7 +164,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalIncludeDirectories>.\bson;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\bson;.\distorm3.2-package\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <EnablePREfast>false</EnablePREfast>
     </ClCompile>
@@ -173,7 +173,7 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;bson.lib;capstone.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;shlwapi.lib;bson.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)x64\Release</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>
       </IgnoreSpecificDefaultLibraries>
@@ -189,6 +189,16 @@
     <ClCompile Include="alloc.c" />
     <ClCompile Include="config.c" />
     <ClCompile Include="cuckoomon.c" />
+    <ClCompile Include="distorm3.2-package\src\decoder.c" />
+    <ClCompile Include="distorm3.2-package\src\distorm.c" />
+    <ClCompile Include="distorm3.2-package\src\instructions.c" />
+    <ClCompile Include="distorm3.2-package\src\insts.c" />
+    <ClCompile Include="distorm3.2-package\src\mnemonics.c" />
+    <ClCompile Include="distorm3.2-package\src\operands.c" />
+    <ClCompile Include="distorm3.2-package\src\prefix.c" />
+    <ClCompile Include="distorm3.2-package\src\textdefs.c" />
+    <ClCompile Include="distorm3.2-package\src\wstring.c" />
+    <ClCompile Include="distorm3.2-package\src\x86defs.c" />
     <ClCompile Include="hooking.c" />
     <ClCompile Include="hooking_32.c" />
     <ClCompile Include="hooking_64.c" />
@@ -368,6 +378,17 @@
     <ClInclude Include="alloc.h" />
     <ClInclude Include="bson\bson.h" />
     <ClInclude Include="config.h" />
+    <ClInclude Include="distorm3.2-package\include\distorm.h" />
+    <ClInclude Include="distorm3.2-package\include\mnemonics.h" />
+    <ClInclude Include="distorm3.2-package\src\config.h" />
+    <ClInclude Include="distorm3.2-package\src\decoder.h" />
+    <ClInclude Include="distorm3.2-package\src\instructions.h" />
+    <ClInclude Include="distorm3.2-package\src\insts.h" />
+    <ClInclude Include="distorm3.2-package\src\operands.h" />
+    <ClInclude Include="distorm3.2-package\src\prefix.h" />
+    <ClInclude Include="distorm3.2-package\src\textdefs.h" />
+    <ClInclude Include="distorm3.2-package\src\wstring.h" />
+    <ClInclude Include="distorm3.2-package\src\x86defs.h" />
     <ClInclude Include="hooking.h" />
     <ClInclude Include="hooks.h" />
     <ClInclude Include="hook_file.h" />

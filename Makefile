@@ -1,7 +1,7 @@
 MAKEFLAGS = -j8
 CFLAGS = -Wall -std=c99 -s -O2 -Wno-strict-aliasing -static
 DLL = -shared
-DIRS = -Ibson -Icapstone
+DIRS = -Idistorm3.2-package/include -Ibson
 LIBS = -lws2_32 -lshlwapi
 OBJDIR = objects
 
@@ -16,18 +16,22 @@ else
 	CC = gcc
 endif
 
+DISTORM3 = $(wildcard distorm3.2-package/src/*.c)
+DISTORM3OBJ = $(DISTORM3:distorm3.2-package/src/%.c=$(OBJDIR)/distorm3.2/%.o)
+
 CUCKOOSRC = $(wildcard *.c)
 CUCKOOOBJ = $(CUCKOOSRC:%.c=$(OBJDIR)/%.o)
-
-CAPSTONELIB = capstone/capstone.lib
 
 BSONSRC = bson/bson.c bson/encoding.c bson/numbers.c
 BSONOBJ = $(OBJDIR)/bson/bson.o $(OBJDIR)/bson/encoding.o $(OBJDIR)/bson/numbers.o
 
-default: $(CAPSTONELIB) $(OBJDIR) cuckoomon.dll
+default: $(OBJDIR) cuckoomon.dll
 
 $(OBJDIR):
-	mkdir $@ $@/bson $@/capstone
+	mkdir $@ $@/bson $@/distorm3.2
+
+$(OBJDIR)/distorm3.2/%.o: distorm3.2-package/src/%.c
+	$(CC) $(CFLAGS) $(DIRS) -c $^ -o $@
 
 $(OBJDIR)/bson/%.o: bson/%.c
 	$(CC) $(CFLAGS) $(DIRS) -c $^ -o $@
@@ -35,12 +39,7 @@ $(OBJDIR)/bson/%.o: bson/%.c
 $(OBJDIR)/%.o: %.c
 	$(CC) $(CFLAGS) $(DIRS) -c $^ -o $@
 
-$(CAPSTONELIB):
-	git submodule update --init && \
-	cp capstone-config.mk capstone/config.mk && \
-	cd capstone && ./make.sh cross-win32
-
-cuckoomon.dll: $(CUCKOOOBJ) $(BSONOBJ) $(CAPSTONELIB)
+cuckoomon.dll: $(CUCKOOOBJ) $(DISTORM3OBJ) $(BSONOBJ)
 	$(CC) $(CFLAGS) $(DLL) $(DIRS) -o $@ $^ $(LIBS)
 
 clean:

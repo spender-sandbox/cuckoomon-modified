@@ -20,8 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stddef.h>
 #include "ntapi.h"
-#include "capstone/include/capstone.h"
-#include "capstone/include/x86.h"
+#include <distorm.h>
 #include "hooking.h"
 #include "ignore.h"
 #include "unhook.h"
@@ -33,39 +32,38 @@ extern DWORD g_tls_hook_index;
 // do not change this number
 #define TLS_LAST_ERROR 0x34
 
-static csh capstone;
-
-void init_capstone(void)
+// length disassembler engine
+static int lde(void *addr)
 {
-	cs_open(CS_ARCH_X86, CS_MODE_64, &capstone);
-	cs_option(capstone, CS_OPT_DETAIL, CS_OPT_ON);
+	// the length of an instruction is 16 bytes max, but there can also be
+	// 16 instructions of length one, so.. we support "decomposing" 16
+	// instructions at once, max
+	unsigned int used_instruction_count; _DInst instructions[16];
+	_CodeInfo code_info = { 0, 0, addr, 16, Decode64Bits };
+	_DecodeResult ret = distorm_decompose(&code_info, instructions, 16,
+		&used_instruction_count);
+
+	return ret == DECRES_SUCCESS ? instructions[0].size : 0;
 }
 
-int lde(void *addr)
+
+static _DInst *get_insn(void *addr)
 {
-	cs_insn *insn;
-
-	size_t ret = cs_disasm(capstone, addr, 16, (uintptr_t)addr, 1, &insn);
-	if (ret == 0) return 0;
-
-	ret = insn->size;
-
-	cs_free(insn, 1);
-	return (int)ret;
+	unsigned int used_instruction_count; _DInst instructions[16];
+	_CodeInfo code_info = { 0, 0, addr, 16, Decode64Bits };
+	_DecodeResult ret = distorm_decompose(&code_info, instructions, 16,
+		&used_instruction_count);
+	if (ret == DECRES_SUCCESS) {
+		_DInst *insn = malloc(sizeof(_DInst));
+		memcpy(insn, &instructions[0], sizeof(_DInst));
+		return insn;
+	}
+	return NULL;
 }
 
-cs_insn *get_insn(void *addr)
+static void put_insn(_DInst *insn)
 {
-	cs_insn *insn;
-	size_t ret = cs_disasm(capstone, addr, 16, (uintptr_t)addr, 1, &insn);
-	if (ret == 0)
-		return NULL;
-	return insn;
-}
-
-put_insn(cs_insn *insn)
-{
-	cs_free(insn, 1);
+	free(insn);
 }
 
 static unsigned char *emit_indirect_jmp(unsigned char *buf, ULONG_PTR addr)
@@ -122,7 +120,7 @@ static ULONG_PTR get_near_rel_target(unsigned char *buf)
 	else if (buf[0] == 0x0f && buf[1] >= 0x80 && buf[1] < 0x90)
 		return (ULONG_PTR)buf + 6 + *(int *)&buf[2];
 
-	assert(false);
+	assert(0);
 	return 0;
 }
 
@@ -131,7 +129,7 @@ static ULONG_PTR get_short_rel_target(unsigned char *buf)
 	if (buf[0] == 0xeb || buf[0] == 0xe3 || (buf[0] >= 0x70 && buf[0] < 0x80))
 		return (ULONG_PTR)buf + 2 + *(char *)&buf[1];
 
-	assert(false);
+	assert(0);
 	return 0;
 }
 
@@ -160,10 +158,10 @@ static int addr_is_in_range(ULONG_PTR addr, const unsigned char *buf, DWORD size
 	return 0;
 }
 
-static void retarget_rip_relative_displacement(unsigned char **tramp, unsigned char **addr, cs_insn *insn)
+static void retarget_rip_relative_displacement(unsigned char **tramp, unsigned char **addr, _DInst *insn)
 {
 	unsigned short length = insn->size;
-	unsigned char offset = (unsigned char)(length - insn->detail->x86.imm_encoded_size - sizeof(int));
+	unsigned char offset = (unsigned char)(length - insn->imm_encoded_size - sizeof(int));
 	unsigned char *newtramp = *tramp;
 	unsigned char *newaddr = *addr;
 	ULONG_PTR target;
@@ -175,7 +173,7 @@ static void retarget_rip_relative_displacement(unsigned char **tramp, unsigned c
 	}
 	// now replace the displacement
 	rel = (int)(target - (ULONG_PTR)newtramp);
-	*(int *)(newtramp - insn->detail->x86.imm_encoded_size - sizeof(int)) = rel;
+	*(int *)(newtramp - insn->imm_encoded_size - sizeof(int)) = rel;
 
 	*tramp = newtramp;
 	*addr = newaddr;
@@ -198,7 +196,7 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 	const unsigned char *origaddr = addr;
 	unsigned char insnidx = 0;
 	int stoleninstrlen = 0;
-	cs_insn *insn;
+	_DInst *insn;
 
 	memset(&addrmap, 0, sizeof(addrmap));
 
@@ -225,7 +223,7 @@ static int hook_create_trampoline(unsigned char *addr, int len,
 		// trampoline
 
 		if (addr[0] == 0xe8 || addr[0] == 0xe9 || (addr[0] == 0x0f && addr[1] >= 0x80 && addr[1] < 0x90) ||
-			((insn->detail->x86.modrm & 0xc7) == 5)) {
+			(insn->flags & FLAG_RIP_RELATIVE)) {
 			retarget_rip_relative_displacement(&tramp, &addr, insn);
 			if (addr[0] == 0xe9 && len > 0)
 				goto error;

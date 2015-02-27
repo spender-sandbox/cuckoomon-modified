@@ -5,13 +5,10 @@ VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cuckoomon", "cuckoomon.vcxproj", "{15C69A24-71D1-4A1A-B39B-0466181ACD7E}"
 	ProjectSection(ProjectDependencies) = postProject
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7} = {5B01D900-2359-44CA-9914-6B0C6AFB7BE7}
 		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8} = {0DA99545-93E9-4C1B-861B-C4DAB5360AA8}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bson", "bson\bson.vcxproj", "{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "capstone_static", "capstone\msvc\capstone_static\capstone_static.vcxproj", "{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "loader", "loader\loader\loader.vcxproj", "{52D1444F-0B18-4F98-BC62-3D11046190CC}"
 EndProject
@@ -54,18 +51,6 @@ Global
 		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}.Release|Win32.Build.0 = Release|Win32
 		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}.Release|x64.ActiveCfg = Release|x64
 		{0DA99545-93E9-4C1B-861B-C4DAB5360AA8}.Release|x64.Build.0 = Release|x64
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|Win32.ActiveCfg = Debug|Win32
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|Win32.Build.0 = Debug|Win32
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|x64.ActiveCfg = Debug|x64
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Debug|x64.Build.0 = Debug|x64
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|Win32.ActiveCfg = Release|Win32
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|Win32.Build.0 = Release|Win32
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|x64.ActiveCfg = Release|x64
-		{5B01D900-2359-44CA-9914-6B0C6AFB7BE7}.Release|x64.Build.0 = Release|x64
 		{52D1444F-0B18-4F98-BC62-3D11046190CC}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{52D1444F-0B18-4F98-BC62-3D11046190CC}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{52D1444F-0B18-4F98-BC62-3D11046190CC}.Debug|Win32.ActiveCfg = Debug|Win32

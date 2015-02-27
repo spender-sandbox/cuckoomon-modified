@@ -21,8 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <stddef.h>
 #include "ntapi.h"
-#include "capstone/include/capstone.h"
-#include "capstone/include/x86.h"
+#include <distorm.h>
 #include "hooking.h"
 #include "ignore.h"
 #include "unhook.h"
@@ -34,25 +33,18 @@ extern DWORD g_tls_hook_index;
 // do not change this number
 #define TLS_LAST_ERROR 0x34
 
-static csh capstone;
-
-void init_capstone(void)
-{
-	cs_open(CS_ARCH_X86, CS_MODE_32, &capstone);
-}
-
 // length disassembler engine
-int lde(void *addr)
+static int lde(void *addr)
 {
-    cs_insn *insn;
+	// the length of an instruction is 16 bytes max, but there can also be
+	// 16 instructions of length one, so.. we support "decomposing" 16
+	// instructions at once, max
+	unsigned int used_instruction_count; _DInst instructions[16];
+	_CodeInfo code_info = { 0, 0, addr, 16, Decode32Bits };
+	_DecodeResult ret = distorm_decompose(&code_info, instructions, 16,
+		&used_instruction_count);
 
-    size_t ret = cs_disasm(capstone, addr, 16, (uintptr_t) addr, 1, &insn);
-    if(ret == 0) return 0;
-
-    ret = insn->size;
-
-    cs_free(insn, 1);
-    return ret;
+	return ret == DECRES_SUCCESS ? instructions[0].size : 0;
 }
 
 // create a trampoline at the given address, that is, we are going to replace

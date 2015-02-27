@@ -651,8 +651,6 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		init_private_heap();
 
-		init_capstone();
-
 		set_os_bitness();
 
 		get_our_process_path();
