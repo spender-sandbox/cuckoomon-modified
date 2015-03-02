@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utf8.h"
 #include "misc.h"
 #include "config.h"
+#include "log.h"
 
 static int _pipe_utf8x(char **out, unsigned short x)
 {
@@ -168,6 +169,9 @@ int pipe(const char *fmt, ...)
 	va_start(args, fmt);
 
 	get_lasterrors(&lasterror);
+
+	log_flush();
+
 	len = _pipe_sprintf(NULL, fmt, args);
     if (len > 0) {
         char *buf = calloc(1, len + 1);

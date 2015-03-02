@@ -268,6 +268,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
     return ret;
 }
 
+extern void file_write(HANDLE file_handle);
+
 HOOKDEF(NTSTATUS, WINAPI, NtCreateSection,
     __out     PHANDLE SectionHandle,
     __in      ACCESS_MASK DesiredAccess,
@@ -283,7 +285,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateSection,
     LOQ_ntstatus("process", "Phop", "SectionHandle", SectionHandle,
         "DesiredAccess", DesiredAccess, "ObjectAttributes", ObjectAttributes ? ObjectAttributes->ObjectName : NULL,
         "FileHandle", FileHandle);
-    return ret;
+
+	if (NT_SUCCESS(ret) && FileHandle && (DesiredAccess & SECTION_MAP_WRITE)) {
+		file_write(FileHandle);
+	}
+
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtOpenSection,

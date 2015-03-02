@@ -97,7 +97,7 @@ static void cache_file(HANDLE file_handle, const wchar_t *path,
     wcsncpy(r->filename, path, r->length + 1);
 }
 
-static void file_write(HANDLE file_handle)
+void file_write(HANDLE file_handle)
 {
 	file_record_t *r;
 	lasterror_t lasterror;
