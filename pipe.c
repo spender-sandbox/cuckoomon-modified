@@ -22,8 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "pipe.h"
 #include "utf8.h"
 #include "misc.h"
-
-const char *g_pipe_name;
+#include "config.h"
 
 static int _pipe_utf8x(char **out, unsigned short x)
 {
@@ -184,7 +183,7 @@ int pipe(const char *fmt, ...)
 			ret = 0;
 		}
 #else
-		if (CallNamedPipe(g_pipe_name, buf, len, buf, len,
+		if (CallNamedPipe(g_config.pipe_name, buf, len, buf, len,
 			(unsigned long *)&len, NMPWAIT_WAIT_FOREVER) != 0)
 			ret = 0;
 #endif
@@ -210,7 +209,7 @@ int pipe2(void *out, int *outlen, const char *fmt, ...)
         _pipe_sprintf(buf, fmt, args);
         va_end(args);
 
-        if(CallNamedPipe(g_pipe_name, buf, len, out, *outlen,
+        if(CallNamedPipe(g_config.pipe_name, buf, len, out, *outlen,
                 (DWORD *) outlen, NMPWAIT_WAIT_FOREVER) != 0)
             ret = 0;
 		free(buf);

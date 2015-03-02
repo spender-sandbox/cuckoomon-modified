@@ -653,6 +653,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		set_os_bitness();
 
+		// initialize file stuff, needs to be performed prior to any file normalization
+		file_init();
+
 		get_our_process_path();
 
 		g_tls_hook_index = TlsAlloc();
@@ -676,9 +679,6 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         hide_module_from_peb(hModule);
 #endif
 
-        // initialize file stuff
-        file_init();
-
         // read the config settings
 		if (!read_config())
 #if CUCKOODBG
@@ -687,8 +687,6 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			// if we're not debugging, then failure to read the cuckoomon config should be a critical error
 			goto out;
 #endif
-        g_pipe_name = g_config.pipe_name;
-
 		// obtain all protected pids
         pipe2(pids, &length, "GETPIDS");
         for (i = 0; i < length / sizeof(pids[0]); i++) {
