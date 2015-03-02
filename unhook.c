@@ -23,6 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "misc.h"
 #include "config.h"
+#include <Sddl.h>
 
 #define UNHOOK_MAXCOUNT 2048
 #define UNHOOK_BUFSIZE 256
@@ -207,7 +208,14 @@ static DWORD WINAPI _terminate_event_thread(LPVOID param)
 
 int terminate_event_init()
 {
-	g_terminate_event_handle = CreateEventA(NULL, FALSE, FALSE, g_config.terminate_event_name);
+	SECURITY_DESCRIPTOR sd;
+	SECURITY_ATTRIBUTES sa;
+	InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
+	SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE);
+	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+	sa.bInheritHandle = FALSE;
+	sa.lpSecurityDescriptor = &sd;
+	g_terminate_event_handle = CreateEventA(&sa, FALSE, FALSE, g_config.terminate_event_name);
 
 	g_terminate_event_thread_handle =
 		CreateThread(NULL, 0, &_terminate_event_thread, NULL, 0, NULL);
