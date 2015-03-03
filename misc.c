@@ -509,6 +509,8 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 	if (tmpout == NULL || nonexistent == NULL)
 		goto normal_copy;
 
+	// TODO: rewrite \\Device\\HarddiskX for non-existent files
+
 	if (!wcsnicmp(inadj, L"\\device\\", 8) || !wcsnicmp(inadj, L"\\systemroot", 11)) {
 		// handle \\Device\\* and \\systemroot\\*
 		unsigned int matchlen;

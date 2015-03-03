@@ -450,22 +450,26 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetInformationFile,
     __in   FILE_INFORMATION_CLASS FileInformationClass
 ) {
 	wchar_t *fname = calloc(32768, sizeof(wchar_t));
-	NTSTATUS ret;
+	wchar_t *absolutepath = calloc(32768, sizeof(wchar_t));
+	BOOL ret;
+
 
 	path_from_handle(FileHandle, fname, 32768);
-	
+	ensure_absolute_unicode_path(absolutepath, fname);
+
 	if(FileInformation != NULL && Length == sizeof(BOOLEAN) &&
             FileInformationClass == FileDispositionInformation &&
             *(BOOLEAN *) FileInformation != FALSE) {
-		pipe("FILE_DEL:%F", fname);
+		pipe("FILE_DEL:%Z", absolutepath);
     }
 
     ret = Old_NtSetInformationFile(FileHandle, IoStatusBlock,
         FileInformation, Length, FileInformationClass);
-	LOQ_ntstatus("filesystem", "pFib", "FileHandle", FileHandle, "HandleName", fname, "FileInformationClass", FileInformationClass,
+	LOQ_ntstatus("filesystem", "puib", "FileHandle", FileHandle, "HandleName", absolutepath, "FileInformationClass", FileInformationClass,
         "FileInformation", Length, FileInformation);
 
 	free(fname);
+	free(absolutepath);
 
     return ret;
 }
