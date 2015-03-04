@@ -481,8 +481,18 @@ int hook_api(hook_t *h, int type)
 	addr = h->addr;
 
 	if (addr == NULL && h->library != NULL && h->funcname != NULL) {
-		addr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library),
-			h->funcname);
+		if (!strcmp(h->funcname, "RtlDispatchException")) {
+			// RtlDispatchException is the first relative call in KiUserExceptionDispatcher
+			unsigned char *baseaddr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library), "KiUserExceptionDispatcher");
+			int instroff = 0;
+			while (baseaddr[instroff] != 0xe8) {
+				instroff += lde(&baseaddr[instroff]);
+			}
+			addr = (unsigned char *)get_near_rel_target(&baseaddr[instroff]);
+		}
+		else {
+			addr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library), h->funcname);
+		}
 	}
 	if (addr == NULL) {
 		// function doesn't exist in this DLL, not a critical error

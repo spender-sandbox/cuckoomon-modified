@@ -2,7 +2,7 @@
 
 /*
 Cuckoo Sandbox - Automated Malware Analysis
-Copyright (C) 2010-2014 Cuckoo Sandbox Developers, Accuvant, Inc. (bspengler@accuvant.com)
+Copyright (C) 2010-2015 Cuckoo Sandbox Developers, Accuvant, Inc. (bspengler@accuvant.com)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -451,6 +451,17 @@ hook_data_t *alloc_hookdata_near(void *addr)
 	return ret;
 }
 
+static ULONG_PTR get_near_rel_target(unsigned char *buf)
+{
+	if (buf[0] == 0xe9 || buf[0] == 0xe8)
+		return (ULONG_PTR)buf + 5 + *(int *)&buf[1];
+	else if (buf[0] == 0x0f && buf[1] >= 0x80 && buf[1] < 0x90)
+		return (ULONG_PTR)buf + 6 + *(int *)&buf[2];
+
+	assert(0);
+	return 0;
+}
+
 int hook_api(hook_t *h, int type)
 {
 	unsigned char *addr;
@@ -491,8 +502,18 @@ int hook_api(hook_t *h, int type)
     addr = h->addr;
 
     if(addr == NULL && h->library != NULL && h->funcname != NULL) {
-        addr = (unsigned char *) GetProcAddress(GetModuleHandleW(h->library),
-            h->funcname);
+		if (!strcmp(h->funcname, "RtlDispatchException")) {
+			// RtlDispatchException is the first relative call in KiUserExceptionDispatcher
+			unsigned char *baseaddr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library), "KiUserExceptionDispatcher");
+			int instroff = 0;
+			while (baseaddr[instroff] != 0xe8) {
+				instroff += lde(&baseaddr[instroff]);
+			}
+			addr = (unsigned char *)get_near_rel_target(&baseaddr[instroff]);
+		}
+		else {
+			addr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library), h->funcname);
+		}
     }
     if(addr == NULL) {
 		// function doesn't exist in this DLL, not a critical error
