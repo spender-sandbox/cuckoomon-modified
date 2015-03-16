@@ -49,6 +49,9 @@ struct _g_config {
     // is this the first process or not?
     int first_process;
 
+	// do we want to ignore "file of interest" and other forms of log reduction?
+	int full_logs;
+
     // how many milliseconds since startup
     unsigned int startup_time;
 

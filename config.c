@@ -118,6 +118,9 @@ int read_config(void)
             else if(!strcmp(key, "force-sleepskip")) {
                 g_config.force_sleepskip = value[0] == '1';
             }
+			else if (!strcmp(key, "full-logs")) {
+				g_config.full_logs = value[0] == '1';
+			}
 			else if (!strcmp(key, "terminate-event")) {
 				strncpy(g_config.terminate_event_name, value,
 					ARRAYSIZE(g_config.terminate_event_name));
@@ -125,8 +128,8 @@ int read_config(void)
         }
     }
 
-	/* don't suspend logging if this isn't the first process */
-	if (!g_config.first_process)
+	/* don't suspend logging if this isn't the first process or if we want all the logs */
+	if (!g_config.first_process || g_config.full_logs)
 		g_config.suspend_logging = FALSE;
 
 	fclose(fp);
