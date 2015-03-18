@@ -54,11 +54,13 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 	activity when there's not, so hide it
 	*/
 	if (!called_by_hook() && wcsncmp(library.Buffer, g_config.dllpath, wcslen(g_config.dllpath))) {
-		if (g_config.file_of_interest && 
-			((!wcsncmp(library.Buffer, L"\\??\\", 4) && !wcsicmp(library.Buffer + 4, g_config.file_of_interest)) ||
-			 !wcsicmp(library.Buffer, g_config.file_of_interest)
-			 ))
-			g_config.suspend_logging = FALSE;
+		if (g_config.file_of_interest) {
+			wchar_t *absolutename = malloc(32768 * sizeof(wchar_t));
+			ensure_absolute_unicode_path(absolutename, library.Buffer);
+			if (!wcsicmp(absolutename, g_config.file_of_interest))
+				g_config.suspend_logging = FALSE;
+			free(absolutename);
+		}
 
 		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
 	        LOQspecial_ntstatus("system", "hFP", "Flags", Flags, "FileName", library.Buffer,
