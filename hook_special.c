@@ -54,7 +54,10 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 	activity when there's not, so hide it
 	*/
 	if (!called_by_hook() && wcsncmp(library.Buffer, g_config.dllpath, wcslen(g_config.dllpath))) {
-		if (g_config.file_of_interest && !wcsicmp(library.Buffer, g_config.file_of_interest))
+		if (g_config.file_of_interest && 
+			((!wcsncmp(library.Buffer, L"\\??\\", 4) && !wcsicmp(library.Buffer + 4, g_config.file_of_interest)) ||
+			 !wcsicmp(library.Buffer, g_config.file_of_interest)
+			 ))
 			g_config.suspend_logging = FALSE;
 
 		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
