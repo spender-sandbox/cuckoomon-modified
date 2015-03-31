@@ -52,6 +52,7 @@ static char logtbl_explained[256] = {0};
 #define LOG_ID_THREAD 1
 #define LOG_ID_ANOMALY 2
 #define LOG_ID_ANOMALY_EXTRA 3
+#define LOG_ID_ENVIRON 4
 
 int g_log_index = 10;  // index must start after the special IDs (see defines)
 
@@ -793,6 +794,104 @@ void log_new_thread()
         "ProcessIdentifier", GetCurrentProcessId());
 }
 
+static int get_registry_string(HKEY hKey, char *subkey, char *value, char *outbuf, DWORD insize)
+{
+	HKEY outkey;
+	DWORD regtype;
+	DWORD outlen;
+	LONG ret;
+
+	memset(outbuf, 0, insize);
+
+	ret = RegOpenKeyExA(hKey, subkey, 0, KEY_READ, &outkey);
+	if (ret)
+		return ret;
+	ret = RegQueryValueExA(outkey, value, NULL, &regtype, outbuf, &outlen);
+	RegCloseKey(outkey);
+	return ret;
+}
+
+void log_environ()
+{
+	char *username, *computername, *winpath, *tmppath;
+	char *sysvolserial, *sysvolguid, *machineguid;
+	char *registeredowner, *registeredorg;
+	char *productname;
+	char *p;
+	char tmp[1024];
+	DWORD installdate;
+	DWORD volser;
+	OSVERSIONINFOA osverinfo;
+	DWORD tmpsize = sizeof(tmp);
+
+	memset(tmp, 0, sizeof(tmp));
+	GetUserNameA(tmp, &tmpsize);
+	username = strdup(tmp);
+	memset(tmp, 0, sizeof(tmp));
+	tmpsize = sizeof(tmp);
+	GetComputerNameA(tmp, &tmpsize);
+	computername = strdup(tmp);
+	get_registry_string(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion", "InstallDate", tmp, sizeof(tmp));
+	installdate = *(DWORD *)tmp;
+	get_registry_string(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion", "RegisteredOwner", tmp, sizeof(tmp));
+	registeredowner = strdup(tmp);
+	get_registry_string(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion", "RegisteredOrganization", tmp, sizeof(tmp));
+	registeredorg = strdup(tmp);
+	get_registry_string(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion", "ProductName", tmp, sizeof(tmp));
+	productname = strdup(tmp);
+	memset(tmp, 0, sizeof(tmp));
+	GetWindowsDirectoryA(tmp, sizeof(tmp));
+	winpath = strdup(tmp);
+	memset(tmp, 0, sizeof(tmp));
+	GetTempPathA(sizeof(tmp), tmp);
+	tmppath = strdup(tmp);
+	get_registry_string(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Cryptography", "MachineGuid", tmp, sizeof(tmp));
+	machineguid = strdup(tmp);
+	memset(tmp, 0, sizeof(tmp));
+	GetVolumeInformationA("C:\\", NULL, 0, &volser, NULL, NULL, NULL, 0);
+	sprintf(tmp, "%04x-%04x", HIWORD(volser), LOWORD(volser));
+	sysvolserial = strdup(tmp);
+	memset(tmp, 0, sizeof(tmp));
+	GetVolumeNameForVolumeMountPointA("C:\\", tmp, sizeof(tmp));
+	p = strchr(tmp, '}');
+	if (p)
+		*p = '\0';
+	p = strchr(tmp, '{');
+	if (p)
+		sysvolguid = strdup(p + 1);
+	else
+		sysvolguid = strdup("");
+
+	osverinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+	GetVersionEx(&osverinfo);
+	
+	loq(LOG_ID_ENVIRON, "__notification__", "__environ__", 1, 0, "ssisssssiisss",
+		"UserName", username,
+		"ComputerName", computername,
+		"InstallDate", installdate,
+		"WindowsPath", winpath,
+		"TempPath", tmppath,
+		"RegisteredOwner", registeredowner,
+		"RegisteredOrganization", registeredorg,
+		"ProductName", productname,
+		"OSMajor", osverinfo.dwMajorVersion,
+		"OSMinor", osverinfo.dwMinorVersion,
+		"SystemVolumeSerialNumber", sysvolserial,
+		"SystemVolumeGUID", sysvolguid,
+		"MachineGUID", machineguid
+		);
+
+	free(username);
+	free(computername);
+	free(winpath);
+	free(tmppath);
+	free(productname);
+	free(registeredowner);
+	free(registeredorg);
+	free(sysvolserial);
+	free(sysvolguid);
+	free(machineguid);
+}
 void log_anomaly(const char *subcategory, int success,
     const char *funcname, const char *msg)
 {
@@ -892,6 +991,7 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 	announce_netlog();
     log_new_process();
     log_new_thread();
+	log_environ();
     // flushing here so host can create files / keep timestamps
     log_flush();
 }
