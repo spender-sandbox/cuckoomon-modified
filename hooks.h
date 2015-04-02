@@ -1090,6 +1090,10 @@ extern HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 // Misc Hooks
 //
 
+extern HOOKDEF(void, WINAPI, GetSystemInfo,
+	__out LPSYSTEM_INFO lpSystemInfo
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, RtlDecompressBuffer,
 	__in USHORT CompressionFormat,
 	__out PUCHAR UncompressedBuffer,

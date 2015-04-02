@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "pipe.h"
 #include "misc.h"
+#include "config.h"
 
 HOOKDEF(NTSTATUS, WINAPI, NtCreateKey,
     __out       PHANDLE KeyHandle,
@@ -186,12 +187,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryValueKey,
 			"FullName", keypath);
 
 		// fake the vendor name
-		if (keypath && Data && DataLength >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(Data, "QEMU HARDDISK", 13)) {
+		if (!g_config.no_stealth && keypath && Data && DataLength >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(Data, "QEMU HARDDISK", 13)) {
 			memcpy(Data, "DELL", 4);
 		}
 
 		// fake the manufacturer name
-		if (keypath && Data && DataLength >= 4 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\SystemInformation\\SystemManufacturer") && !memcmp(Data, "QEMU", 4)) {
+		if (!g_config.no_stealth && keypath && Data && DataLength >= 4 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\SystemInformation\\SystemManufacturer") && !memcmp(Data, "QEMU", 4)) {
 			memcpy(Data, "DELL", 4);
 		}
 

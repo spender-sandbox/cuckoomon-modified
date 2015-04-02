@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "misc.h"
 #include "hook_file.h"
 #include "hook_sleep.h"
+#include "config.h"
 
 HOOKDEF(HHOOK, WINAPI, SetWindowsHookExA,
     __in  int idHook,
@@ -150,11 +151,11 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
             lpOutBuffer);
 
 	/* Fake harddrive size to 256GB */
-	if (ret && lpOutBuffer && nOutBufferSize >= sizeof(GET_LENGTH_INFORMATION) && dwIoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
+	if (!g_config.no_stealth && ret && lpOutBuffer && nOutBufferSize >= sizeof(GET_LENGTH_INFORMATION) && dwIoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
 		((PGET_LENGTH_INFORMATION)lpOutBuffer)->Length.QuadPart = 256060514304L;
 	}
 	/* fake model name */
-	if (ret && dwIoControlCode == IOCTL_STORAGE_QUERY_PROPERTY && lpOutBuffer && nOutBufferSize > 4) {
+	if (!g_config.no_stealth && ret && dwIoControlCode == IOCTL_STORAGE_QUERY_PROPERTY && lpOutBuffer && nOutBufferSize > 4) {
 		ULONG i;
 		for (i = 0; i < nOutBufferSize - 4; i++) {
 			if (!memcmp(&((PCHAR)lpOutBuffer)[i], "QEMU", 4))
@@ -414,4 +415,19 @@ HOOKDEF(NTSTATUS, WINAPI, RtlDecompressBuffer,
 	LOQ_ntstatus("misc", "b", "UncompressedBuffer", ret ? 0 : *FinalUncompressedSize, UncompressedBuffer);
 
 	return ret;
+}
+
+HOOKDEF(void, WINAPI, GetSystemInfo,
+	__out LPSYSTEM_INFO lpSystemInfo
+) {
+	int ret = 0;
+
+	Old_GetSystemInfo(lpSystemInfo);
+
+	if (!g_config.no_stealth && lpSystemInfo->dwNumberOfProcessors == 1)
+		lpSystemInfo->dwNumberOfProcessors = 2;
+
+	LOQ_void("misc", "");
+
+	return;
 }

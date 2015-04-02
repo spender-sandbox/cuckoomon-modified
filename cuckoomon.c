@@ -290,6 +290,7 @@ static hook_t g_hooks[] = {
 	HOOK(user32, GetAsyncKeyState),
 	HOOK(ntdll, NtLoadDriver),
 	HOOK(ntdll, RtlDecompressBuffer),
+	HOOK(kernel32, GetSystemInfo),
 	
 	//
     // Network Hooks
@@ -721,6 +722,15 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		// initialize context watchdog
 		//init_watchdog();
+
+#ifndef _WIN64
+		if (!g_config.no_stealth) {
+			/* for people too lazy to setup VMs properly */
+			PEB *peb = get_peb();
+			if (peb->NumberOfProcessors == 1)
+				peb->NumberOfProcessors = 2;
+		}
+#endif
 
 		notify_successful_load();
     }

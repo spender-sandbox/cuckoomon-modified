@@ -52,6 +52,9 @@ struct _g_config {
 	// do we want to ignore "file of interest" and other forms of log reduction?
 	int full_logs;
 
+	// should we attempt anti-anti-sandbox/VM tricks ?
+	int no_stealth;
+
     // how many milliseconds since startup
     unsigned int startup_time;
 

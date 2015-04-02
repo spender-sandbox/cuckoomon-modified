@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "misc.h"
 #include "log.h"
+#include "config.h"
 
 HOOKDEF(LONG, WINAPI, RegOpenKeyExA,
     __in        HKEY hKey,
@@ -284,7 +285,7 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExA,
 			"FullName", keypath);
 
 		// fake the vendor name
-		if (keypath && *lpcbData >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(lpData, "QEMU HARDDISK", 13)) {
+		if (!g_config.no_stealth && keypath && *lpcbData >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(lpData, "QEMU HARDDISK", 13)) {
 			memcpy(lpData, "DELL", 4);
 		}
 
@@ -325,7 +326,7 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExW,
 			"FullName", keypath);
 
 		// fake the vendor name
-		if (keypath && *lpcbData >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(lpData, "QEMU HARDDISK", 13)) {
+		if (!g_config.no_stealth && keypath && *lpcbData >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(lpData, "QEMU HARDDISK", 13)) {
 			memcpy(lpData, "DELL", 4);
 		}
 

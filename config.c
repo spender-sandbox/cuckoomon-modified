@@ -125,6 +125,9 @@ int read_config(void)
 				strncpy(g_config.terminate_event_name, value,
 					ARRAYSIZE(g_config.terminate_event_name));
 			}
+			else if (!strcmp(key, "no-stealth")) {
+				g_config.no_stealth = value[0] == '1';
+			}
         }
     }
 
