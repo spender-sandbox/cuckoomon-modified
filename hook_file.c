@@ -29,8 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 
 #define DUMP_FILE_MASK (GENERIC_WRITE | FILE_GENERIC_WRITE | \
-    FILE_WRITE_DATA | FILE_APPEND_DATA | STANDARD_RIGHTS_WRITE | \
-    STANDARD_RIGHTS_ALL)
+    FILE_WRITE_DATA | FILE_APPEND_DATA | STANDARD_RIGHTS_WRITE)
 
 // length of a hardcoded unicode string
 #define UNILEN(x) (sizeof(x) / sizeof(wchar_t) - 1)
