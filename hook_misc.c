@@ -390,7 +390,7 @@ HOOKDEF(SHORT, WINAPI, GetAsyncKeyState,
 	__in int vKey
 ) {
 	SHORT ret = Old_GetAsyncKeyState(vKey);
-	if (asynckeystate_logcount < 50) {
+	if (asynckeystate_logcount < 50 && ((vKey >= 0x30 && vKey <= 0x39) || (vKey >= 0x41 && vKey <= 0x5a))) {
 		asynckeystate_logcount++;
 		LOQ_nonzero("windows", "i", "KeyCode", vKey);
 	}
