@@ -53,6 +53,7 @@ static char logtbl_explained[256] = {0};
 #define LOG_ID_ANOMALY 2
 #define LOG_ID_ANOMALY_EXTRA 3
 #define LOG_ID_ENVIRON 4
+#define LOG_ID_PREDEFINED_MAX 4
 
 int g_log_index = 10;  // index must start after the special IDs (see defines)
 
@@ -321,7 +322,7 @@ void loq(int index, const char *category, const char *name,
 	lasterror_t lasterror;
 	hook_info_t *hookinfo;
 
-	if (index >= LOG_ID_ANOMALY && g_config.suspend_logging)
+	if (index >= LOG_ID_PREDEFINED_MAX && g_config.suspend_logging)
 		return;
 
 	get_lasterrors(&lasterror);
