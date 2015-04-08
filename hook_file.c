@@ -362,9 +362,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
 		((PGET_LENGTH_INFORMATION)OutputBuffer)->Length.QuadPart = 256060514304L;
 	}
 	/* fake model name */
-	if (!g_config.no_stealth && NT_SUCCESS(ret) && IoControlCode == IOCTL_STORAGE_QUERY_PROPERTY && OutputBuffer && OutputBufferLength > 4) {
+	if (!g_config.no_stealth && NT_SUCCESS(ret) && IoControlCode == IOCTL_STORAGE_QUERY_PROPERTY && OutputBuffer && OutputBufferLength >= 4) {
 		ULONG i;
-		for (i = 0; i < OutputBufferLength - 4; i++) {
+		for (i = 0; i <= OutputBufferLength - 4; i++) {
 			if (!memcmp(&((PCHAR)OutputBuffer)[i], "QEMU", 4))
 				memcpy(&((PCHAR)OutputBuffer)[i], "DELL", 4);
 		}
@@ -749,9 +749,9 @@ HOOKDEF(BOOL, WINAPI, GetVolumeNameForVolumeMountPointW,
 ) {
 	BOOL ret = Old_GetVolumeNameForVolumeMountPointW(lpszVolumeMountPoint, lpszVolumeName, cchBufferLength);
 	LOQ_bool("filesystem", "uu", "VolumeMountPoint", lpszVolumeMountPoint, "VolumeName", lpszVolumeName);
-	if (!g_config.no_stealth && ret && lpszVolumeName && cchBufferLength > 4) {
+	if (!g_config.no_stealth && ret && lpszVolumeName && cchBufferLength >= 4) {
 		DWORD i;
-		for (i = 0; i < cchBufferLength - 4; i++) {
+		for (i = 0; i <= cchBufferLength - 4; i++) {
 			if (!memcmp(&lpszVolumeName[i], L"QEMU", 8))
 				memcpy(&lpszVolumeName[i], L"DELL", 8);
 		}

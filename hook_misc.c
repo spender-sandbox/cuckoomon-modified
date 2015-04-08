@@ -155,9 +155,9 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
 		((PGET_LENGTH_INFORMATION)lpOutBuffer)->Length.QuadPart = 256060514304L;
 	}
 	/* fake model name */
-	if (!g_config.no_stealth && ret && dwIoControlCode == IOCTL_STORAGE_QUERY_PROPERTY && lpOutBuffer && nOutBufferSize > 4) {
+	if (!g_config.no_stealth && ret && dwIoControlCode == IOCTL_STORAGE_QUERY_PROPERTY && lpOutBuffer && nOutBufferSize >= 4) {
 		ULONG i;
-		for (i = 0; i < nOutBufferSize - 4; i++) {
+		for (i = 0; i <= nOutBufferSize - 4; i++) {
 			if (!memcmp(&((PCHAR)lpOutBuffer)[i], "QEMU", 4))
 				memcpy(&((PCHAR)lpOutBuffer)[i], "DELL", 4);
 		}

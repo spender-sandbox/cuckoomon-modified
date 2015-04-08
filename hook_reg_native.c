@@ -191,6 +191,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryValueKey,
 			memcpy(Data, "DELL", 4);
 		}
 
+		if (!g_config.no_stealth && keypath && Data && DataLength >= 4 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
+			ULONG i;
+			for (i = 0; i <= DataLength - 4; i++) {
+				if (!memcmp(&((PCHAR)Data)[i], "QEMU", 4))
+					memcpy(&((PCHAR)Data)[i], "DELL", 4);
+			}
+		}
+
 		// fake the manufacturer name
 		if (!g_config.no_stealth && keypath && Data && DataLength >= 4 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\SystemInformation\\SystemManufacturer") && !memcmp(Data, "QEMU", 4)) {
 			memcpy(Data, "DELL", 4);
