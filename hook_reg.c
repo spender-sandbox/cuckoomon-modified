@@ -286,7 +286,7 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExA,
 
 		// fake the vendor name
 		if (!g_config.no_stealth)
-			perform_registry_fakery(keypath, lpData, *lpcbData);
+			perform_ascii_registry_fakery(keypath, lpData, *lpcbData);
 		free(keybuf);
 	}
     else if (ret == ERROR_MORE_DATA) {
@@ -324,7 +324,7 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExW,
 			"FullName", keypath);
 
 		if (!g_config.no_stealth)
-			perform_registry_fakery(keypath, lpData, *lpcbData);
+			perform_unicode_registry_fakery(keypath, lpData, *lpcbData);
 		free(keybuf);
 	}
     else if (ret == ERROR_MORE_DATA) {

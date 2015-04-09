@@ -124,7 +124,7 @@ void replace_wstring_in_buf(PWCHAR buf, ULONG len, PWCHAR findstr, PWCHAR repstr
 	}
 }
 
-void perform_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength)
+void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength)
 {
 	if (keypath == NULL || Data == NULL)
 		return;
@@ -132,8 +132,10 @@ void perform_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength)
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier"))
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
 
-	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0"))
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
+		pipe("INFO:found the key");
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
+	}
 
 	if (!wcsnicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor", 63) &&
 		!wcsicmp(keypath + 65, L"ProcessorNameString"))
@@ -143,6 +145,27 @@ void perform_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength)
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\SystemInformation\\SystemManufacturer"))
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
 }
+
+void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength)
+{
+	if (keypath == NULL || Data == NULL)
+		return;
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier"))
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU", L"DELL");
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0"))
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU", L"DELL");
+
+	if (!wcsnicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor", 63) &&
+		!wcsicmp(keypath + 65, L"ProcessorNameString"))
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU Virtual CPU version 2.0.0", L"Intel(R) Core(TM) i7 CPU @3GHz");
+
+	// fake the manufacturer name
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\SystemInformation\\SystemManufacturer"))
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU", L"DELL");
+}
+
 
 DWORD get_image_size(ULONG_PTR base)
 {

@@ -126,4 +126,5 @@ DWORD get_image_size(ULONG_PTR base);
 
 void replace_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr);
 void replace_wstring_in_buf(PWCHAR buf, ULONG len, PWCHAR findstr, PWCHAR repstr);
-void perform_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength);
+void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength);
+void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength);
