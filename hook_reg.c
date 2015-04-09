@@ -285,16 +285,8 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExA,
 			"FullName", keypath);
 
 		// fake the vendor name
-		if (!g_config.no_stealth && keypath && *lpcbData >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(lpData, "QEMU HARDDISK", 13)) {
-			memcpy(lpData, "DELL", 4);
-		}
-		if (!g_config.no_stealth && keypath && lpData && *lpcbData >= 4 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
-			ULONG i;
-			for (i = 0; i <= *lpcbData - 4; i++) {
-				if (!memcmp(&((PCHAR)lpData)[i], "QEMU", 4))
-					memcpy(&((PCHAR)lpData)[i], "DELL", 4);
-			}
-		}
+		if (!g_config.no_stealth)
+			perform_registry_fakery(keypath, lpData, *lpcbData);
 		free(keybuf);
 	}
     else if (ret == ERROR_MORE_DATA) {
@@ -331,17 +323,8 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExW,
             "Data", *lpType, *lpcbData, lpData,
 			"FullName", keypath);
 
-		// fake the vendor name
-		if (!g_config.no_stealth && keypath && *lpcbData >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(lpData, "QEMU HARDDISK", 13)) {
-			memcpy(lpData, "DELL", 4);
-		}
-		if (!g_config.no_stealth && keypath && lpData && *lpcbData >= 4 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
-			ULONG i;
-			for (i = 0; i <= *lpcbData - 4; i++) {
-				if (!memcmp(&((PCHAR)lpData)[i], "QEMU", 4))
-					memcpy(&((PCHAR)lpData)[i], "DELL", 4);
-			}
-		}
+		if (!g_config.no_stealth)
+			perform_registry_fakery(keypath, lpData, *lpcbData);
 		free(keybuf);
 	}
     else if (ret == ERROR_MORE_DATA) {

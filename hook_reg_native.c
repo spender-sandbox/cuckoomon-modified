@@ -186,24 +186,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryValueKey,
             "Type", Type, "Information", Type, DataLength, Data,
 			"FullName", keypath);
 
-		// fake the vendor name
-		if (!g_config.no_stealth && keypath && Data && DataLength >= 13 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier") && !memcmp(Data, "QEMU HARDDISK", 13)) {
-			memcpy(Data, "DELL", 4);
-		}
-
-		if (!g_config.no_stealth && keypath && Data && DataLength >= 4 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
-			ULONG i;
-			for (i = 0; i <= DataLength - 4; i++) {
-				if (!memcmp(&((PCHAR)Data)[i], "QEMU", 4))
-					memcpy(&((PCHAR)Data)[i], "DELL", 4);
-			}
-		}
-
-		// fake the manufacturer name
-		if (!g_config.no_stealth && keypath && Data && DataLength >= 4 && !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\SystemInformation\\SystemManufacturer") && !memcmp(Data, "QEMU", 4)) {
-			memcpy(Data, "DELL", 4);
-		}
-
+		if (!g_config.no_stealth)
+			perform_registry_fakery(keypath, Data, DataLength);
 
 		free(keybuf);
 	}
