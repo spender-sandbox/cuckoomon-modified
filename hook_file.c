@@ -28,8 +28,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "lookup.h"
 #include "config.h"
 
-#define DUMP_FILE_MASK (GENERIC_ALL | GENERIC_WRITE | FILE_GENERIC_WRITE | \
-    FILE_WRITE_DATA | FILE_APPEND_DATA | STANDARD_RIGHTS_WRITE | MAXIMUM_ALLOWED)
+#define DUMP_FILE_MASK ((GENERIC_ALL | GENERIC_WRITE | FILE_GENERIC_WRITE | \
+    FILE_WRITE_DATA | FILE_APPEND_DATA | STANDARD_RIGHTS_WRITE | MAXIMUM_ALLOWED) & ~SYNCHRONIZE)
 
 // length of a hardcoded unicode string
 #define UNILEN(x) (sizeof(x) / sizeof(wchar_t) - 1)
