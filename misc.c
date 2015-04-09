@@ -133,7 +133,6 @@ void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
-		pipe("INFO:found the key");
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
 	}
 
