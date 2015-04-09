@@ -669,7 +669,31 @@ extern HOOKDEF(BOOL, WINAPI, SendNotifyMessageW,
 	_In_  UINT Msg,
 	_In_  WPARAM wParam,
 	_In_  LPARAM lParam
-	);
+);
+
+extern HOOKDEF(LONG, WINAPI, SetWindowLongA,
+	_In_ HWND hWnd,
+	_In_ int nIndex,
+	_In_ LONG dwNewLong
+);
+
+extern HOOKDEF(LONG_PTR, WINAPI, SetWindowLongPtrA,
+	_In_ HWND hWnd,
+	_In_ int nIndex,
+	_In_ LONG_PTR dwNewLong
+);
+
+extern HOOKDEF(LONG, WINAPI, SetWindowLongW,
+	_In_ HWND hWnd,
+	_In_ int nIndex,
+	_In_ LONG dwNewLong
+);
+
+extern HOOKDEF(LONG_PTR, WINAPI, SetWindowLongPtrW,
+	_In_ HWND hWnd,
+	_In_ int nIndex,
+	_In_ LONG_PTR dwNewLong
+);
 
 
 //

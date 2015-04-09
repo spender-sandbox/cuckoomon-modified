@@ -196,6 +196,10 @@ static hook_t g_hooks[] = {
     HOOK(user32, EnumWindows),
 	HOOK(user32, SendNotifyMessageA),
 	HOOK(user32, SendNotifyMessageW),
+	HOOK(user32, SetWindowLongA),
+	HOOK(user32, SetWindowLongW),
+	HOOK(user32, SetWindowLongPtrA),
+	HOOK(user32, SetWindowLongPtrW),
 
     //
     // Sync Hooks
