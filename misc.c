@@ -129,11 +129,16 @@ void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength
 	if (keypath == NULL || Data == NULL)
 		return;
 
-	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier"))
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier")) {
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
+		replace_string_in_buf(Data, DataLength, "VMware", "DELL__");
+		replace_string_in_buf(Data, DataLength, "Virtual", "C300_BD");
+	}
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
+		replace_string_in_buf(Data, DataLength, "VMware", "DELL__");
+		replace_string_in_buf(Data, DataLength, "Virtual", "C300_BD");
 	}
 
 	if (!wcsnicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor", 63) &&
@@ -150,11 +155,17 @@ void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLeng
 	if (keypath == NULL || Data == NULL)
 		return;
 
-	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier"))
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 0\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier")) {
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU", L"DELL");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VMware", L"DELL__");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"Virtual", L"C300_BD");
+	}
 
-	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0"))
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU", L"DELL");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VMware", L"DELL__");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"Virtual", L"C300_BD");
+	}
 
 	if (!wcsnicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor", 63) &&
 		!wcsicmp(keypath + 65, L"ProcessorNameString"))

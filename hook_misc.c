@@ -155,8 +155,11 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
 		((PGET_LENGTH_INFORMATION)lpOutBuffer)->Length.QuadPart = 256060514304L;
 	}
 	/* fake model name */
-	if (!g_config.no_stealth && ret && dwIoControlCode == IOCTL_STORAGE_QUERY_PROPERTY)
+	if (!g_config.no_stealth && ret && dwIoControlCode == IOCTL_STORAGE_QUERY_PROPERTY) {
 		replace_string_in_buf(lpOutBuffer, nOutBufferSize, "QEMU", "DELL");
+		replace_string_in_buf(lpOutBuffer, nOutBufferSize, "VMware", "DELL__");
+		replace_string_in_buf(lpOutBuffer, nOutBufferSize, "Virtual", "C300_BD");
+	}
 
 	return ret;
 }
