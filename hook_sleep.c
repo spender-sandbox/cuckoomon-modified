@@ -82,15 +82,18 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 		else if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
 			LARGE_INTEGER newint;
 			newint.QuadPart = -(10000 * 10000);
-			time_skipped.QuadPart -= interval - (10000 * 10000);
+			time_skipped.QuadPart += interval - (10000 * 10000);
 			LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
 			set_lasterrors(&lasterror);
 			return Old_NtDelayExecution(Alertable, &newint);
 		}
 		else if (g_config.force_sleepskip > 0) {
+			LARGE_INTEGER newint;
 			time_skipped.QuadPart += interval;
 			LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
-			goto skipcall;
+			newint.QuadPart = 0;
+			set_lasterrors(&lasterror);
+			return Old_NtDelayExecution(Alertable, &newint);
 		}
         else {
             disable_sleep_skip();
