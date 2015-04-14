@@ -142,7 +142,7 @@ void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength
 	}
 
 	if (!wcsnicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor", 63) &&
-		!wcsicmp(keypath + 65, L"ProcessorNameString"))
+		!wcsicmp(keypath + wcslen(keypath) - wcslen(L"ProcessorNameString"), L"ProcessorNameString"))
 		replace_string_in_buf(Data, DataLength, "QEMU Virtual CPU version 2.0.0", "Intel(R) Core(TM) i7 CPU @3GHz");
 
 	// fake the manufacturer name
@@ -168,7 +168,7 @@ void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLeng
 	}
 
 	if (!wcsnicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor", 63) &&
-		!wcsicmp(keypath + 65, L"ProcessorNameString"))
+		!wcsicmp(keypath + wcslen(keypath) - wcslen(L"ProcessorNameString"), L"ProcessorNameString"))
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU Virtual CPU version 2.0.0", L"Intel(R) Core(TM) i7 CPU @3GHz");
 
 	// fake the manufacturer name
