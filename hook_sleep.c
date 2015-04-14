@@ -50,54 +50,67 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    PLARGE_INTEGER DelayInterval
 ) {
     NTSTATUS ret = 0;
-	LONGLONG interval = -DelayInterval->QuadPart;
-	unsigned long milli = (unsigned long)(interval / 10000);
+	LONGLONG interval;
+	FILETIME ft;
+	LARGE_INTEGER li;
+	LARGE_INTEGER newint;
+	unsigned long milli;
 	lasterror_t lasterror;
 
 	get_lasterrors(&lasterror);
 
-    // do we want to skip this sleep?
-    if(interval >= 0LL) {
-        FILETIME ft; LARGE_INTEGER li;
-        GetSystemTimeAsFileTime(&ft);
-        li.HighPart = ft.dwHighDateTime;
-        li.LowPart = ft.dwLowDateTime;
+	newint.QuadPart = DelayInterval->QuadPart;
 
-        // check if we're still within the hardcoded limit
-        if(sleep_skip_active && (li.QuadPart < time_start.QuadPart + MAX_SLEEP_SKIP_DIFF * 10000)) {
-            time_skipped.QuadPart += interval;
+	if (newint.QuadPart > 0LL) {
+		/* convert absolute time to relative time */
+		FILETIME ft;
+		GetSystemTimeAsFileTime(&ft);
 
-			if (num_skipped < 20) {
-				// notify how much we've skipped
-				LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
-				num_skipped++;
-			}
-			else if (num_skipped == 20) {
-				LOQ_ntstatus("system", "s", "Status", "Skipped log limit reached");
-				num_skipped++;
-			}
-            goto skipcall;
-		}
-		/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
-		else if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
-			LARGE_INTEGER newint;
-			newint.QuadPart = -(10000 * 10000);
-			time_skipped.QuadPart += interval - (10000 * 10000);
+		newint.HighPart = ft.dwHighDateTime;
+		newint.LowPart = ft.dwLowDateTime;
+		newint.QuadPart += time_skipped.QuadPart;
+		newint.QuadPart -= DelayInterval->QuadPart;
+		if (newint.QuadPart > 0LL)
+			newint.QuadPart = 0LL;
+	}
+	interval = -newint.QuadPart;
+	milli = (unsigned long)(interval / 10000);
+
+	GetSystemTimeAsFileTime(&ft);
+    li.HighPart = ft.dwHighDateTime;
+    li.LowPart = ft.dwLowDateTime;
+
+    // check if we're still within the hardcoded limit
+    if(sleep_skip_active && (li.QuadPart < time_start.QuadPart + MAX_SLEEP_SKIP_DIFF * 10000)) {
+        time_skipped.QuadPart += interval;
+
+		if (num_skipped < 20) {
+			// notify how much we've skipped
 			LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
-			set_lasterrors(&lasterror);
-			return Old_NtDelayExecution(Alertable, &newint);
+			num_skipped++;
 		}
-		else if (g_config.force_sleepskip > 0) {
-			LARGE_INTEGER newint;
-			time_skipped.QuadPart += interval;
-			LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
-			newint.QuadPart = 0;
-			set_lasterrors(&lasterror);
-			return Old_NtDelayExecution(Alertable, &newint);
+		else if (num_skipped == 20) {
+			LOQ_ntstatus("system", "s", "Status", "Skipped log limit reached");
+			num_skipped++;
 		}
-        else {
-            disable_sleep_skip();
-        }
+        goto skipcall;
+	}
+	/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
+	else if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
+		LARGE_INTEGER newint;
+		newint.QuadPart = -(10000 * 10000);
+		time_skipped.QuadPart += interval - (10000 * 10000);
+		LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
+		goto docall;
+	}
+	else if (g_config.force_sleepskip > 0) {
+		time_skipped.QuadPart += interval;
+		LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
+		newint.QuadPart = 0;
+		goto docall;
+	}
+    else {
+        disable_sleep_skip();
     }
 	if (milli <= 10) {
 		if (num_small < 20) {
@@ -112,8 +125,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 	else {
 		LOQ_ntstatus("system", "i", "Milliseconds", milli);
 	}
+docall:
 	set_lasterrors(&lasterror);
-	return Old_NtDelayExecution(Alertable, DelayInterval);
+	return Old_NtDelayExecution(Alertable, &newint);
 skipcall:
 	set_lasterrors(&lasterror);
 	return ret;
