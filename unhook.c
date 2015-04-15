@@ -231,6 +231,8 @@ int terminate_event_init()
 	return -1;
 }
 
+DWORD g_watchdog_thread_id;
+
 #ifndef _WIN64
 static ULONG_PTR cuckoomonaddrs[20];
 static int cuckoomonaddrs_num;
@@ -294,8 +296,6 @@ static DWORD WINAPI _watchdog_thread(LPVOID param)
 		pipe(msg);
 	}
 }
-
-DWORD g_watchdog_thread_id;
 
 int init_watchdog()
 {
