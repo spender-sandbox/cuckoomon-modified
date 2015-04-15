@@ -84,6 +84,9 @@ int log_resolve_index(const char *funcname, int index);
 extern const char *logtbl[][2];
 extern int g_log_index;
 
+extern DWORD g_log_thread_id;
+extern DWORD g_logwatcher_thread_id;
+
 #define _LOQ(eval, cat, fmt, ...) do { static int _index; if(_index == 0) \
     _index = ++g_log_index; loq(_index, cat, \
     &__FUNCTION__[4], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)

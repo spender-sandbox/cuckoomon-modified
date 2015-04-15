@@ -947,6 +947,9 @@ void log_hook_restoration(const char *funcname)
 }
 
 
+DWORD g_log_thread_id;
+DWORD g_logwatcher_thread_id;
+
 void log_init(unsigned int ip, unsigned short port, int debug)
 {
 	g_buffer = calloc(1, BUFFERSIZE);
@@ -979,10 +982,10 @@ void log_init(unsigned int ip, unsigned short port, int debug)
     }
 
 	g_log_thread_handle =
-		CreateThread(NULL, 0, &_log_thread, NULL, 0, NULL);
+		CreateThread(NULL, 0, &_log_thread, NULL, 0, &g_log_thread_id);
 
 	g_logwatcher_thread_handle =
-		CreateThread(NULL, 0, &_logwatcher_thread, NULL, 0, NULL);
+		CreateThread(NULL, 0, &_logwatcher_thread, NULL, 0, &g_logwatcher_thread_id);
 
 	if (g_log_thread_handle == NULL || g_logwatcher_thread_handle == NULL) {
 		pipe("CRITICAL:Error initializing logging threads!");
