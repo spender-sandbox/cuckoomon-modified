@@ -121,6 +121,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 			LOQ_ntstatus("system", "s", "Status", "Small log limit reached");
 			num_small++;
 		}
+		else if (num_small > 20) {
+			// likely using a bunch of tiny sleeps to delay execution, so let's suddenly mimic high load and give our
+			// fake passage of time the impression of longer delays to return from sleep
+			time_skipped.QuadPart += ((100 + (random() % 400)) * 10000);
+		}
 	}
 	else {
 		LOQ_ntstatus("system", "i", "Milliseconds", milli);
