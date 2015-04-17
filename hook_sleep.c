@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "pipe.h"
 #include "config.h"
+#include "misc.h"
 
 // only skip Sleep()'s the first five seconds
 #define MAX_SLEEP_SKIP_DIFF 5000
@@ -124,7 +125,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 		else if (num_small > 20) {
 			// likely using a bunch of tiny sleeps to delay execution, so let's suddenly mimic high load and give our
 			// fake passage of time the impression of longer delays to return from sleep
-			time_skipped.QuadPart += ((100 + (random() % 400)) * 10000);
+			time_skipped.QuadPart += (randint(500, 1000) * 10000);
 		}
 	}
 	else {
