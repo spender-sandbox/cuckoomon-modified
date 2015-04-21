@@ -810,6 +810,7 @@ void log_environ()
 	char *productname;
 	char *p;
 	char tmp[1024];
+	HMODULE mainbase = GetModuleHandleA(NULL);
 	DWORD installdate;
 	DWORD volser;
 	OSVERSIONINFOA osverinfo;
@@ -856,7 +857,7 @@ void log_environ()
 	osverinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
 	GetVersionEx(&osverinfo);
 	
-	loq(LOG_ID_ENVIRON, "__notification__", "__environ__", 1, 0, "ssisssssiisss",
+	loq(LOG_ID_ENVIRON, "__notification__", "__environ__", 1, 0, "ssisssssiisssph",
 		"UserName", username,
 		"ComputerName", computername,
 		"InstallDate", installdate,
@@ -869,7 +870,9 @@ void log_environ()
 		"OSMinor", osverinfo.dwMinorVersion,
 		"SystemVolumeSerialNumber", sysvolserial,
 		"SystemVolumeGUID", sysvolguid,
-		"MachineGUID", machineguid
+		"MachineGUID", machineguid,
+		"MainExeBase", mainbase,
+		"MainExeSize", get_image_size((ULONG_PTR)mainbase)
 		);
 
 	free(username);
