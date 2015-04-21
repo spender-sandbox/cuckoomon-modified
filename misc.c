@@ -135,6 +135,32 @@ void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength
 		replace_string_in_buf(Data, DataLength, "Virtual", "C300_BD");
 	}
 
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\SystemBiosVersion")) {
+		replace_string_in_buf(Data, DataLength, "VBOX", "DELL");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\VideoBiosVersion")) {
+		replace_string_in_buf(Data, DataLength, "Oracle VM VirtualBox", "Intel VideoBios v1.3");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\mssmbios\\Data\\AcpiData") ||
+		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\mssmbios\\Data\\AcpiData")) {
+		replace_string_in_buf(Data, DataLength, "VBOX", "DELL");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\mssmbios\\Data\\SMBiosData") ||
+		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\mssmbios\\Data\\SMBiosData")) {
+		replace_string_in_buf(Data, DataLength, "vbox", "DELL");
+		replace_string_in_buf(Data, DataLength, "VirtualBox", "Gigabyte__");
+		replace_string_in_buf(Data, DataLength, "innotek GmbH", "HP Pavillion");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS\\00000002\\00000000") ||
+		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP\\00000001\\00000000") ||
+		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT\\00000001\\00000000")) {
+		replace_string_in_buf(Data, DataLength, "VBOX", "DELL");
+	}
+
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
 		replace_string_in_buf(Data, DataLength, "VMware", "DELL__");
@@ -161,6 +187,32 @@ void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLeng
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"Virtual", L"C300_BD");
 	}
 
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\SystemBiosVersion")) {
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VBOX", L"DELL");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\VideoBiosVersion")) {
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"Oracle VM VirtualBox", L"Intel VideoBios v1.3");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\mssmbios\\Data\\AcpiData") ||
+		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\mssmbios\\Data\\AcpiData")) {
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VBOX", L"DELL");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\mssmbios\\Data\\SMBiosData") ||
+		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\mssmbios\\Data\\SMBiosData")) {
+		replace_string_in_buf(Data, DataLength / sizeof(wchar_t), L"vbox", L"DELL");
+		replace_string_in_buf(Data, DataLength / sizeof(wchar_t), L"VirtualBox", L"Gigabyte__");
+		replace_string_in_buf(Data, DataLength / sizeof(wchar_t), L"innotek GmbH", L"HP Pavillion");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS\\00000002\\00000000") ||
+		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP\\00000001\\00000000") ||
+		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT\\00000001\\00000000")) {
+		replace_string_in_buf(Data, DataLength / sizeof(wchar_t), L"VBOX", L"DELL");
+	}
+	
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU", L"DELL");
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VMware", L"DELL__");

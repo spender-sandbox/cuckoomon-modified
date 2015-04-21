@@ -32,6 +32,22 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExA,
 ) {
     LONG ret = Old_RegOpenKeyExA(hKey, lpSubKey, ulOptions, samDesired,
         phkResult);
+
+    // fake the absence of some keys
+    if (!g_config.no_stealth && ret == ERROR_SUCCESS) {
+        unsigned int allocsize = sizeof(KEY_NAME_INFORMATION)+MAX_KEY_BUFLEN;
+        PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+        wchar_t *keypath = get_full_key_pathA(hKey, lpSubKey, keybuf, allocsize);
+
+        if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT"))
+            ret = ERROR_BADKEY;
+    }
+
     LOQ_zero("registry", "psPe", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult,
 		"FullName", hKey, lpSubKey);
     return ret;
@@ -46,6 +62,22 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExW,
 ) {
     LONG ret = Old_RegOpenKeyExW(hKey, lpSubKey, ulOptions, samDesired,
         phkResult);
+
+    // fake the absence of some keys
+    if (!g_config.no_stealth && ret == ERROR_SUCCESS) {
+        unsigned int allocsize = sizeof(KEY_NAME_INFORMATION)+MAX_KEY_BUFLEN;
+        PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+        wchar_t *keypath = get_full_key_pathW(hKey, lpSubKey, keybuf, allocsize);
+
+        if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__") ||
+            !wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT"))
+            ret = ERROR_BADKEY;
+    }
+
     LOQ_zero("registry", "puPE", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult,
 		"FullName", hKey, lpSubKey);
 	return ret;
@@ -284,7 +316,7 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExA,
 			"Data", *lpType, *lpcbData, lpData,
 			"FullName", keypath);
 
-		// fake the vendor name
+		// fake some values
 		if (!g_config.no_stealth)
 			perform_ascii_registry_fakery(keypath, lpData, *lpcbData);
 		free(keybuf);
@@ -323,6 +355,7 @@ HOOKDEF(LONG, WINAPI, RegQueryValueExW,
             "Data", *lpType, *lpcbData, lpData,
 			"FullName", keypath);
 
+        // fake some values
 		if (!g_config.no_stealth)
 			perform_unicode_registry_fakery(keypath, lpData, *lpcbData);
 		free(keybuf);
