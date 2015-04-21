@@ -233,7 +233,8 @@ typedef struct _SYSTEM_PROCESS_INFORMATION {
 
 #define SystemProcessInformation 5
 #define Suspended 5
-#define STATUS_INFO_LENGTH_MISMATCH 0xc0000004
+#define STATUS_INFO_LENGTH_MISMATCH  0xc0000004
+#define STATUS_OBJECT_NAME_NOT_FOUND 0xc0000034
 
 typedef struct _INITIAL_TEB {
   PVOID StackBase;
