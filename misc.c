@@ -202,15 +202,15 @@ void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLeng
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\mssmbios\\Data\\SMBiosData") ||
 		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\mssmbios\\Data\\SMBiosData")) {
-		replace_string_in_buf(Data, DataLength / sizeof(wchar_t), L"vbox", L"DELL");
-		replace_string_in_buf(Data, DataLength / sizeof(wchar_t), L"VirtualBox", L"Gigabyte__");
-		replace_string_in_buf(Data, DataLength / sizeof(wchar_t), L"innotek GmbH", L"HP Pavillion");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"vbox", L"DELL");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VirtualBox", L"Gigabyte__");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"innotek GmbH", L"HP Pavillion");
 	}
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS\\00000002\\00000000") ||
 		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP\\00000001\\00000000") ||
 		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT\\00000001\\00000000")) {
-		replace_string_in_buf(Data, DataLength / sizeof(wchar_t), L"VBOX", L"DELL");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VBOX", L"DELL");
 	}
 	
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Disk\\Enum\\0")) {
