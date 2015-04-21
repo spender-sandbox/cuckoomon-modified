@@ -499,3 +499,18 @@ HOOKDEF(int, WINAPI, GetAddrInfoW,
     LOQ_zero("network", "uu", "NodeName", pNodeName, "ServiceName", pServiceName);
     return ret;
 }
+
+HOOKDEF(DWORD, WINAPI, WNetUseConnectionW,
+	_In_     HWND hwndOwner,
+	_In_     LPNETRESOURCEW lpNetResource,
+	_In_     LPCWSTR lpPassword,
+	_In_     LPCWSTR lpUserID,
+	_In_     DWORD dwFlags,
+	_Out_    LPWSTR lpAccessName,
+	_Inout_  LPDWORD lpBufferSize,
+	_Out_    LPDWORD lpResult
+) {
+	DWORD ret = Old_WNetUseConnectionW(hwndOwner, lpNetResource, lpPassword, lpUserID, dwFlags, lpAccessName, lpBufferSize, lpResult);
+	LOQ_zero("network", "uuuuuh", "LocalName", lpNetResource->lpRemoteName, "RemoteName", lpNetResource->lpRemoteName, "Password", lpPassword, "UserID", lpUserID, "AccessName", lpAccessName, "Flags", dwFlags);
+	return ret;
+}

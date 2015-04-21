@@ -1544,6 +1544,17 @@ extern HOOKDEF(int, WSAAPI, GetAddrInfoW,
     _Out_     PADDRINFOW *ppResult
 );
 
+extern HOOKDEF(DWORD, WINAPI, WNetUseConnectionW,
+	_In_     HWND hwndOwner,
+	_In_     LPNETRESOURCEW lpNetResource,
+	_In_     LPCWSTR lpPassword,
+	_In_     LPCWSTR lpUserID,
+	_In_     DWORD dwFlags,
+	_Out_    LPWSTR lpAccessName,
+	_Inout_  LPDWORD lpBufferSize,
+	_Out_    LPDWORD lpResult
+);
+
 //
 // Service Hooks
 //
