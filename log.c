@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 static CRITICAL_SECTION g_mutex;
 static CRITICAL_SECTION g_writing_log_buffer_mutex;
 static SOCKET g_sock;
+static HANDLE g_debug_log_handle;
 static unsigned int g_starttick;
 
 static char *g_buffer;
@@ -74,19 +75,8 @@ static void _send_log(void)
 		int written = -1;
 
 		if (g_sock == DEBUG_SOCKET) {
-			char filename[64];
-			char pid[8];
-			FILE *f;
-
-			strcpy(filename, "c:\\debug");
-			num_to_string(pid, sizeof(pid), GetCurrentProcessId());
-			strcat(filename, pid);
-			strcat(filename, ".log");
-			// will happen when we're in debug mode
-			f = fopen(filename, "ab");
-			if (f) {
-				written = (int)fwrite(g_buffer, 1, g_idx, f);
-				fclose(f);
+			if (g_debug_log_handle != INVALID_HANDLE_VALUE) {
+				WriteFile(g_debug_log_handle, g_buffer, g_idx, &written, NULL);
 			}
 			else {
 				// some non-admin debug case
@@ -981,6 +971,18 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 		}
     }
 
+	if (g_sock == DEBUG_SOCKET) {
+		char filename[64];
+		char pid[8];
+
+		strcpy(filename, "c:\\debug");
+		num_to_string(pid, sizeof(pid), GetCurrentProcessId());
+		strcat(filename, pid);
+		strcat(filename, ".log");
+		// will happen when we're in debug mode
+		g_debug_log_handle = CreateFileA(filename, FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, CREATE_NEW, 0, NULL);
+	}
+
 	g_log_thread_handle =
 		CreateThread(NULL, 0, &_log_thread, NULL, 0, &g_log_thread_id);
 
@@ -1009,9 +1011,14 @@ void log_free()
 		lastlog.buf = NULL;
 	}
     log_flush();
-	if (g_sock != INVALID_SOCKET && g_sock != DEBUG_SOCKET) {
-        closesocket(g_sock);
-		g_sock = INVALID_SOCKET;
-		WSACleanup();
+	if (g_sock != INVALID_SOCKET) {
+		if (g_sock == DEBUG_SOCKET) {
+			g_sock = INVALID_SOCKET;
+		}
+		else {
+			closesocket(g_sock);
+			g_sock = INVALID_SOCKET;
+			WSACleanup();
+		}
     }
 }
