@@ -188,6 +188,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		pid = atoi(__argv[2]);
 		tid = atoi(__argv[3]);
 		return inject(pid, tid, __argv[4], is_suspended(pid, tid));
+	} else if (!strcmp(__argv[1], "load")) {
+		// usage: loader.exe load <binary> <commandline> <dll to load>
+		PROCESS_INFORMATION pi;
+		STARTUPINFOA si;
+		int ret;
+		memset(&si, 0, sizeof(si));
+		if (__argc != 5)
+			return ERROR_ARGCOUNT;
+		CreateProcessA(__argv[2], __argv[3], NULL, NULL, FALSE, CREATE_SUSPENDED, NULL, NULL, &si, &pi);
+		ret = inject(pi.dwProcessId, pi.dwThreadId, __argv[4], TRUE);
+		if (ret == 1) {
+			HANDLE threadhand = OpenThread(THREAD_SUSPEND_RESUME, FALSE, pi.dwThreadId);
+			if (threadhand) {
+				ResumeThread(threadhand);
+				CloseHandle(threadhand);
+			}
+		}
 	}
 
 	return ERROR_MODE;
