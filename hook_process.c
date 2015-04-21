@@ -248,7 +248,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
 
 	get_lasterrors(&lasterror);
     LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
-	if (ProcessHandle == NULL || GetCurrentProcessId() == GetProcessId(ProcessHandle)) {
+	if (!process_shutting_down && (ProcessHandle == NULL || GetCurrentProcessId() == GetProcessId(ProcessHandle))) {
 		pipe("KILL:%d", GetCurrentProcessId());
 		log_free();
 		process_shutting_down = 1;
