@@ -91,22 +91,22 @@ int is_ignored_file_objattr(const OBJECT_ATTRIBUTES *obj)
         obj->ObjectName->Length / sizeof(wchar_t));
 }
 
-static wchar_t *g_ignored_processpaths[] = {
-    L"C:\\WINDOWS\\system32\\dwwin.exe",
-    L"C:\\WINDOWS\\system32\\dumprep.exe",
-    L"C:\\WINDOWS\\system32\\drwtsn32.exe",
-	L"C:\\WINDOWS\\system32\\WerFault.exe",
-	L"C:\\WINDOWS\\syswow64\\WerFault.exe"
-};
+//static wchar_t *g_ignored_processpaths[] = {
+//    L"C:\\WINDOWS\\system32\\dwwin.exe",
+//    L"C:\\WINDOWS\\system32\\dumprep.exe",
+//    L"C:\\WINDOWS\\system32\\drwtsn32.exe",
+//	L"C:\\WINDOWS\\system32\\WerFault.exe",
+//	L"C:\\WINDOWS\\syswow64\\WerFault.exe"
+//};
 
 int is_ignored_process()
 {
-	int i;
-    for (i = 0; i < ARRAYSIZE(g_ignored_processpaths); i++) {
-        if(!wcsicmp(g_ignored_processpaths[i], our_process_path)) {
-            return 1;
-        }
-    }
+//	int i;
+//    for (i = 0; i < ARRAYSIZE(g_ignored_processpaths); i++) {
+//        if(!wcsicmp(g_ignored_processpaths[i], our_process_path)) {
+//            return 1;
+//        }
+//    }
     return 0;
 }
 
@@ -117,13 +117,13 @@ int is_ignored_process()
 // for each high 20-bits of an address, there are two bits:
 // - is this address ignored
 // - is the ignored bit initialized yet?
-static unsigned char retaddr[0x40000];
+//static unsigned char retaddr[0x40000];
 
-void init_ignored_retaddr()
-{
+//void init_ignored_retaddr()
+//{
     // send the address of the retaddr buffer to analyzer.py
-    pipe("RET_INIT:%d,%x", GetCurrentProcessId(), retaddr);
-}
+//    pipe("RET_INIT:%d,%x", GetCurrentProcessId(), retaddr);
+//}
 
 /*
 static void ret_get_flags(unsigned int addr, unsigned int *ignored,
