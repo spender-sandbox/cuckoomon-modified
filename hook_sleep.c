@@ -63,7 +63,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 	newint.QuadPart = DelayInterval->QuadPart;
 	// handle INFINITE sleep
 	if (newint.QuadPart == 0x8000000000000000ULL) {
-		LOQ_ntstatus("system", "i", "Milliseconds", -1);
+		LOQ_ntstatus("system", "is", "Milliseconds", -1, "Status", "Infinite");
 		goto docall;
 	}
 
