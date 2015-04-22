@@ -61,6 +61,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 	get_lasterrors(&lasterror);
 
 	newint.QuadPart = DelayInterval->QuadPart;
+	// handle INFINITE sleep
+	if (newint.QuadPart == 0x8000000000000000ULL) {
+		LOQ_ntstatus("system", "i", "Milliseconds", -1);
+		goto docall;
+	}
 
 	if (newint.QuadPart > 0LL) {
 		/* convert absolute time to relative time */
