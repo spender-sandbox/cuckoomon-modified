@@ -427,8 +427,15 @@ HOOKDEF(BOOL, WINAPI, InternetSetOptionA,
 	_In_ DWORD dwBufferLength
 ) {
 	BOOL ret = Old_InternetSetOptionA(hInternet, dwOption, lpBuffer, dwBufferLength);
-	// when logging the buffer, remember the special handling of dwBufferLength when lpBuffer holds a string vs other content
-	LOQ_bool("network", "ph", "InternetHandle", hInternet, "Option", dwOption);
+	if (lpBuffer && dwBufferLength == 4) {
+		LOQ_bool("network", "phh", "InternetHandle", hInternet, "Option", dwOption, "Buffer", *(DWORD *)lpBuffer);
+	}
+	else if (lpBuffer) {
+		LOQ_bool("network", "phb", "InternetHandle", hInternet, "Option", dwOption, "Buffer", dwBufferLength, lpBuffer);
+	}
+	else {
+		LOQ_bool("network", "ph", "InternetHandle", hInternet, "Option", dwOption);
+	}
 	return ret;
 }
 
