@@ -750,6 +750,7 @@ HOOKDEF(BOOL, WINAPI, GetVolumeNameForVolumeMountPointW,
 	LOQ_bool("filesystem", "uu", "VolumeMountPoint", lpszVolumeMountPoint, "VolumeName", lpszVolumeName);
 	if (!g_config.no_stealth && ret) {
 		replace_wstring_in_buf(lpszVolumeName, cchBufferLength, L"QEMU", L"DELL");
+		replace_wstring_in_buf(lpszVolumeName, cchBufferLength, L"VMware", L"DELL__");
 		replace_wstring_in_buf(lpszVolumeName, cchBufferLength, L"VMWar", L"WDRed");
 	}
 
