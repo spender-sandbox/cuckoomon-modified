@@ -173,6 +173,60 @@ out:
 	return ret;
 }
 
+static int dump(int pid, char *dumpfile)
+{
+	SYSTEM_INFO sysinfo;
+	PUCHAR addr;
+	MEMORY_BASIC_INFORMATION meminfo;
+	HANDLE f;
+	HANDLE proc = OpenProcess(PROCESS_VM_READ, FALSE, pid);
+	if (proc == NULL)
+		return ERROR_PROCESS_OPEN;
+
+	f = CreateFileA(dumpfile, GENERIC_WRITE, 0, NULL, CREATE_NEW, 0, NULL);
+	if (f == INVALID_HANDLE_VALUE) {
+		CloseHandle(proc);
+		return ERROR_FILE_OPEN;
+	}
+
+	GetSystemInfo(&sysinfo);
+
+	// for now just do this the lame way, later we'll dump processes properly
+	// in a way that's compatible with copymemII/shrinker/etc by communicating
+	// with a dumper thread in our hooked process
+	for (addr = (PUCHAR)sysinfo.lpMinimumApplicationAddress; addr < (PUCHAR)sysinfo.lpMaximumApplicationAddress;) {
+		if (VirtualQueryEx(proc, addr, &meminfo, sizeof(meminfo))) {
+			if ((meminfo.State & MEM_COMMIT) && (meminfo.Type & (MEM_IMAGE | MEM_MAPPED | MEM_PRIVATE))) {
+				char *buf;
+				LARGE_INTEGER bufaddr;
+				DWORD bufsize;
+				DWORD byteswritten;
+				SIZE_T bytesread;
+				bufaddr.QuadPart = (ULONGLONG)addr;
+				bufsize = (DWORD)meminfo.RegionSize;
+				buf = malloc(bufsize);
+				if (buf == NULL) {
+					CloseHandle(f);
+					CloseHandle(proc);
+					return ERROR_ALLOCATE;
+				}
+				if (ReadProcessMemory(proc, addr, buf, bufsize, &bytesread) && bytesread == bufsize) {
+					WriteFile(f, &bufaddr, sizeof(bufaddr), &byteswritten, NULL);
+					WriteFile(f, &bufsize, sizeof(bufsize), &byteswritten, NULL);
+					WriteFile(f, buf, bufsize, &byteswritten, NULL);
+				}
+			}
+			addr += meminfo.RegionSize;
+		}
+		else {
+			addr += 0x1000;
+		}
+	}
+	CloseHandle(f);
+	CloseHandle(proc);
+	return 1;
+}
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	if (__argc < 2)
@@ -205,6 +259,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				CloseHandle(threadhand);
 			}
 		}
+	}
+	else if (!strcmp(__argv[1], "dump")) {
+		if (__argc != 4)
+			return ERROR_ARGCOUNT;
+		int pid = atoi(__argv[2]);
+		char *dumpfile = __argv[3];
+		return dump(pid, dumpfile);
 	}
 
 	return ERROR_MODE;
