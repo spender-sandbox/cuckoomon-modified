@@ -87,23 +87,6 @@ HOOKDEF(UINT, WINAPI, SetErrorMode,
 	return ret;
 }
 
-
-HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
-    __in_opt    PWCHAR PathToFile,
-    __in_opt    ULONG Flags,
-    __in        PUNICODE_STRING ModuleFileName,
-    __out       PHANDLE ModuleHandle
-) {
-	NTSTATUS ret;
-    COPY_UNICODE_STRING(library, ModuleFileName);
-
-    ret = Old_LdrLoadDll(PathToFile, Flags, ModuleFileName,
-        ModuleHandle);
-    LOQ_ntstatus("system", "hoP", "Flags", Flags, "FileName", &library,
-        "BaseAddress", ModuleHandle);
-    return ret;
-}
-
 // Called with the loader lock held
 HOOKDEF(NTSTATUS, WINAPI, LdrGetDllHandle,
     __in_opt    PWORD pwPath,

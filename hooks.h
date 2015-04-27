@@ -863,21 +863,6 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtOpenSection,
     __in   POBJECT_ATTRIBUTES ObjectAttributes
 );
 
-extern HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
-    __in_opt    LPVOID lpUnknown1,
-    __in_opt    LPWSTR lpApplicationName,
-    __inout_opt LPWSTR lpCommandLine,
-    __in_opt    LPSECURITY_ATTRIBUTES lpProcessAttributes,
-    __in_opt    LPSECURITY_ATTRIBUTES lpThreadAttributes,
-    __in        BOOL bInheritHandles,
-    __in        DWORD dwCreationFlags,
-    __in_opt    LPVOID lpEnvironment,
-    __in_opt    LPWSTR lpCurrentDirectory,
-    __in        LPSTARTUPINFO lpStartupInfo,
-    __out       LPPROCESS_INFORMATION lpProcessInformation,
-    __in_opt    LPVOID lpUnknown2
-);
-
 extern HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     __in_opt    LPVOID lpUnknown1,
     __in_opt    LPWSTR lpApplicationName,
@@ -1159,13 +1144,6 @@ extern HOOKDEF(LPTOP_LEVEL_EXCEPTION_FILTER, WINAPI, SetUnhandledExceptionFilter
 
 extern HOOKDEF(UINT, WINAPI, SetErrorMode,
 	_In_ UINT uMode
-);
-
-extern HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
-    __in_opt    PWCHAR PathToFile,
-    __in_opt    ULONG Flags,
-    __in        PUNICODE_STRING ModuleFileName,
-    __out       PHANDLE ModuleHandle
 );
 
 extern HOOKDEF(NTSTATUS, WINAPI, LdrGetDllHandle,

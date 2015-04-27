@@ -305,33 +305,6 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenSection,
     return ret;
 }
 
-HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
-    __in_opt    LPVOID lpUnknown1,
-    __in_opt    LPWSTR lpApplicationName,
-    __inout_opt LPWSTR lpCommandLine,
-    __in_opt    LPSECURITY_ATTRIBUTES lpProcessAttributes,
-    __in_opt    LPSECURITY_ATTRIBUTES lpThreadAttributes,
-    __in        BOOL bInheritHandles,
-    __in        DWORD dwCreationFlags,
-    __in_opt    LPVOID lpEnvironment,
-    __in_opt    LPWSTR lpCurrentDirectory,
-    __in        LPSTARTUPINFOW lpStartupInfo,
-    __out       LPPROCESS_INFORMATION lpProcessInformation,
-    __in_opt    LPVOID lpUnknown2
-) {
-    BOOL ret = Old_CreateProcessInternalW(lpUnknown1, lpApplicationName,
-        lpCommandLine, lpProcessAttributes, lpThreadAttributes,
-        bInheritHandles, dwCreationFlags, lpEnvironment,
-        lpCurrentDirectory, lpStartupInfo, lpProcessInformation, lpUnknown2);
-    LOQ_bool("process", "uuhiipp", "ApplicationName", lpApplicationName,
-        "CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
-        "ProcessId", lpProcessInformation->dwProcessId,
-        "ThreadId", lpProcessInformation->dwThreadId,
-        "ProcessHandle", lpProcessInformation->hProcess,
-        "ThreadHandle", lpProcessInformation->hThread);
-    return ret;
-}
-
 HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     __inout  SHELLEXECUTEINFOW *pExecInfo
 ) {
