@@ -204,13 +204,13 @@ static int dump(int pid, char *dumpfile)
 				SIZE_T bytesread;
 				bufaddr.QuadPart = (ULONGLONG)addr;
 				bufsize = (DWORD)meminfo.RegionSize;
-				buf = malloc(bufsize);
+				buf = calloc(1, bufsize);
 				if (buf == NULL) {
 					CloseHandle(f);
 					CloseHandle(proc);
 					return ERROR_ALLOCATE;
 				}
-				if (ReadProcessMemory(proc, addr, buf, bufsize, &bytesread) && bytesread == bufsize) {
+				if (ReadProcessMemory(proc, addr, buf, bufsize, &bytesread) || GetLastError() == ERROR_PARTIAL_COPY) {
 					WriteFile(f, &bufaddr, sizeof(bufaddr), &byteswritten, NULL);
 					WriteFile(f, &bufsize, sizeof(bufsize), &byteswritten, NULL);
 					WriteFile(f, buf, bufsize, &byteswritten, NULL);
