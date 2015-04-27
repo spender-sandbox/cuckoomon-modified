@@ -231,7 +231,6 @@ typedef struct _SYSTEM_PROCESS_INFORMATION {
 	SYSTEM_THREAD			Threads[0];
 } SYSTEM_PROCESS_INFORMATION, *PSYSTEM_PROCESS_INFORMATION;
 
-#define SystemProcessInformation 5
 #define Suspended 5
 #define STATUS_INFO_LENGTH_MISMATCH  0xc0000004
 #define STATUS_OBJECT_NAME_NOT_FOUND 0xc0000034
@@ -243,6 +242,29 @@ typedef struct _INITIAL_TEB {
   PVOID StackCommitMax;
   PVOID StackReserved;
 } INITIAL_TEB, *PINITIAL_TEB;
+
+typedef enum _SYSTEM_INFORMATION_CLASS {
+	SystemBasicInformation = 0,
+	SystemExceptionInformation,
+	SystemInterruptInformation,
+	SystemLookasideInformation,
+	SystemPerformanceInformation,
+	SystemProcessInformation
+} SYSTEM_INFORMATION_CLASS, *PSYSTEM_INFORMATION_CLASS;
+
+typedef struct _SYSTEM_BASIC_INFORMATION {
+	ULONG 	Reserved;
+	ULONG 	TimerResolution;
+	ULONG 	PageSize;
+	ULONG 	NumberOfPhysicalPages;
+	ULONG 	LowestPhysicalPageNumber;
+	ULONG 	HighestPhysicalPageNumber;
+	ULONG 	AllocationGranularity;
+	ULONG_PTR 	MinimumUserModeAddress;
+	ULONG_PTR 	MaximumUserModeAddress;
+	ULONG_PTR 	ActiveProcessorsAffinityMask;
+	CCHAR 	NumberOfProcessors;
+} SYSTEM_BASIC_INFORMATION, *PSYSTEM_BASIC_INFORMATION;
 
 typedef enum _FILE_INFORMATION_CLASS {
   FileDirectoryInformation = 1,

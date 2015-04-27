@@ -2025,3 +2025,10 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
     __in     ULONG AllocationType,
     __in     ULONG Win32Protect
 );
+
+extern HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemInformation,
+	_In_ ULONG SystemInformationClass,
+	_Inout_ PVOID SystemInformation,
+	_In_ ULONG SystemInformationLength,
+	_Out_opt_ PULONG ReturnLength
+);

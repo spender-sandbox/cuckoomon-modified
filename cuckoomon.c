@@ -295,6 +295,7 @@ static hook_t g_hooks[] = {
 	HOOK(ntdll, NtLoadDriver),
 	HOOK(ntdll, RtlDecompressBuffer),
 	HOOK(kernel32, GetSystemInfo),
+	HOOK(ntdll, NtQuerySystemInformation),
 	
 	//
     // Network Hooks
