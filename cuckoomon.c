@@ -670,9 +670,6 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		if (g_tls_hook_index == TLS_OUT_OF_INDEXES)
 			goto out;
 
-		// there's a small list of processes which we don't want to inject
-		if (is_ignored_process())
-			goto out;
 #if REPORT_EXCEPTIONS
 		AddVectoredExceptionHandler(1, cuckoomon_exception_handler);
 		SetUnhandledExceptionFilter(cuckoomon_exception_handler);
