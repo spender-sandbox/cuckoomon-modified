@@ -215,6 +215,7 @@ static int dump(int pid, char *dumpfile)
 					WriteFile(f, &bufsize, sizeof(bufsize), &byteswritten, NULL);
 					WriteFile(f, buf, bufsize, &byteswritten, NULL);
 				}
+				free(buf);
 			}
 			addr += meminfo.RegionSize;
 		}
