@@ -179,7 +179,7 @@ static int dump(int pid, char *dumpfile)
 	PUCHAR addr;
 	MEMORY_BASIC_INFORMATION meminfo;
 	HANDLE f;
-	HANDLE proc = OpenProcess(PROCESS_VM_READ, FALSE, pid);
+	HANDLE proc = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (proc == NULL)
 		return ERROR_PROCESS_OPEN;
 

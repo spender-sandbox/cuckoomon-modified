@@ -231,6 +231,15 @@ typedef struct _SYSTEM_PROCESS_INFORMATION {
 	SYSTEM_THREAD			Threads[0];
 } SYSTEM_PROCESS_INFORMATION, *PSYSTEM_PROCESS_INFORMATION;
 
+typedef struct _SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION {
+	LARGE_INTEGER IdleTime;
+	LARGE_INTEGER KernelTime;
+	LARGE_INTEGER UserTime;
+	LARGE_INTEGER DpcTime;
+	LARGE_INTEGER InterruptTime;
+	ULONG InterruptCount;
+} SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION, *PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION;
+
 #define Suspended 5
 #define STATUS_INFO_LENGTH_MISMATCH  0xc0000004
 #define STATUS_OBJECT_NAME_NOT_FOUND 0xc0000034
@@ -249,7 +258,23 @@ typedef enum _SYSTEM_INFORMATION_CLASS {
 	SystemInterruptInformation,
 	SystemLookasideInformation,
 	SystemPerformanceInformation,
-	SystemProcessInformation
+	SystemProcessInformation,
+	SystemCallCountInformation,
+	SystemDeviceInformation,
+	SystemProcessorPerformanceInformation,
+	SystemFlagsInformation,
+	SystemCallTimeInformation,
+	SystemModuleInformation,
+	SystemLocksInformation,
+	SystemStackTraceInformation,
+	SystemPagedPoolInformation,
+	SystemNonPagedPoolInformation,
+	SystemHandleInformation,
+	SystemObjectInformation,
+	SystemPageFileInformation,
+	SystemVdmInstemulInformation,
+	SystemVdmBopInformation,
+	SystemFileCacheInformation
 } SYSTEM_INFORMATION_CLASS, *PSYSTEM_INFORMATION_CLASS;
 
 typedef struct _SYSTEM_BASIC_INFORMATION {
