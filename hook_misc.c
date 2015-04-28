@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hook_file.h"
 #include "hook_sleep.h"
 #include "config.h"
+#include "ignore.h"
 
 HOOKDEF(HHOOK, WINAPI, SetWindowsHookExA,
     __in  int idHook,
@@ -426,6 +427,34 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemInformation,
 	if (!g_config.no_stealth && SystemInformationClass == SystemBasicInformation && SystemInformationLength >= sizeof(SYSTEM_BASIC_INFORMATION) && NT_SUCCESS(ret)) {
 		PSYSTEM_BASIC_INFORMATION p = (PSYSTEM_BASIC_INFORMATION)SystemInformation;
 		p->NumberOfProcessors = 2;
+	}
+	if (SystemInformationClass == SystemProcessInformation && SystemInformationLength >= sizeof(SYSTEM_PROCESS_INFORMATION) && NT_SUCCESS(ret)) {
+		PSYSTEM_PROCESS_INFORMATION p = (PSYSTEM_PROCESS_INFORMATION)SystemInformation;
+		PSYSTEM_PROCESS_INFORMATION next = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)SystemInformation + p->NextEntryOffset);
+		PSYSTEM_PROCESS_INFORMATION last;
+		ULONG newoffset = 0;
+		while (1) {
+			last = next;
+			newoffset = next->NextEntryOffset;
+			while (is_protected_pid((DWORD)last->UniqueProcessId)) {
+				if (!last->NextEntryOffset) {
+					newoffset = 0;
+					memset(last, 0, sizeof(SYSTEM_PROCESS_INFORMATION) + (last->NumberOfThreads * sizeof(SYSTEM_THREAD)));
+					break;
+				}
+				else {
+					PSYSTEM_PROCESS_INFORMATION savednext = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)SystemInformation + last->NextEntryOffset);
+					memset(last, 0, sizeof(SYSTEM_PROCESS_INFORMATION) + (last->NumberOfThreads * sizeof(SYSTEM_THREAD)));
+					last = savednext;
+					newoffset = (ULONG)((PCHAR)last - (PCHAR)SystemInformation);
+				}
+			}
+			p->NextEntryOffset = newoffset;
+			if (!p->NextEntryOffset)
+				break;
+			p = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)SystemInformation + p->NextEntryOffset);
+			next = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)SystemInformation + p->NextEntryOffset);
+		}
 	}
 	return ret;
 }
