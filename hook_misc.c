@@ -421,7 +421,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemInformation,
 ) {
 	NTSTATUS ret = Old_NtQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
 
-	LOQ_void("misc", "i", "SystemInformationClass", SystemInformationClass);
+	LOQ_ntstatus("misc", "i", "SystemInformationClass", SystemInformationClass);
 
 	if (!g_config.no_stealth && SystemInformationClass == SystemBasicInformation && SystemInformationLength >= sizeof(SYSTEM_BASIC_INFORMATION) && NT_SUCCESS(ret)) {
 		PSYSTEM_BASIC_INFORMATION p = (PSYSTEM_BASIC_INFORMATION)SystemInformation;
