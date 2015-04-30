@@ -213,6 +213,9 @@ static int dump(int pid, char *dumpfile)
 				if (ReadProcessMemory(proc, addr, buf, bufsize, &bytesread) || GetLastError() == ERROR_PARTIAL_COPY) {
 					WriteFile(f, &bufaddr, sizeof(bufaddr), &byteswritten, NULL);
 					WriteFile(f, &bufsize, sizeof(bufsize), &byteswritten, NULL);
+					WriteFile(f, &meminfo.State, sizeof(meminfo.State), &byteswritten, NULL);
+					WriteFile(f, &meminfo.Type, sizeof(meminfo.Type), &byteswritten, NULL);
+					WriteFile(f, &meminfo.Protect, sizeof(meminfo.Protect), &byteswritten, NULL);
 					WriteFile(f, buf, bufsize, &byteswritten, NULL);
 				}
 				free(buf);
