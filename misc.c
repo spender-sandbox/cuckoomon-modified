@@ -135,6 +135,18 @@ void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength
 		replace_string_in_buf(Data, DataLength, "Virtual", "C300_BD");
 	}
 
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 1\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier")) {
+		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
+		replace_string_in_buf(Data, DataLength, "VMware", "DELL__");
+		replace_string_in_buf(Data, DataLength, "Virtual", "C300_BD");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi\\Scsi Port 2\\Scsi Bus 0\\Target Id 0\\Logical Unit Id 0\\Identifier")) {
+		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
+		replace_string_in_buf(Data, DataLength, "VMware", "DELL__");
+		replace_string_in_buf(Data, DataLength, "Virtual", "C300_BD");
+	}
+
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\SystemBiosVersion")) {
 		replace_string_in_buf(Data, DataLength, "VBOX", "DELL");
 	}
