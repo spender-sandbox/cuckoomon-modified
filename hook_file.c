@@ -705,7 +705,7 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceExA,
 	LOQ_bool("filesystem", "s", "DirectoryName", lpDirectoryName);
 	
 	/* Fake harddrive size to 256GB */
-	if (ret) {
+	if (!g_config.no_stealth && ret) {
 		lpTotalNumberOfBytes->QuadPart = 256060514304L;
 	}
 
@@ -720,7 +720,13 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceExW,
 ) {
     BOOL ret = Old_GetDiskFreeSpaceExW(lpDirectoryName, lpFreeBytesAvailable, lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes);
 	LOQ_bool("filesystem", "u", "DirectoryName", lpDirectoryName);
-    return ret;
+
+	/* Fake harddrive size to 256GB */
+	if (!g_config.no_stealth && ret) {
+		lpTotalNumberOfBytes->QuadPart = 256060514304L;
+	}
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceA,
@@ -732,7 +738,13 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceA,
 ) {
     BOOL ret = Old_GetDiskFreeSpaceA(lpRootPathName, lpSectorsPerCluster, lpBytesPerSector, lpNumberOfFreeClusters, lpTotalNumberOfClusters);
 	LOQ_bool("filesystem", "s", "RootPathName", lpRootPathName);
-    return ret;
+
+	/* Fake harddrive size to 256GB */
+	if (!g_config.no_stealth && *lpSectorsPerCluster && *lpBytesPerSector) {
+		*lpTotalNumberOfClusters = (DWORD)(256060514304L / (*lpSectorsPerCluster * *lpBytesPerSector));
+	}
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceW,
@@ -744,7 +756,13 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceW,
 ) {
     BOOL ret = Old_GetDiskFreeSpaceW(lpRootPathName, lpSectorsPerCluster, lpBytesPerSector, lpNumberOfFreeClusters, lpTotalNumberOfClusters);
 	LOQ_bool("filesystem", "u", "RootPathName", lpRootPathName);
-    return ret;
+
+	/* Fake harddrive size to 256GB */
+	if (!g_config.no_stealth && *lpSectorsPerCluster && *lpBytesPerSector) {
+		*lpTotalNumberOfClusters = (DWORD)(256060514304L / (*lpSectorsPerCluster * *lpBytesPerSector));
+	}
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, GetVolumeNameForVolumeMountPointW,
