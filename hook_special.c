@@ -206,6 +206,11 @@ HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 
 	set_lasterrors(&lasterror);
 
+	// notify of task scheduler usage
+	// ITaskService
+	if (!strcmp(idbuf1, "0F87369F-A4E5-4CFC-BD3E-73E6154572DD") && !strcmp(idbuf2, "2FABA4C7-4DA9-4013-9697-20CC3FD40F85"))
+		pipe("TASKSCHED:1");
+
 	if ((known = known_object(&id1, &id2)))
 		LOQspecial_hresult("com", "shss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);
 	else
