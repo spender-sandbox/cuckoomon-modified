@@ -703,6 +703,12 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceExA,
 ) {
     BOOL ret = Old_GetDiskFreeSpaceExA(lpDirectoryName, lpFreeBytesAvailable, lpTotalNumberOfBytes, lpTotalNumberOfFreeBytes);
 	LOQ_bool("filesystem", "s", "DirectoryName", lpDirectoryName);
+	
+	/* Fake harddrive size to 256GB */
+	if (ret) {
+		lpTotalNumberOfBytes->QuadPart = 256060514304L;
+	}
+
     return ret;
 }
 
