@@ -133,6 +133,7 @@ void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
 		replace_string_in_buf(Data, DataLength, "VMware", "DELL__");
 		replace_string_in_buf(Data, DataLength, "Virtual", "C300_BD");
+		replace_string_in_buf(Data, DataLength, "VBOX", "DELL");
 	}
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\SystemBiosVersion")) {
@@ -141,6 +142,10 @@ void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\VideoBiosVersion")) {
 		replace_string_in_buf(Data, DataLength, "Oracle VM VirtualBox", "Intel VideoBios v1.3");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\SystemBiosDate")) {
+		replace_string_in_buf(Data, DataLength, "06/23/99", "01/01/02");
 	}
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\mssmbios\\Data\\AcpiData") ||
@@ -185,10 +190,15 @@ void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLeng
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU", L"DELL");
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VMware", L"DELL__");
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"Virtual", L"C300_BD");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VBOX", L"DELL");
 	}
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\SystemBiosVersion")) {
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VBOX", L"DELL");
+	}
+
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\SystemBiosDate")) {
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"06/23/99", L"01/01/02");
 	}
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\Description\\System\\VideoBiosVersion")) {
