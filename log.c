@@ -138,9 +138,9 @@ void log_flush()
 	There's thus an implicit assumption here that we won't log more than BUFFERSIZE before
 	DllMain completes, otherwise we'll lose logs.
 	*/
-	if (g_dll_main_complete) {
+	if (g_dll_main_complete && !process_shutting_down) {
 		SetEvent(g_log_flush);
-		while (g_idx && (g_sock != INVALID_SOCKET || !process_shutting_down)) raw_sleep(50);
+		while (g_idx && (g_sock != INVALID_SOCKET)) raw_sleep(50);
 	}
 	else {
 		/* if we're in main() still, then send the logs immediately just in case something bad

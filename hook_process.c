@@ -250,8 +250,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
     LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
 	if (!process_shutting_down && (ProcessHandle == NULL || GetCurrentProcessId() == GetProcessId(ProcessHandle))) {
 		pipe("KILL:%d", GetCurrentProcessId());
-		log_free();
 		process_shutting_down = 1;
+		log_free();
 	}
 	else if (ProcessHandle != NULL && GetCurrentProcessId() != GetProcessId(ProcessHandle)) {
 		DWORD PID = pid_from_process_handle(ProcessHandle);
