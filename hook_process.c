@@ -253,7 +253,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
 		log_free();
 		process_shutting_down = 1;
 	}
-	else {
+	else if (ProcessHandle != NULL && GetCurrentProcessId() != GetProcessId(ProcessHandle)) {
 		DWORD PID = pid_from_process_handle(ProcessHandle);
 		if (is_protected_pid(PID)) {
 			ret = STATUS_ACCESS_DENIED;
