@@ -124,6 +124,39 @@ void replace_wstring_in_buf(PWCHAR buf, ULONG len, PWCHAR findstr, PWCHAR repstr
 	}
 }
 
+void perform_device_fakery(PVOID OutputBuffer, ULONG OutputBufferLength, ULONG IoControlCode)
+{
+	/* Fake harddrive size to 256GB */
+	if (OutputBufferLength >= sizeof(GET_LENGTH_INFORMATION) && IoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
+		((PGET_LENGTH_INFORMATION)OutputBuffer)->Length.QuadPart = 256060514304L;
+	}
+
+	if (OutputBufferLength >= sizeof(DISK_GEOMETRY) && IoControlCode == IOCTL_DISK_GET_DRIVE_GEOMETRY) {
+		PDISK_GEOMETRY geo = (PDISK_GEOMETRY)OutputBuffer;
+		geo->Cylinders.QuadPart = 31130;
+		geo->TracksPerCylinder = 255;
+		geo->BytesPerSector = 512;
+		geo->SectorsPerTrack = 63;
+	}
+
+	if (OutputBufferLength >= sizeof(DISK_GEOMETRY) && IoControlCode == IOCTL_DISK_GET_DRIVE_GEOMETRY_EX) {
+		PDISK_GEOMETRY_EX geo = (PDISK_GEOMETRY_EX)OutputBuffer;
+		geo->Geometry.Cylinders.QuadPart = 31130;
+		geo->Geometry.TracksPerCylinder = 255;
+		geo->Geometry.BytesPerSector = 512;
+		geo->Geometry.SectorsPerTrack = 63;
+		if (OutputBufferLength >= (sizeof(DISK_GEOMETRY) + sizeof(LARGE_INTEGER)))
+			geo->DiskSize.QuadPart = 256060514304L;
+	}
+
+	/* fake model name */
+	if (IoControlCode == IOCTL_STORAGE_QUERY_PROPERTY) {
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "QEMU", "DELL");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "VMware", "DELL__");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "Virtual", "C300_BD");
+	}
+}
+
 void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength)
 {
 	if (keypath == NULL || Data == NULL)

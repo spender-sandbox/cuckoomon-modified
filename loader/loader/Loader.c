@@ -173,6 +173,54 @@ out:
 	return ret;
 }
 
+static void fixpe(char *buf, DWORD bufsize)
+{
+	PIMAGE_DOS_HEADER doshdr;
+	PIMAGE_NT_HEADERS nthdr;
+	PIMAGE_NT_HEADERS32 nthdr32;
+	PIMAGE_NT_HEADERS64 nthdr64;
+	PIMAGE_SECTION_HEADER sechdr;
+	unsigned short numsecs;
+	unsigned short i;
+
+	doshdr = (PIMAGE_DOS_HEADER)buf;
+
+	if (doshdr->e_magic != IMAGE_DOS_SIGNATURE)
+		return;
+
+	if (doshdr->e_magic > bufsize - (sizeof(IMAGE_NT_HEADERS64) + sizeof(IMAGE_DOS_HEADER)))
+		return;
+
+	nthdr = (PIMAGE_NT_HEADERS)(buf + doshdr->e_lfanew);
+	if (nthdr->Signature != IMAGE_NT_SIGNATURE)
+		return;
+
+	if (nthdr->FileHeader.Machine == IMAGE_FILE_MACHINE_I386) {
+		nthdr32 = (PIMAGE_NT_HEADERS32)nthdr;
+		numsecs = nthdr32->FileHeader.NumberOfSections;
+		if (bufsize < sizeof(IMAGE_NT_HEADERS32) - sizeof(IMAGE_OPTIONAL_HEADER32) + sizeof(IMAGE_DOS_HEADER) + nthdr32->FileHeader.SizeOfOptionalHeader + (numsecs * sizeof(IMAGE_SECTION_HEADER)))
+			return;
+		sechdr = (PIMAGE_SECTION_HEADER)((PCHAR)&nthdr32->OptionalHeader + nthdr32->FileHeader.SizeOfOptionalHeader);
+		for (i = 0; i < numsecs; i++) {
+			sechdr[i].PointerToRawData = sechdr[i].VirtualAddress;
+			sechdr[i].SizeOfRawData = sechdr[i].Misc.VirtualSize;
+		}
+	}
+	else if (nthdr->FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64) {
+		nthdr64 = (PIMAGE_NT_HEADERS64)nthdr;
+		numsecs = nthdr64->FileHeader.NumberOfSections;
+		if (bufsize < sizeof(IMAGE_NT_HEADERS64) - sizeof(IMAGE_OPTIONAL_HEADER64) + sizeof(IMAGE_DOS_HEADER) + nthdr64->FileHeader.SizeOfOptionalHeader + (numsecs * sizeof(IMAGE_SECTION_HEADER)))
+			return;
+		sechdr = (PIMAGE_SECTION_HEADER)((PCHAR)&nthdr64->OptionalHeader + nthdr64->FileHeader.SizeOfOptionalHeader);
+		for (i = 0; i < numsecs; i++) {
+			sechdr[i].PointerToRawData = sechdr[i].VirtualAddress;
+			sechdr[i].SizeOfRawData = sechdr[i].Misc.VirtualSize;
+		}
+	}
+
+	return;
+}
+
 static int dump(int pid, char *dumpfile)
 {
 	SYSTEM_INFO sysinfo;
@@ -216,6 +264,7 @@ static int dump(int pid, char *dumpfile)
 					WriteFile(f, &meminfo.State, sizeof(meminfo.State), &byteswritten, NULL);
 					WriteFile(f, &meminfo.Type, sizeof(meminfo.Type), &byteswritten, NULL);
 					WriteFile(f, &meminfo.Protect, sizeof(meminfo.Protect), &byteswritten, NULL);
+					fixpe(buf, bufsize);
 					WriteFile(f, buf, bufsize, &byteswritten, NULL);
 				}
 				free(buf);

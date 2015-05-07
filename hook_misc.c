@@ -134,16 +134,8 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
         "OutBuffer", lpBytesReturned ? *lpBytesReturned : nOutBufferSize,
             lpOutBuffer);
 
-	/* Fake harddrive size to 256GB */
-	if (!g_config.no_stealth && ret && lpOutBuffer && nOutBufferSize >= sizeof(GET_LENGTH_INFORMATION) && dwIoControlCode == IOCTL_DISK_GET_LENGTH_INFO) {
-		((PGET_LENGTH_INFORMATION)lpOutBuffer)->Length.QuadPart = 256060514304L;
-	}
-	/* fake model name */
-	if (!g_config.no_stealth && ret && dwIoControlCode == IOCTL_STORAGE_QUERY_PROPERTY) {
-		replace_string_in_buf(lpOutBuffer, nOutBufferSize, "QEMU", "DELL");
-		replace_string_in_buf(lpOutBuffer, nOutBufferSize, "VMware", "DELL__");
-		replace_string_in_buf(lpOutBuffer, nOutBufferSize, "Virtual", "C300_BD");
-	}
+	if (!g_config.no_stealth && ret && lpOutBuffer)
+		perform_device_fakery(lpOutBuffer, nOutBufferSize, dwIoControlCode);
 
 	return ret;
 }
@@ -288,6 +280,10 @@ HOOKDEF(int, WINAPI, GetSystemMetrics,
 }
 
 static LARGE_INTEGER last_skipped;
+static int num_to_spoof;
+static int num_spoofed;
+static int lastx;
+static int lasty;
 
 HOOKDEF(BOOL, WINAPI, GetCursorPos,
     _Out_ LPPOINT lpPoint
@@ -299,8 +295,19 @@ HOOKDEF(BOOL, WINAPI, GetCursorPos,
 		int xres, yres;
 		xres = GetSystemMetrics(0);
 		yres = GetSystemMetrics(1);
-		lpPoint->x = random() % xres;
-		lpPoint->y = random() % yres;
+		if (!num_to_spoof)
+			num_to_spoof = (random() % 20) + 10;
+		if (num_spoofed < num_to_spoof) {
+			lpPoint->x = random() % xres;
+			lpPoint->y = random() % yres;
+			num_spoofed++;
+		}
+		else {
+			lpPoint->x = lastx;
+			lpPoint->y = lasty;
+			lastx = lpPoint->x;
+			lasty = lpPoint->y;
+		}
 		last_skipped.QuadPart = time_skipped.QuadPart;
 	}
 	else if (last_skipped.QuadPart == 0) {

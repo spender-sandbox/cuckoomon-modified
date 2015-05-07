@@ -128,3 +128,4 @@ void replace_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr);
 void replace_wstring_in_buf(PWCHAR buf, ULONG len, PWCHAR findstr, PWCHAR repstr);
 void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength);
 void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength);
+void perform_device_fakery(PVOID OutputBuffer, ULONG OutputBufferLength, ULONG IoControlCode);
