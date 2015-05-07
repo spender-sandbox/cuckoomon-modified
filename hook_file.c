@@ -370,13 +370,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
 		geo->SectorsPerTrack = 63;
 	}
 
-	if (!g_config.no_stealth && NT_SUCCESS(ret) && OutputBuffer && OutputBufferLength >= sizeof(DISK_GEOMETRY_EX) && IoControlCode == IOCTL_DISK_GET_DRIVE_GEOMETRY_EX) {
+	if (!g_config.no_stealth && NT_SUCCESS(ret) && OutputBuffer && OutputBufferLength >= sizeof(DISK_GEOMETRY) && IoControlCode == IOCTL_DISK_GET_DRIVE_GEOMETRY_EX) {
 		PDISK_GEOMETRY_EX geo = (PDISK_GEOMETRY_EX)OutputBuffer;
-		geo->DiskSize.QuadPart = 256060514304L;
 		geo->Geometry.Cylinders.QuadPart = 31130;
 		geo->Geometry.TracksPerCylinder = 255;
 		geo->Geometry.BytesPerSector = 512;
 		geo->Geometry.SectorsPerTrack = 63;
+		if (OutputBufferLength >= (sizeof(DISK_GEOMETRY) + sizeof(LARGE_INTEGER)))
+			geo->DiskSize.QuadPart = 256060514304L;
 	}
 
 	/* fake model name */
