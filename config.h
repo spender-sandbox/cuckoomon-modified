@@ -20,6 +20,8 @@ struct _g_config {
     // name of the pipe to communicate with cuckoo
     char pipe_name[MAX_PATH];
 
+	char logserver[MAX_PATH];
+
     // results directory, has to be hidden
     char results[MAX_PATH];
 

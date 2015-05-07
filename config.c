@@ -31,8 +31,12 @@ int read_config(void)
     sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
 
     fp = fopen(config_fname, "r");
-	if (fp == NULL)
-		return 0;
+	if (fp == NULL) {
+		// for debugging purposes
+		fp = fopen("C:\\config.ini", "r");
+		if (fp == NULL)
+			return 0;
+	}
 
 	g_config.force_sleepskip = -1;
 	while (fgets(buf, sizeof(buf), fp) != NULL)
@@ -54,7 +58,11 @@ int read_config(void)
                 strncpy(g_config.pipe_name, value,
                     ARRAYSIZE(g_config.pipe_name));
             }
-            else if(!strcmp(key, "results")) {
+			else if (!strcmp(key, "logserver")) {
+				strncpy(g_config.logserver, value,
+					ARRAYSIZE(g_config.logserver));
+			}
+			else if (!strcmp(key, "results")) {
                 strncpy(g_config.results, value,
                     ARRAYSIZE(g_config.results));
             }

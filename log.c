@@ -42,6 +42,7 @@ static unsigned int g_starttick;
 
 static char *g_buffer;
 static volatile int g_idx;
+static HANDLE g_log_handle;
 
 // current to-be-logged API call
 static bson g_bson[1];
@@ -83,6 +84,17 @@ static void _send_log(void)
 				written = g_idx;
 			}
 		}
+		else {
+			if (g_log_handle == INVALID_HANDLE_VALUE) {
+				g_idx = 0;
+				continue;
+			}
+			else {
+				WriteFile(g_log_handle, g_buffer, g_idx, &written, NULL);
+			}
+		}
+		/*
+		// old style logging
 		else if (g_sock == INVALID_SOCKET) {
 			g_idx = 0;
 			continue;
@@ -90,6 +102,7 @@ static void _send_log(void)
 		else {
 			written = send(g_sock, g_buffer, g_idx, 0);
 		}
+		*/
 
 		if (written < 0)
 			continue;
@@ -138,16 +151,16 @@ void log_flush()
 	There's thus an implicit assumption here that we won't log more than BUFFERSIZE before
 	DllMain completes, otherwise we'll lose logs.
 	*/
-	if (g_dll_main_complete && !process_shutting_down) {
-		SetEvent(g_log_flush);
-		while (g_idx && (g_sock != INVALID_SOCKET)) raw_sleep(50);
-	}
-	else {
+	//if (g_dll_main_complete && !process_shutting_down) {
+	//	SetEvent(g_log_flush);
+	//	while (g_idx && (g_sock != INVALID_SOCKET)) raw_sleep(50);
+	//}
+	//else {
 		/* if we're in main() still, then send the logs immediately just in case something bad
 		   happens early in execution of the malware's code
 		 */
 		_send_log();
-	}
+	//}
 }
 
 static void log_raw_direct(const char *buf, size_t length) {
@@ -954,8 +967,18 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 
 	if(debug != 0) {
         g_sock = DEBUG_SOCKET;
-    }
-    else {
+	}
+	else {
+		g_sock = INVALID_SOCKET;
+		g_log_handle = CreateFileA(g_config.logserver, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+		if (g_log_handle == INVALID_HANDLE_VALUE) {
+			pipe("CRITICAL:Error initializing logging!");
+			return;
+		}
+	}
+	/*
+	// old style logging
+	else {
         WSADATA wsa;
 		struct sockaddr_in addr;
 
@@ -973,6 +996,7 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 			g_sock = DEBUG_SOCKET;
 		}
     }
+	*/
 
 	if (g_sock == DEBUG_SOCKET) {
 		char filename[64];
@@ -986,6 +1010,8 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 		g_debug_log_handle = CreateFileA(filename, FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, CREATE_NEW, 0, NULL);
 	}
 
+	/*
+	// old style logging
 	g_log_thread_handle =
 		CreateThread(NULL, 0, &_log_thread, NULL, 0, &g_log_thread_id);
 
@@ -996,6 +1022,7 @@ void log_init(unsigned int ip, unsigned short port, int debug)
 		pipe("CRITICAL:Error initializing logging threads!");
 		return;
 	}
+	*/
 
 	announce_netlog();
     log_new_process();
@@ -1014,6 +1041,16 @@ void log_free()
 		lastlog.buf = NULL;
 	}
     log_flush();
+	if (g_sock == DEBUG_SOCKET) {
+		g_sock = INVALID_SOCKET;
+	}
+	else {
+		CloseHandle(g_log_handle);
+		g_log_handle = INVALID_HANDLE_VALUE;
+	}
+
+	/*
+	// old logging method
 	if (g_sock != INVALID_SOCKET) {
 		if (g_sock == DEBUG_SOCKET) {
 			g_sock = INVALID_SOCKET;
@@ -1023,5 +1060,6 @@ void log_free()
 			g_sock = INVALID_SOCKET;
 			WSACleanup();
 		}
-    }
+	}
+	*/
 }

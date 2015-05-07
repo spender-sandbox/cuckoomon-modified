@@ -739,7 +739,10 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		notify_successful_load();
     }
     else if(dwReason == DLL_PROCESS_DETACH) {
-        log_free();
+		// in production, we shouldn't ever get called in this way since we
+		// unlink ourselves from the module list in the PEB
+		// so don't call log_free(), as it'll have side-effects
+        // log_free();
     }
 
 	g_dll_main_complete = TRUE;

@@ -247,18 +247,28 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
 	lasterror_t lasterror;
 
 	get_lasterrors(&lasterror);
-    LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
-	if (!process_shutting_down && (ProcessHandle == NULL || GetCurrentProcessId() == GetProcessId(ProcessHandle))) {
-		pipe("KILL:%d", GetCurrentProcessId());
+	if (ProcessHandle == NULL) {
+		// we mark this here as this termination type will kill all threads but ours, including
+		// the logging thread.  By setting this, we'll switch into a direct logging mode
+		// for the subsequent call to NtTerminateProcess against our own process handle
 		process_shutting_down = 1;
+		LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
+	}
+	else if (GetCurrentProcessId() == GetProcessId(ProcessHandle)) {
+		process_shutting_down = 1;
+		LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
+		pipe("KILL:%d", GetCurrentProcessId());
 		log_free();
 	}
-	else if (ProcessHandle != NULL && GetCurrentProcessId() != GetProcessId(ProcessHandle)) {
+	else {
 		DWORD PID = pid_from_process_handle(ProcessHandle);
 		if (is_protected_pid(PID)) {
 			ret = STATUS_ACCESS_DENIED;
 			LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
 			return ret;
+		}
+		else {
+			LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
 		}
 		pipe("KILL:%d", PID);
 	}

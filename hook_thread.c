@@ -233,8 +233,19 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateThread,
     __in  NTSTATUS ExitStatus
 ) {
     // Thread will terminate. Default logging will not work. Be aware: return value not valid
-    NTSTATUS ret = 0;
-    LOQ_ntstatus("threading", "ph", "ThreadHandle", ThreadHandle, "ExitStatus", ExitStatus);
+	DWORD pid = pid_from_thread_handle(ThreadHandle);
+	DWORD tid = tid_from_thread_handle(ThreadHandle);
+	NTSTATUS ret = 0;
+
+	if (pid == GetCurrentProcessId() && tid && (tid == g_unhook_detect_thread_id || tid == g_unhook_watcher_thread_id ||
+		tid == g_watchdog_thread_id || tid == g_terminate_event_thread_id || tid == g_log_thread_id ||
+		tid == g_logwatcher_thread_id)) {
+		ret = 0;
+		LOQ_ntstatus("threading", "phs", "ThreadHandle", ThreadHandle, "ExitStatus", ExitStatus, "Alert", "Attempted to kill cuckoomon thread");
+		return ret;
+	}
+
+	LOQ_ntstatus("threading", "ph", "ThreadHandle", ThreadHandle, "ExitStatus", ExitStatus);
     ret = Old_NtTerminateThread(ThreadHandle, ExitStatus);    
     return ret;
 }
