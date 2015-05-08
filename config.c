@@ -27,6 +27,7 @@ int read_config(void)
     char buf[512], config_fname[MAX_PATH];
 	FILE *fp;
 	unsigned int i;
+	unsigned int vallen;
 
     sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
 
@@ -53,10 +54,10 @@ int read_config(void)
 			const char *key = buf, *value = p + 1;
 
 			*p = 0;
-
+			vallen = strlen(value);
             if(!strcmp(key, "pipe")) {
-                strncpy(g_config.pipe_name, value,
-                    ARRAYSIZE(g_config.pipe_name));
+				for (i = 0; i < vallen; i++)
+					g_config.pipe_name[i] = (wchar_t)(unsigned short)value[i];
             }
 			else if (!strcmp(key, "logserver")) {
 				strncpy(g_config.logserver, value,

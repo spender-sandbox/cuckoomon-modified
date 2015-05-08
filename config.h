@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 struct _g_config {
     // name of the pipe to communicate with cuckoo
-    char pipe_name[MAX_PATH];
+    wchar_t pipe_name[MAX_PATH];
 
 	char logserver[MAX_PATH];
 
