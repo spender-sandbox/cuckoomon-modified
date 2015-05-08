@@ -339,6 +339,7 @@ static hook_t g_hooks[] = {
     HOOK(ws2_32, GetAddrInfoW),
 
 	HOOK(mpr, WNetUseConnectionW),
+	HOOK(cryptnet, CryptRetrieveObjectByUrlW),
 
     //
     // Service Hooks

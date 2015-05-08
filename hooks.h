@@ -1533,6 +1533,18 @@ extern HOOKDEF(DWORD, WINAPI, WNetUseConnectionW,
 	_Out_    LPDWORD lpResult
 );
 
+extern HOOKDEF(BOOL, WINAPI, CryptRetrieveObjectByUrl,
+	_In_     LPCWSTR                  pszUrl,
+	_In_     LPCSTR                   pszObjectOid,
+	_In_     DWORD                    dwRetrievalFlags,
+	_In_     DWORD                    dwTimeout,
+	_Out_    LPVOID                   *ppvObject,
+	_In_     HCRYPTASYNC              hAsyncRetrieve,
+	_In_opt_ PCRYPT_CREDENTIALS       pCredentials,
+	_In_opt_ LPVOID                   pvVerify,
+	_In_     PCRYPT_RETRIEVE_AUX_INFO pAuxInfo
+);
+
 //
 // Service Hooks
 //

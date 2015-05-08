@@ -521,3 +521,19 @@ HOOKDEF(DWORD, WINAPI, WNetUseConnectionW,
 	LOQ_zero("network", "uuuuuh", "LocalName", lpNetResource->lpRemoteName, "RemoteName", lpNetResource->lpRemoteName, "Password", lpPassword, "UserID", lpUserID, "AccessName", lpAccessName, "Flags", dwFlags);
 	return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, CryptRetrieveObjectByUrl,
+	_In_     LPCWSTR                  pszUrl,
+	_In_     LPCSTR                   pszObjectOid,
+	_In_     DWORD                    dwRetrievalFlags,
+	_In_     DWORD                    dwTimeout,
+	_Out_    LPVOID                   *ppvObject,
+	_In_     HCRYPTASYNC              hAsyncRetrieve,
+	_In_opt_ PCRYPT_CREDENTIALS       pCredentials,
+	_In_opt_ LPVOID                   pvVerify,
+	_In_     PCRYPT_RETRIEVE_AUX_INFO pAuxInfo
+) {
+	BOOL ret = Old_CryptRetrieveObjectByUrlW(pszUrl, pszObjectOid, dwRetrievalFlags, dwTimeout, ppvObject, hAsyncRetrieve, pCredentials, pvVerify, pAuxInfo);
+	LOQ_bool("network", "u", "URL", pszUrl);
+	return ret;
+}
