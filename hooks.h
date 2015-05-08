@@ -1533,7 +1533,7 @@ extern HOOKDEF(DWORD, WINAPI, WNetUseConnectionW,
 	_Out_    LPDWORD lpResult
 );
 
-extern HOOKDEF(BOOL, WINAPI, CryptRetrieveObjectByUrl,
+extern HOOKDEF(BOOL, WINAPI, CryptRetrieveObjectByUrlW,
 	_In_     LPCWSTR                  pszUrl,
 	_In_     LPCSTR                   pszObjectOid,
 	_In_     DWORD                    dwRetrievalFlags,

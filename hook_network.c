@@ -522,7 +522,7 @@ HOOKDEF(DWORD, WINAPI, WNetUseConnectionW,
 	return ret;
 }
 
-HOOKDEF(BOOL, WINAPI, CryptRetrieveObjectByUrl,
+HOOKDEF(BOOL, WINAPI, CryptRetrieveObjectByUrlW,
 	_In_     LPCWSTR                  pszUrl,
 	_In_     LPCSTR                   pszObjectOid,
 	_In_     DWORD                    dwRetrievalFlags,
