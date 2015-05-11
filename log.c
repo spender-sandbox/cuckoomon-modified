@@ -42,7 +42,7 @@ static unsigned int g_starttick;
 
 static char *g_buffer;
 static volatile int g_idx;
-static HANDLE g_log_handle;
+HANDLE g_log_handle;
 
 // current to-be-logged API call
 static bson g_bson[1];

@@ -86,6 +86,7 @@ extern int g_log_index;
 
 extern DWORD g_log_thread_id;
 extern DWORD g_logwatcher_thread_id;
+extern HANDLE g_log_handle;
 
 #define _LOQ(eval, cat, fmt, ...) do { static int _index; if(_index == 0) \
     _index = ++g_log_index; loq(_index, cat, \

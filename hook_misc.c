@@ -201,7 +201,13 @@ HOOKDEF(BOOL, WINAPI, LookupPrivilegeValueW,
 HOOKDEF(NTSTATUS, WINAPI, NtClose,
     __in    HANDLE Handle
 ) {
-    NTSTATUS ret = Old_NtClose(Handle);
+	NTSTATUS ret;
+	if (Handle == g_log_handle) {
+		ret = STATUS_INVALID_HANDLE;
+		LOQ_ntstatus("system", "ps", "Handle", Handle, "Alert", "Tried to close Cuckoo's log handle");
+		return ret;
+	}
+	ret = Old_NtClose(Handle);
     LOQ_ntstatus("system", "p", "Handle", Handle);
     if(NT_SUCCESS(ret)) {
         file_close(Handle);
