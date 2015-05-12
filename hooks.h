@@ -1643,7 +1643,7 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 extern HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 	__in HANDLE Handle,
 	__in    BOOLEAN Alertable,
-	__in    PLARGE_INTEGER Timeout
+	__in_opt    PLARGE_INTEGER Timeout
 );
 
 extern HOOKDEF(void, WINAPI, GetLocalTime,

@@ -51,7 +51,7 @@ void disable_sleep_skip()
 HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 	__in	HANDLE Handle,
 	__in    BOOLEAN Alertable,
-	__in    PLARGE_INTEGER Timeout
+	__in_opt    PLARGE_INTEGER Timeout
 ) {
 	NTSTATUS ret = STATUS_TIMEOUT;
 	LONGLONG interval;
@@ -63,13 +63,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 
 	get_lasterrors(&lasterror);
 
-	newint.QuadPart = Timeout->QuadPart;
-
 	// handle INFINITE wait
-	if (newint.QuadPart == 0x8000000000000000ULL) {
+	if (Timeout == NULL || Timeout->QuadPart == 0x8000000000000000ULL) {
 		LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", -1, "Status", "Infinite");
-		goto docall;
+		set_lasterrors(&lasterror);
+		return Old_NtWaitForSingleObject(Handle, Alertable, Timeout);
 	}
+
+	newint.QuadPart = Timeout->QuadPart;
 
 	if (newint.QuadPart > 0LL) {
 		/* convert absolute time to relative time */
