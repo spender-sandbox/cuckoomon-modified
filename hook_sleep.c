@@ -53,7 +53,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 	__in    BOOLEAN Alertable,
 	__in    PLARGE_INTEGER Timeout
 ) {
-	NTSTATUS ret = 0;
+	NTSTATUS ret = STATUS_TIMEOUT;
 	LONGLONG interval;
 	LARGE_INTEGER newint;
 	LARGE_INTEGER li;
