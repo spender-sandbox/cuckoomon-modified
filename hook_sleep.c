@@ -332,8 +332,6 @@ HOOKDEF(DWORD, WINAPI, timeGetTime,
 	// add the time we've skipped
 	ret += (DWORD)(time_skipped.QuadPart / 10000);
 
-	LOQ_void("system", "");
-
 	return ret;
 }
 
