@@ -258,7 +258,8 @@ HOOKDEF(void, WINAPI, GetLocalTime,
 ) {
 	lasterror_t lasterror;
 	LARGE_INTEGER li; FILETIME ft;
-	
+	DWORD ret = 0;
+
 	Old_GetLocalTime(lpSystemTime);
 
 
@@ -273,6 +274,8 @@ HOOKDEF(void, WINAPI, GetLocalTime,
     FileTimeToSystemTime(&ft, lpSystemTime);
 
 	set_lasterrors(&lasterror);
+
+	LOQ_void("system", "");
 }
 
 HOOKDEF(void, WINAPI, GetSystemTime,
@@ -280,6 +283,7 @@ HOOKDEF(void, WINAPI, GetSystemTime,
 ) {
 	lasterror_t lasterror;
 	LARGE_INTEGER li; FILETIME ft;
+	DWORD ret = 0;
 
     Old_GetSystemTime(lpSystemTime);
 
@@ -294,6 +298,8 @@ HOOKDEF(void, WINAPI, GetSystemTime,
     FileTimeToSystemTime(&ft, lpSystemTime);
 
 	set_lasterrors(&lasterror);
+
+	LOQ_void("system", "");
 }
 
 HOOKDEF(DWORD, WINAPI, GetTickCount,
@@ -311,6 +317,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemTime,
     _Out_  PLARGE_INTEGER SystemTime
 ) {
     NTSTATUS ret = Old_NtQuerySystemTime(SystemTime);
+	LOQ_ntstatus("system", "");
     if(NT_SUCCESS(ret)) {
         SystemTime->QuadPart += time_skipped.QuadPart;
     }
@@ -325,6 +332,8 @@ HOOKDEF(DWORD, WINAPI, timeGetTime,
 	// add the time we've skipped
 	ret += (DWORD)(time_skipped.QuadPart / 10000);
 
+	LOQ_void("system", "");
+
 	return ret;
 }
 
@@ -333,6 +342,8 @@ HOOKDEF(void, WINAPI, GetSystemTimeAsFileTime,
 ) {
 	LARGE_INTEGER li;
 	FILETIME ft;
+	DWORD ret = 0;
+
 	Old_GetSystemTimeAsFileTime(&ft);
 
 	li.HighPart = ft.dwHighDateTime;
@@ -342,6 +353,8 @@ HOOKDEF(void, WINAPI, GetSystemTimeAsFileTime,
 	ft.dwLowDateTime = li.LowPart;
 
 	memcpy(lpSystemTimeAsFileTime, &ft, sizeof(ft));
+
+	LOQ_void("system", "");
 
 	return;
 }
