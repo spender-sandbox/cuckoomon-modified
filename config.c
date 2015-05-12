@@ -54,7 +54,7 @@ int read_config(void)
 			const char *key = buf, *value = p + 1;
 
 			*p = 0;
-			vallen = strlen(value);
+			vallen = (unsigned int)strlen(value);
             if(!strcmp(key, "pipe")) {
 				for (i = 0; i < vallen; i++)
 					g_config.pipe_name[i] = (wchar_t)(unsigned short)value[i];
