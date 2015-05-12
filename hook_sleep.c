@@ -37,6 +37,8 @@ static LARGE_INTEGER time_start;
 
 static int num_skipped = 0;
 static int num_small = 0;
+static int num_wait_skipped = 0;
+static int num_wait_small = 0;
 
 void disable_sleep_skip()
 {
@@ -46,6 +48,112 @@ void disable_sleep_skip()
 	}
 }
 
+HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
+	__in	HANDLE Handle,
+	__in    BOOLEAN Alertable,
+	__in    PLARGE_INTEGER Timeout
+) {
+	NTSTATUS ret = 0;
+	LONGLONG interval;
+	LARGE_INTEGER newint;
+	LARGE_INTEGER li;
+	unsigned long milli;
+	FILETIME ft;
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
+	newint.QuadPart = Timeout->QuadPart;
+
+	// handle INFINITE wait
+	if (newint.QuadPart == 0x8000000000000000ULL) {
+		LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", -1, "Status", "Infinite");
+		goto docall;
+	}
+
+	if (newint.QuadPart > 0LL) {
+		/* convert absolute time to relative time */
+		FILETIME ft;
+		GetSystemTimeAsFileTime(&ft);
+
+		newint.HighPart = ft.dwHighDateTime;
+		newint.LowPart = ft.dwLowDateTime;
+		newint.QuadPart += time_skipped.QuadPart;
+		newint.QuadPart -= Timeout->QuadPart;
+		if (newint.QuadPart > 0LL)
+			newint.QuadPart = 0LL;
+	}
+	interval = -newint.QuadPart;
+	milli = (unsigned long)(interval / 10000);
+
+	// only handle lame cases
+	if (Handle != GetCurrentProcess()) {
+		LOQ_ntstatus("system", "pi", "Handle", Handle, "Milliseconds", milli);
+		goto docall;
+	}
+
+	GetSystemTimeAsFileTime(&ft);
+	li.HighPart = ft.dwHighDateTime;
+	li.LowPart = ft.dwLowDateTime;
+
+	// check if we're still within the hardcoded limit
+	if (sleep_skip_active && (li.QuadPart < time_start.QuadPart + MAX_SLEEP_SKIP_DIFF * 10000)) {
+		time_skipped.QuadPart += interval;
+
+		if (num_wait_skipped < 20) {
+			// notify how much we've skipped
+			LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", milli, "Status", "Skipped");
+			num_wait_skipped++;
+		}
+		else if (num_wait_skipped == 20) {
+			LOQ_ntstatus("system", "s", "Status", "Skipped log limit reached");
+			num_wait_skipped++;
+		}
+		goto skipcall;
+	}
+	/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
+	else if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
+		LARGE_INTEGER newint;
+		newint.QuadPart = -(10000 * 10000);
+		time_skipped.QuadPart += interval - (10000 * 10000);
+		LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", milli, "Status", "Skipped");
+		goto docall;
+	}
+	else if (g_config.force_sleepskip > 0) {
+		time_skipped.QuadPart += interval;
+		LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", milli, "Status", "Skipped");
+		newint.QuadPart = 0;
+		goto docall;
+	}
+	else {
+		disable_sleep_skip();
+	}
+	if (milli <= 10) {
+		if (num_wait_small < 20) {
+			LOQ_ntstatus("system", "pi", "Handle", Handle, "Milliseconds", milli);
+			num_wait_small++;
+		}
+		else if (num_wait_small == 20) {
+			LOQ_ntstatus("system", "s", "Status", "Small log limit reached");
+			num_wait_small++;
+		}
+		else if (num_wait_small > 20) {
+			// likely using a bunch of tiny sleeps to delay execution, so let's suddenly mimic high load and give our
+			// fake passage of time the impression of longer delays to return from sleep
+			time_skipped.QuadPart += (randint(500, 1000) * 10000);
+		}
+	}
+	else {
+		LOQ_ntstatus("system", "pi", "Handle", Handle, "Milliseconds", milli);
+	}
+
+docall:
+	set_lasterrors(&lasterror);
+	return Old_NtWaitForSingleObject(Handle, Alertable, &newint);
+skipcall:
+	set_lasterrors(&lasterror);
+	return ret;
+}
 HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    BOOLEAN Alertable,
     __in    PLARGE_INTEGER DelayInterval

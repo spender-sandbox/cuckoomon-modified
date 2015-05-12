@@ -360,6 +360,7 @@ static hook_t g_hooks[] = {
     // Sleep Hooks
     //
     HOOK(ntdll, NtDelayExecution),
+	HOOK(ntdll, NtWaitForSingleObject),
     HOOK(kernel32, GetLocalTime),
     HOOK(kernel32, GetSystemTime),
 	HOOK(kernel32, GetSystemTimeAsFileTime),
