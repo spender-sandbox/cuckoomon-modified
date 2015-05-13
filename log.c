@@ -728,7 +728,7 @@ void loq(int index, const char *category, const char *name,
                 }
             } else {
                 bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
-                    (const char *) data, 0);
+                    (const char *) data, size);
             }
 
             // bson_append_finish_object( g_bson );
