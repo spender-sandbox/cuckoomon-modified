@@ -786,7 +786,7 @@ void log_new_process()
 
     GetSystemTimeAsFileTime(&st);
 
-    loq(LOG_ID_PROCESS, "__notification__", "__process__", 1, 0, "llllu",
+    loq(LOG_ID_PROCESS, "__notification__", "__process__", 1, 0, "iiiiu",
         "TimeLow", st.dwLowDateTime,
         "TimeHigh", st.dwHighDateTime,
         "ProcessIdentifier", GetCurrentProcessId(),
@@ -904,7 +904,7 @@ void log_environ()
 void log_anomaly(const char *subcategory, int success,
     const char *funcname, const char *msg)
 {
-    loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", success, 0, "lsss",
+    loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", success, 0, "isss",
         "ThreadIdentifier", GetCurrentThreadId(),
         "Subcategory", subcategory,
         "FunctionName", funcname,
@@ -927,7 +927,7 @@ void log_hook_modification(const char *funcname, const char *origbytes, const ch
 		sprintf(p, "%02X ", (unsigned char)newbytes[i]);
 	}
 
-	loq(LOG_ID_ANOMALY_EXTRA, "__notification__", "__anomaly__", 1, 0, "lsssss",
+	loq(LOG_ID_ANOMALY_EXTRA, "__notification__", "__anomaly__", 1, 0, "isssss",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
 		"FunctionName", funcname,
@@ -938,7 +938,7 @@ void log_hook_modification(const char *funcname, const char *origbytes, const ch
 
 void log_hook_removal(const char *funcname)
 {
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "lsss",
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "isss",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
 		"FunctionName", funcname,
@@ -947,7 +947,7 @@ void log_hook_removal(const char *funcname)
 
 void log_hook_restoration(const char *funcname)
 {
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "lsss",
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "isss",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
 		"FunctionName", funcname,

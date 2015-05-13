@@ -51,7 +51,7 @@ typedef NTSTATUS(WINAPI *_NtDelayExecution)(
 
 void resolve_runtime_apis(void);
 
-ULONG_PTR parent_process_id(); // By Napalm @ NetCore2K (rohitab.com)
+DWORD parent_process_id(); // By Napalm @ NetCore2K (rohitab.com)
 DWORD pid_from_process_handle(HANDLE process_handle);
 DWORD pid_from_thread_handle(HANDLE thread_handle);
 DWORD tid_from_thread_handle(HANDLE thread_handle);

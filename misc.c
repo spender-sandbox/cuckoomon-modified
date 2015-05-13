@@ -312,12 +312,13 @@ BOOLEAN is_valid_address_range(ULONG_PTR start, DWORD len)
 	return TRUE;
 }
 
-ULONG_PTR parent_process_id() // By Napalm @ NetCore2K (rohitab.com)
+DWORD parent_process_id() // By Napalm @ NetCore2K (rohitab.com)
 {
-    ULONG_PTR pbi[6]; ULONG ulSize = 0;
+	PROCESS_BASIC_INFORMATION pbi;
+    ULONG ulSize = 0;
 
     if(pNtQueryInformationProcess(GetCurrentProcess(), 0, &pbi, sizeof(pbi), &ulSize) >= 0 && ulSize == sizeof(pbi))
-        return pbi[5];
+        return (DWORD)pbi.ParentProcessId;
 
 	return 0;
 }

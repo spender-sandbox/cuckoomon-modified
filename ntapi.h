@@ -174,10 +174,10 @@ typedef struct _KEY_VALUE_ENTRY {
 
 typedef struct _PROCESS_BASIC_INFORMATION {
     PVOID Reserved1;
-    void *PebBaseAddress;
+    PVOID PebBaseAddress;
     PVOID Reserved2[2];
     ULONG_PTR UniqueProcessId;
-    PVOID Reserved3;
+	ULONG_PTR ParentProcessId;
 } PROCESS_BASIC_INFORMATION;
 
 typedef struct _CLIENT_ID {
