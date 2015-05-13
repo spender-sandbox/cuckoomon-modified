@@ -1243,6 +1243,40 @@ extern HOOKDEF(BOOL, WINAPI, GetUserNameW,
     _Inout_  LPDWORD lpnSize
 );
 
+extern HOOKDEF(HDEVINFO, WINAPI, SetupDiGetClassDevsA,
+	_In_opt_ const GUID   *ClassGuid,
+	_In_opt_       PCSTR Enumerator,
+	_In_opt_       HWND   hwndParent,
+	_In_           DWORD  Flags
+);
+
+extern HOOKDEF(HDEVINFO, WINAPI, SetupDiGetClassDevsW,
+	_In_opt_ const GUID   *ClassGuid,
+	_In_opt_       PCWSTR Enumerator,
+	_In_opt_       HWND   hwndParent,
+	_In_           DWORD  Flags
+);
+
+extern HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyA,
+	_In_      HDEVINFO         DeviceInfoSet,
+	_In_      PSP_DEVINFO_DATA DeviceInfoData,
+	_In_      DWORD            Property,
+	_Out_opt_ PDWORD           PropertyRegDataType,
+	_Out_opt_ PBYTE            PropertyBuffer,
+	_In_      DWORD            PropertyBufferSize,
+	_Out_opt_ PDWORD           RequiredSize
+);
+
+extern HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyW,
+	_In_      HDEVINFO         DeviceInfoSet,
+	_In_      PSP_DEVINFO_DATA DeviceInfoData,
+	_In_      DWORD            Property,
+	_Out_opt_ PDWORD           PropertyRegDataType,
+	_Out_opt_ PBYTE            PropertyBuffer,
+	_In_      DWORD            PropertyBufferSize,
+	_Out_opt_ PDWORD           RequiredSize
+);
+
 //
 // Network Hooks
 //

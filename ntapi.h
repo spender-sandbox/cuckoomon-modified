@@ -180,6 +180,14 @@ typedef struct _PROCESS_BASIC_INFORMATION {
 	ULONG_PTR ParentProcessId;
 } PROCESS_BASIC_INFORMATION;
 
+typedef PVOID HDEVINFO; 
+typedef struct _SP_DEVINFO_DATA {
+	DWORD     cbSize;
+	GUID      ClassGuid;
+	DWORD     DevInst;
+	ULONG_PTR Reserved;
+} SP_DEVINFO_DATA, *PSP_DEVINFO_DATA;
+
 typedef struct _CLIENT_ID {
     PVOID UniqueProcess;
     PVOID UniqueThread;

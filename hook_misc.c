@@ -471,3 +471,130 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemInformation,
 	}
 	return ret;
 }
+
+static GUID _CLSID_DiskDrive = { 0x4d36e967, 0xe325, 0x11ce, 0xbf, 0xc1, 0x08, 0x00, 0x2b, 0xe1, 0x03, 0x18 };
+static GUID _CLSID_CDROM = { 0x4d36e965, 0xe325, 0x11ce, 0xbf, 0xc1, 0x08, 0x00, 0x2b, 0xe1, 0x03, 0x18 };
+static GUID _CLSID_Display = { 0x4d36e968, 0xe325, 0x11ce, 0xbf, 0xc1, 0x08, 0x00, 0x2b, 0xe1, 0x03, 0x18 };
+static GUID _CLSID_FDC = { 0x4d36e969, 0xe325, 0x11ce, 0xbf, 0xc1, 0x08, 0x00, 0x2b, 0xe1, 0x03, 0x18 };
+static GUID _CLSID_HDC = { 0x4d36e96a, 0xe325, 0x11ce, 0xbf, 0xc1, 0x08, 0x00, 0x2b, 0xe1, 0x03, 0x18 };
+static GUID _CLSID_FloppyDisk = { 0x4d36e980, 0xe325, 0x11ce, 0xbf, 0xc1, 0x08, 0x00, 0x2b, 0xe1, 0x03, 0x18 };
+
+static char *known_object(IID *cls)
+{
+	if (!memcmp(cls, &_CLSID_DiskDrive, sizeof(*cls)))
+		return "DiskDrive";
+	else if (!memcmp(cls, &_CLSID_CDROM, sizeof(*cls)))
+		return "CDROM";
+	else if (!memcmp(cls, &_CLSID_Display, sizeof(*cls)))
+		return "Display";
+	else if (!memcmp(cls, &_CLSID_FDC, sizeof(*cls)))
+		return "FDC";
+	else if (!memcmp(cls, &_CLSID_HDC, sizeof(*cls)))
+		return "HDC";
+	else if (!memcmp(cls, &_CLSID_FloppyDisk, sizeof(*cls)))
+		return "FloppyDisk";
+
+	return NULL;
+}
+
+HOOKDEF(HDEVINFO, WINAPI, SetupDiGetClassDevsA,
+	_In_opt_ const GUID   *ClassGuid,
+	_In_opt_       PCSTR Enumerator,
+	_In_opt_       HWND   hwndParent,
+	_In_           DWORD  Flags
+) {
+	IID id1;
+	char idbuf[40];
+	char *known;
+	lasterror_t lasterror;
+	HDEVINFO ret = Old_SetupDiGetClassDevsA(ClassGuid, Enumerator, hwndParent, Flags);
+
+	get_lasterrors(&lasterror);
+
+	if (ClassGuid) {
+		memcpy(&id1, ClassGuid, sizeof(id1));
+		sprintf(idbuf, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id1.Data1, id1.Data2, id1.Data3,
+			id1.Data4[0], id1.Data4[1], id1.Data4[2], id1.Data4[3], id1.Data4[4], id1.Data4[5], id1.Data4[6], id1.Data4[7]);
+		set_lasterrors(&lasterror);
+
+		if ((known = known_object(&id1)))
+			LOQ_handle("misc", "ss", "ClassGuid", idbuf, "Known", known);
+		else
+			LOQ_handle("misc", "s", "ClassGuid", idbuf);
+	}
+	return ret;
+}
+
+HOOKDEF(HDEVINFO, WINAPI, SetupDiGetClassDevsW,
+	_In_opt_ const GUID   *ClassGuid,
+	_In_opt_       PCWSTR Enumerator,
+	_In_opt_       HWND   hwndParent,
+	_In_           DWORD  Flags
+) {
+	IID id1;
+	char idbuf[40];
+	char *known;
+	lasterror_t lasterror;
+	HDEVINFO ret = Old_SetupDiGetClassDevsW(ClassGuid, Enumerator, hwndParent, Flags);
+	if (ClassGuid) {
+		memcpy(&id1, ClassGuid, sizeof(id1));
+		sprintf(idbuf, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id1.Data1, id1.Data2, id1.Data3,
+			id1.Data4[0], id1.Data4[1], id1.Data4[2], id1.Data4[3], id1.Data4[4], id1.Data4[5], id1.Data4[6], id1.Data4[7]);
+		set_lasterrors(&lasterror);
+
+		if ((known = known_object(&id1)))
+			LOQ_handle("misc", "ss", "ClassGuid", idbuf, "Known", known);
+		else
+			LOQ_handle("misc", "s", "ClassGuid", idbuf);
+	}
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyA,
+	_In_      HDEVINFO         DeviceInfoSet,
+	_In_      PSP_DEVINFO_DATA DeviceInfoData,
+	_In_      DWORD            Property,
+	_Out_opt_ PDWORD           PropertyRegDataType,
+	_Out_opt_ PBYTE            PropertyBuffer,
+	_In_      DWORD            PropertyBufferSize,
+	_Out_opt_ PDWORD           RequiredSize
+) {
+	BOOL ret = Old_SetupDiGetDeviceRegistryPropertyA(DeviceInfoSet, DeviceInfoData, Property, PropertyRegDataType, PropertyBuffer, PropertyBufferSize, RequiredSize);
+
+	if (PropertyBuffer)
+		LOQ_bool("misc", "ir", "Property", Property, "PropertyBuffer", PropertyRegDataType, PropertyBufferSize, PropertyBuffer);
+
+	if (!g_config.no_stealth && ret && PropertyBuffer) {
+		replace_ci_string_in_buf(PropertyBuffer, PropertyBufferSize, "VBOX", "DELL_");
+		replace_ci_string_in_buf(PropertyBuffer, PropertyBufferSize, "QEMU", "DELL");
+		replace_ci_string_in_buf(PropertyBuffer, PropertyBufferSize, "VMWARE", "DELL__");
+	}
+
+	return ret;
+}
+
+
+HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyW,
+	_In_      HDEVINFO         DeviceInfoSet,
+	_In_      PSP_DEVINFO_DATA DeviceInfoData,
+	_In_      DWORD            Property,
+	_Out_opt_ PDWORD           PropertyRegDataType,
+	_Out_opt_ PBYTE            PropertyBuffer,
+	_In_      DWORD            PropertyBufferSize,
+	_Out_opt_ PDWORD           RequiredSize
+) {
+	BOOL ret;
+	ENSURE_DWORD(PropertyRegDataType);
+	ret = Old_SetupDiGetDeviceRegistryPropertyW(DeviceInfoSet, DeviceInfoData, Property, PropertyRegDataType, PropertyBuffer, PropertyBufferSize, RequiredSize);
+
+	if (PropertyBuffer)
+		LOQ_bool("misc", "iR", "Property", Property, "PropertyBuffer", PropertyRegDataType, PropertyBufferSize, PropertyBuffer);
+
+	if (!g_config.no_stealth && ret && PropertyBuffer) {
+		replace_ci_wstring_in_buf((PWCHAR)PropertyBuffer, PropertyBufferSize, L"VBOX", L"DELL_");
+		replace_ci_wstring_in_buf((PWCHAR)PropertyBuffer, PropertyBufferSize, L"QEMU", L"DELL");
+		replace_ci_wstring_in_buf((PWCHAR)PropertyBuffer, PropertyBufferSize, L"VMWARE", L"DELL__");
+	}
+
+	return ret;
+}

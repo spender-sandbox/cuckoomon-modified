@@ -296,7 +296,11 @@ static hook_t g_hooks[] = {
 	HOOK(ntdll, RtlDecompressBuffer),
 	HOOK(kernel32, GetSystemInfo),
 	HOOK(ntdll, NtQuerySystemInformation),
-	
+	HOOK(setupapi, SetupDiGetClassDevsA),
+	HOOK(setupapi, SetupDiGetClassDevsW),
+	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyA),
+	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyW),
+
 	//
     // Network Hooks
     //

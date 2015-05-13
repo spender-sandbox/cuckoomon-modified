@@ -106,6 +106,23 @@ void replace_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr)
 	}
 }
 
+void replace_ci_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr)
+{
+	unsigned int findlen = (unsigned int)strlen(findstr);
+	unsigned int replen = (unsigned int)strlen(repstr);
+	ULONG i;
+
+	if ((findlen != replen) || len < findlen)
+		return;
+
+	for (i = 0; i <= len - findlen; i++) {
+		if (!_strnicmp(&buf[i], findstr, findlen)) {
+			memcpy(&buf[i], repstr, replen);
+			i += replen - 1;
+		}
+	}
+}
+
 // len is in characters
 void replace_wstring_in_buf(PWCHAR buf, ULONG len, PWCHAR findstr, PWCHAR repstr)
 {
@@ -118,6 +135,23 @@ void replace_wstring_in_buf(PWCHAR buf, ULONG len, PWCHAR findstr, PWCHAR repstr
 
 	for (i = 0; i <= len - findlen; i++) {
 		if (!memcmp(&buf[i], findstr, findlen * sizeof(wchar_t))) {
+			memcpy(&buf[i], repstr, replen * sizeof(wchar_t));
+			i += replen - 1;
+		}
+	}
+}
+
+void replace_ci_wstring_in_buf(PWCHAR buf, ULONG len, PWCHAR findstr, PWCHAR repstr)
+{
+	unsigned int findlen = (unsigned int)wcslen(findstr);
+	unsigned int replen = (unsigned int)wcslen(repstr);
+	ULONG i;
+
+	if ((findlen != replen) || len < findlen)
+		return;
+
+	for (i = 0; i <= len - findlen; i++) {
+		if (!_wcsnicmp(&buf[i], findstr, findlen)) {
 			memcpy(&buf[i], repstr, replen * sizeof(wchar_t));
 			i += replen - 1;
 		}
