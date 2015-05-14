@@ -25,8 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include <Sddl.h>
 
-#define UNHOOK_MAXCOUNT 2048
-#define UNHOOK_BUFSIZE 256
+#define UNHOOK_MAXCOUNT 1024
+#define UNHOOK_BUFSIZE 32
 
 static HANDLE g_unhook_thread_handle, g_watcher_thread_handle;
 
@@ -46,10 +46,21 @@ static char g_funcname[UNHOOK_MAXCOUNT][64];
 static uint8_t g_orig[UNHOOK_MAXCOUNT][UNHOOK_BUFSIZE];
 
 // The contents of this region after we modified it.
-static uint8_t g_our[UNHOOK_BUFSIZE][UNHOOK_BUFSIZE];
+static uint8_t g_our[UNHOOK_MAXCOUNT][UNHOOK_BUFSIZE];
 
 // If the region has been modified, did we report this already?
 static uint8_t g_hook_reported[UNHOOK_MAXCOUNT];
+
+int address_already_hooked(uint8_t *addr)
+{
+	uint32_t idx;
+
+	for (idx = 0; idx < g_index; idx++)
+		if (addr == g_addr[idx])
+			return 1;
+
+	return 0;
+}
 
 void unhook_detect_add_region(const char *funcname, uint8_t *addr,
     const uint8_t *orig, const uint8_t *our, uint32_t length)
@@ -59,11 +70,14 @@ void unhook_detect_add_region(const char *funcname, uint8_t *addr,
         return;
     }
 
+	if (address_already_hooked(addr))
+		return;
+
     g_length[g_index] = length;
     g_addr[g_index] = addr;
 
     if(funcname != NULL) {
-        strcpy(g_funcname[g_index], funcname);
+        strncpy(g_funcname[g_index], funcname, sizeof(g_funcname[g_index]) - 1);
     }
 
     memcpy(g_orig[g_index], orig, MIN(length, UNHOOK_BUFSIZE));

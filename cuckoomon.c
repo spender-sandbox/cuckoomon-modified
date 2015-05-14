@@ -428,6 +428,25 @@ static hook_t g_hooks[] = {
 	HOOK(advapi32, CryptExportKey),
 	HOOK(advapi32, CryptGenKey),
 	HOOK(advapi32, CryptCreateHash),
+
+	// needed due to the DLL being delay-loaded in some cases
+	HOOK(cryptsp, CryptAcquireContextA),
+	HOOK(cryptsp, CryptAcquireContextW),
+	HOOK(cryptsp, CryptProtectData),
+	HOOK(cryptsp, CryptUnprotectData),
+	HOOK(cryptsp, CryptProtectMemory),
+	HOOK(cryptsp, CryptUnprotectMemory),
+	HOOK(cryptsp, CryptDecrypt),
+	HOOK(cryptsp, CryptEncrypt),
+	HOOK(cryptsp, CryptHashData),
+	HOOK(cryptsp, CryptDecodeMessage),
+	HOOK(cryptsp, CryptDecryptMessage),
+	HOOK(cryptsp, CryptEncryptMessage),
+	HOOK(cryptsp, CryptHashMessage),
+	HOOK(cryptsp, CryptExportKey),
+	HOOK(cryptsp, CryptGenKey),
+	HOOK(cryptsp, CryptCreateHash),
+
 };
 
 // get a random hooking method, except for hook_jmp_direct

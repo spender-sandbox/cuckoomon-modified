@@ -504,17 +504,35 @@ int hook_api(hook_t *h, int type)
 	if (GetVersionEx(&os_info) && os_info.dwMajorVersion >= 6) {
 		if (addr[0] == 0xeb) {
 			PUCHAR target = (PUCHAR)get_short_rel_target(addr);
+			unhook_detect_add_region(h->funcname, addr, addr, addr, 2);
 			if (target[0] == 0xff && target[1] == 0x25) {
-				unhook_detect_add_region(h->funcname, addr, addr, addr, 2);
+				PUCHAR origaddr = addr;
 				addr = (PUCHAR)get_indirect_target(target);
+				// handle delay-loaded DLL stubs
+				if (!memcmp(addr, "\x48\x8d\x05", 3) && addr[7] == 0xe9) {
+					// skip this particular hook, we'll hook the delay-loaded DLL at the time
+					// is is loaded.  This means we will have duplicate "hook" entries
+					// but to avoid any problems, we will check before hooking to see
+					// if the final function has already been hooked
+					return 0;
+				}
+				unhook_detect_add_region(h->funcname, target, target, target, 6);
 			}
 		}
 		else if (addr[0] == 0xe9) {
 			PUCHAR target = (PUCHAR)get_near_rel_target(addr);
 			unhook_detect_add_region(h->funcname, addr, addr, addr, 5);
 			if (target[0] == 0xff && target[1] == 0x25) {
-				unhook_detect_add_region(h->funcname, target, target, target, 6);
 				addr = (PUCHAR)get_indirect_target(target);
+				// handle delay-loaded DLL stubs
+				if (!memcmp(addr, "\x48\x8d\x05", 3) && addr[7] == 0xe9) {
+					// skip this particular hook, we'll hook the delay-loaded DLL at the time
+					// is is loaded.  This means we will have duplicate "hook" entries
+					// but to avoid any problems, we will check before hooking to see
+					// if the final function has already been hooked
+					return 0;
+				}
+				unhook_detect_add_region(h->funcname, target, target, target, 6);
 			}
 			else {
 				addr = target;
@@ -538,6 +556,11 @@ int hook_api(hook_t *h, int type)
 		return ret;
 	}
 
+	// make sure we aren't trying to hook the same address twice, as could
+	// happen due to delay-loaded DLLs
+	if (address_already_hooked(addr))
+		return 0;
+		
 	// make the address writable
 	if (VirtualProtect(addr, hook_types[type].len, PAGE_EXECUTE_READWRITE,
 		&old_protect)) {
@@ -556,9 +579,7 @@ int hook_api(hook_t *h, int type)
 			ret = hook_types[type].hook(h, addr, h->hookdata->pre_tramp);
 
 			// Add unhook detection for our newly created hook.
-			// Ensure any changes behind our hook are also catched by
-			// making the buffersize 16.
-			unhook_detect_add_region(h->funcname, addr, orig, addr, 16);
+			unhook_detect_add_region(h->funcname, addr, orig, addr, hook_types[type].len);
 
 			// if successful, assign the trampoline address to *old_func
 			if (ret == 0) {

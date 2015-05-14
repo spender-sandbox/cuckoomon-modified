@@ -918,11 +918,11 @@ void log_hook_modification(const char *funcname, const char *origbytes, const ch
 	char *p;
 	unsigned int i;
 
-	for (i = 0; i < len && i < 124/3; i++) {
+	for (i = 0; (i < len) && (i < 124/3); i++) {
 		p = &msg1[i * 3];
 		sprintf(p, "%02X ", (unsigned char)origbytes[i]);
 	}
-	for (i = 0; i < len && i < 124 / 3; i++) {
+	for (i = 0; (i < len) && (i < 124 / 3); i++) {
 		p = &msg2[i * 3];
 		sprintf(p, "%02X ", (unsigned char)newbytes[i]);
 	}
