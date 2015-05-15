@@ -527,7 +527,7 @@ void set_hooks()
 LONG WINAPI cuckoomon_exception_handler(
 	__in struct _EXCEPTION_POINTERS *ExceptionInfo
 	) {
-	char msg[1024];
+	char msg[8192];
 	char *dllname;
 	unsigned int offset;
 	ULONG_PTR eip = (ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
@@ -557,10 +557,18 @@ LONG WINAPI cuckoomon_exception_handler(
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
 	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %.08x, Fault Address: %.08x, Esp: %.08x, Exception Code: %08x, ",
 		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (ULONG_PTR)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
-	if (is_valid_address_range((ULONG_PTR)stack, 10 * sizeof(ULONG_PTR))) 
+	if (is_valid_address_range((ULONG_PTR)stack, 100 * sizeof(ULONG_PTR))) 
 	{
-		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Stack Dump: %.08x %.08x %.08x %.08x %.08x %.08x %.08x %.08x %.08x %.08x, ",
-			stack[0], stack[1], stack[2], stack[3], stack[4], stack[5], stack[6], stack[7], stack[8], stack[9]);
+		DWORD i;
+		// overflows ahoy
+		for (i = 0; i < 100; i++) {
+			char *buf = convert_address_to_dll_name_and_offset(stack[i], &offset);
+			if (buf) {
+				snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", buf, offset);
+				free(buf);
+			}
+		}
+		strcat(msg, ", ");
 	}
 	if (is_valid_address_range(eip, 16)) {
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Bytes at EIP: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
@@ -665,7 +673,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #error Update hook check
 #endif
 		if (((PUCHAR)ReadProcessMemory)[0] == 0xff && ((PUCHAR)ReadProcessMemory)[1] == 0x25) {
-			notify_successful_load();
+			char config_fname[MAX_PATH];
+			sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
+			DeleteFile(config_fname);
 			goto out;
 		}
 #else
@@ -673,7 +683,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #error Update hook check
 #endif
 		if (((PUCHAR)ReadProcessMemory)[0] == 0x8b && ((PUCHAR)ReadProcessMemory)[1] == 0xff && ((PUCHAR)ReadProcessMemory)[2] == 0xff && ((PUCHAR)ReadProcessMemory)[3] == 0x25) {
-			notify_successful_load();
+			char config_fname[MAX_PATH];
+			sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
+			DeleteFile(config_fname);
 			goto out;
 		}
 #endif

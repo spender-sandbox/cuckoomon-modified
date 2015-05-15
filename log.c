@@ -159,8 +159,13 @@ void log_flush()
 		/* if we're in main() still, then send the logs immediately just in case something bad
 		   happens early in execution of the malware's code
 		 */
-		_send_log();
+
 	//}
+	// we might get called by the pipe() code trying to flush logs before logging is
+	// actually initialized, so avoid any nastiness on trying to use unitialized
+	// critical sections
+	if (g_buffer)
+		_send_log();
 }
 
 static void log_raw_direct(const char *buf, size_t length) {
