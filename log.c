@@ -699,7 +699,7 @@ void loq(int index, const char *category, const char *name,
             }
             else if(type == REG_DWORD_BIG_ENDIAN) {
                 unsigned int value = *(unsigned int *) data;
-                log_int32(htonl(value));
+                log_int32(our_htonl(value));
             }
             else if(type == REG_EXPAND_SZ || type == REG_SZ) {
 
@@ -958,7 +958,7 @@ void log_hook_restoration(const char *funcname)
 DWORD g_log_thread_id;
 DWORD g_logwatcher_thread_id;
 
-void log_init(unsigned int ip, unsigned short port, int debug)
+void log_init(int debug)
 {
 	g_buffer = calloc(1, BUFFERSIZE);
 

@@ -285,6 +285,19 @@ HOOKDEF(int, WINAPI, GetSystemMetrics,
     return ret;
 }
 
+typedef int (WINAPI * __GetSystemMetrics)(__in int nIndex);
+
+__GetSystemMetrics _GetSystemMetrics;
+
+DWORD WINAPI our_GetSystemMetrics(
+	__in int nIndex
+	) {
+	if (!_GetSystemMetrics) {
+		_GetSystemMetrics = (__GetSystemMetrics)GetProcAddress(LoadLibraryA("user32"), "GetSystemMetrics");
+	}
+	return _GetSystemMetrics(nIndex);
+}
+
 static LARGE_INTEGER last_skipped;
 static int num_to_spoof;
 static int num_spoofed;
@@ -299,8 +312,8 @@ HOOKDEF(BOOL, WINAPI, GetCursorPos,
 	/* work around the fact that skipping sleeps prevents the human module from making the system look active */
 	if (lpPoint && time_skipped.QuadPart != last_skipped.QuadPart) {
 		int xres, yres;
-		xres = GetSystemMetrics(0);
-		yres = GetSystemMetrics(1);
+		xres = our_GetSystemMetrics(0);
+		yres = our_GetSystemMetrics(1);
 		if (!num_to_spoof)
 			num_to_spoof = (random() % 20) + 10;
 		if (num_spoofed < num_to_spoof) {

@@ -131,3 +131,7 @@ void replace_ci_wstring_in_buf(PWCHAR buf, ULONG len, PWCHAR findstr, PWCHAR rep
 void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength);
 void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength);
 void perform_device_fakery(PVOID OutputBuffer, ULONG OutputBufferLength, ULONG IoControlCode);
+
+unsigned short our_htons(unsigned short num);
+unsigned int our_htonl(unsigned int num);
+void addr_to_string(const IN_ADDR addr, char *string);

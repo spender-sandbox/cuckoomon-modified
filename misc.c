@@ -89,6 +89,29 @@ void num_to_string(char *buf, unsigned int buflen, unsigned int num)
 	buf[i] = '\0';
 }
 
+unsigned short our_htons(unsigned short num)
+{
+	return (num >> 8) | ((num & 0xFF) << 8);
+}
+
+unsigned int our_htonl(unsigned int num)
+{
+	return (num >> 24) | ((num & 0x00FF0000) >> 8) | ((num & 0x0000FF00) << 8) | ((num & 0xFF) << 24);
+}
+
+void addr_to_string(const IN_ADDR addr, char *string)
+{
+	const unsigned char *chunk = (const unsigned char *)&addr;
+	string[0] = '\0';
+	num_to_string(string, 4, chunk[3]);
+	strcat(string, ".");
+	num_to_string(string+strlen(string), 4, chunk[2]);
+	strcat(string, ".");
+	num_to_string(string+strlen(string), 4, chunk[1]);
+	strcat(string, ".");
+	num_to_string(string+strlen(string), 4, chunk[0]);
+}
+
 void replace_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr)
 {
 	unsigned int findlen = (unsigned int)strlen(findstr);

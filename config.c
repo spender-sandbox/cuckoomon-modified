@@ -118,12 +118,14 @@ int read_config(void)
             else if(!strcmp(key, "startup-time")) {
                 g_config.startup_time = atoi(value);
             }
-            else if(!strcmp(key, "host-ip")) {
+			/*
+			else if(!strcmp(key, "host-ip")) {
                 g_config.host_ip = inet_addr(value);
             }
             else if(!strcmp(key, "host-port")) {
                 g_config.host_port = atoi(value);
             }
+			*/
             else if(!strcmp(key, "force-sleepskip")) {
                 g_config.force_sleepskip = value[0] == '1';
             }

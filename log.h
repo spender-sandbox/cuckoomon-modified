@@ -72,7 +72,7 @@ void log_hook_modification(const char *funcname, const char *origbytes, const ch
 void log_hook_removal(const char *funcname);
 void log_hook_restoration(const char *funcname);
 
-void log_init(unsigned int ip, unsigned short port, int debug);
+void log_init(int debug);
 void log_flush();
 void log_free();
 

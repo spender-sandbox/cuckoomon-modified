@@ -23,6 +23,42 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "pipe.h"
 #include "log.h"
 
+typedef DWORD (WINAPI * __GetWindowThreadProcessId)(
+	__in HWND hWnd,
+	__out_opt LPDWORD lpdwProcessId
+);
+
+__GetWindowThreadProcessId _GetWindowThreadProcessId;
+
+DWORD WINAPI our_GetWindowThreadProcessId(
+	__in HWND hWnd,
+	__out_opt LPDWORD lpdwProcessId
+) {
+	if (!_GetWindowThreadProcessId) {
+		_GetWindowThreadProcessId = (__GetWindowThreadProcessId)GetProcAddress(LoadLibraryA("user32"), "GetWindowThreadProcessId");
+	}
+	return _GetWindowThreadProcessId(hWnd, lpdwProcessId);
+}
+
+typedef DWORD(WINAPI * __GetClassNameA)(
+	_In_  HWND   hWnd,
+	_Out_ LPTSTR lpClassName,
+	_In_  int    nMaxCount
+);
+
+__GetClassNameA _GetClassNameA;
+
+DWORD WINAPI our_GetClassNameA(
+	_In_  HWND   hWnd,
+	_Out_ LPSTR lpClassName,
+	_In_  int    nMaxCount
+) {
+	if (!_GetClassNameA) {
+		_GetClassNameA = (__GetClassNameA)GetProcAddress(LoadLibraryA("user32"), "GetClassNameA");
+	}
+	return _GetClassNameA(hWnd, lpClassName, nMaxCount);
+}
+
 HOOKDEF(HWND, WINAPI, FindWindowA,
     __in_opt  LPCTSTR lpClassName,
     __in_opt  LPCTSTR lpWindowName
@@ -151,10 +187,10 @@ HOOKDEF(LONG, WINAPI, SetWindowLongA,
 	BOOL isbad = FALSE;
 
 	get_lasterrors(&lasterror);
-	GetWindowThreadProcessId(hWnd, &pid);
+	our_GetWindowThreadProcessId(hWnd, &pid);
 	if (pid != GetCurrentProcessId()) {
 		char classname[1024];
-		GetClassNameA(hWnd, classname, sizeof(classname));
+		our_GetClassNameA(hWnd, classname, sizeof(classname));
 		if (!stricmp(classname, "Shell_TrayWnd") && nIndex == 0) {
 			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 			isbad = TRUE;
@@ -181,10 +217,10 @@ HOOKDEF(LONG_PTR, WINAPI, SetWindowLongPtrA,
 	BOOL isbad = FALSE;
 
 	get_lasterrors(&lasterror);
-	GetWindowThreadProcessId(hWnd, &pid);
+	our_GetWindowThreadProcessId(hWnd, &pid);
 	if (pid != GetCurrentProcessId()) {
 		char classname[1024];
-		GetClassNameA(hWnd, classname, sizeof(classname));
+		our_GetClassNameA(hWnd, classname, sizeof(classname));
 		if (!stricmp(classname, "Shell_TrayWnd") && nIndex == 0) {
 			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 			isbad = TRUE;
@@ -211,10 +247,10 @@ HOOKDEF(LONG, WINAPI, SetWindowLongW,
 	BOOL isbad = FALSE;
 
 	get_lasterrors(&lasterror);
-	GetWindowThreadProcessId(hWnd, &pid);
+	our_GetWindowThreadProcessId(hWnd, &pid);
 	if (pid != GetCurrentProcessId()) {
 		char classname[1024];
-		GetClassNameA(hWnd, classname, sizeof(classname));
+		our_GetClassNameA(hWnd, classname, sizeof(classname));
 		if (!stricmp(classname, "Shell_TrayWnd") && nIndex == 0) {
 			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 			isbad = TRUE;
@@ -242,10 +278,10 @@ HOOKDEF(LONG_PTR, WINAPI, SetWindowLongPtrW,
 	BOOL isbad = FALSE;
 
 	get_lasterrors(&lasterror);
-	GetWindowThreadProcessId(hWnd, &pid);
+	our_GetWindowThreadProcessId(hWnd, &pid);
 	if (pid != GetCurrentProcessId()) {
 		char classname[1024];
-		GetClassNameA(hWnd, classname, sizeof(classname));
+		our_GetClassNameA(hWnd, classname, sizeof(classname));
 		if (!stricmp(classname, "Shell_TrayWnd") && nIndex == 0) {
 			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
 			isbad = TRUE;

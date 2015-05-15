@@ -64,8 +64,8 @@ struct _g_config {
     int force_sleepskip;
 
     // server ip and port
-    unsigned int host_ip;
-    unsigned short host_port;
+    //unsigned int host_ip;
+    //unsigned short host_port;
 
 	BOOLEAN suspend_logging;
 };
