@@ -103,13 +103,13 @@ void addr_to_string(const IN_ADDR addr, char *string)
 {
 	const unsigned char *chunk = (const unsigned char *)&addr;
 	string[0] = '\0';
-	num_to_string(string, 4, chunk[3]);
-	strcat(string, ".");
-	num_to_string(string+strlen(string), 4, chunk[2]);
+	num_to_string(string, 4, chunk[0]);
 	strcat(string, ".");
 	num_to_string(string+strlen(string), 4, chunk[1]);
 	strcat(string, ".");
-	num_to_string(string+strlen(string), 4, chunk[0]);
+	num_to_string(string+strlen(string), 4, chunk[2]);
+	strcat(string, ".");
+	num_to_string(string+strlen(string), 4, chunk[3]);
 }
 
 void replace_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr)
