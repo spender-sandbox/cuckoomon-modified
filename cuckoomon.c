@@ -533,7 +533,7 @@ LONG WINAPI cuckoomon_exception_handler(
 	ULONG_PTR eip = (ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
 	PUCHAR eipptr = (PUCHAR)eip;
 #ifdef _WIN64
-	ULONG_PTR *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Rsp);
+	ULONG_PTR *stack = (ULONG_PTR *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Rsp);
 #else
 	DWORD *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
 #endif

@@ -699,11 +699,15 @@ void loq(int index, const char *category, const char *name,
                 log_string("", 0);
             }
             else if(type == REG_DWORD || type == REG_DWORD_LITTLE_ENDIAN) {
-                unsigned int value = *(unsigned int *) data;
+				unsigned int value = 0;
+				if (data)
+					value = *(unsigned int *)data;
                 log_int32(value);
             }
             else if(type == REG_DWORD_BIG_ENDIAN) {
-                unsigned int value = *(unsigned int *) data;
+				unsigned int value = 0;
+				if (data)
+					value = *(unsigned int *)data;
                 log_int32(our_htonl(value));
             }
             else if(type == REG_EXPAND_SZ || type == REG_SZ) {
