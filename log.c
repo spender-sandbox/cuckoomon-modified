@@ -760,7 +760,7 @@ void loq(int index, const char *category, const char *name,
 			free(lastlog.buf);
 			lastlog.buf = NULL;
 			// flush logs once we're done seeing duplicates of a particular API
-			log_flush();
+			//log_flush();
 		}
 	}
 	if (lastlog.buf == NULL) {
