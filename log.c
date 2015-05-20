@@ -710,33 +710,113 @@ void loq(int index, const char *category, const char *name,
 					value = *(unsigned int *)data;
                 log_int32(our_htonl(value));
             }
-            else if(type == REG_EXPAND_SZ || type == REG_SZ) {
+			else if (type == REG_EXPAND_SZ || type == REG_SZ) {
 
-                if(data == NULL) {
-                    bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
-                        (const char *) data, 0);
-                }
-                // ascii strings
-                else if(key == 'r') {
-					if (size >= 1 && data[size - 1] == '\0')
-						log_string(data, size - 1);
-					else
-						log_string(data, size);
-                    //bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
-                    //    (const char *) data, size);
-                }
-                // unicode strings
-                else {
+				if (data == NULL) {
+					bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
+						(const char *)data, 0);
+				}
+				// ascii strings
+				else if (key == 'r') {
+					int len = (int)strnlen(data, size);
+					log_string(data, len);
+				}
+				// unicode strings
+				else {
 					const wchar_t *wdata = (const wchar_t *)data;
-					if (size >= 2 && wdata[(size / sizeof(wchar_t)) - 1] == L'\0')
-						log_wstring(wdata, (size / sizeof(wchar_t)) - 1);
-					else
-						log_wstring(wdata, size / sizeof(wchar_t));
-                    //bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
-                    //    (const char *) data, size);
-                }
-            } else {
-                bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
+					int len = (int)wcsnlen(wdata, size / sizeof(wchar_t));
+					log_wstring(wdata, len);
+				}
+			} else if (type == REG_MULTI_SZ) {
+				if (data == NULL) {
+					bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
+						(const char *)data, 0);
+				}
+				else if ((type == 'r' && size < 2) || (type == 'R' && size < 4))
+					goto buffer_log;
+				// ascii strings
+				else if (key == 'r') {
+					unsigned long i, x;
+					unsigned int strcnt = 0;
+					int found_doublenull = 0;
+					char *p;
+					int len;
+					for (i = 0; i < size - 1; i++) {
+						if (data[i] == '\0')
+							strcnt++;
+						if (data[i + 1] == '\0') {
+							found_doublenull = 1;
+							break;
+						}
+					}
+					if (!found_doublenull)
+						goto buffer_log;
+					p = (char *)malloc(size + (strcnt * 4));
+					if (p == NULL)
+						goto buffer_log;
+					for (i = 0, x = 0; i < size - 1; i++) {
+						if (data[i] == '\0') {
+							p[x++] = '\\';
+							p[x++] = 'x';
+							p[x++] = '0';
+							p[x++] = '0';
+							if (data[i + 1] == '\0') {
+								p[x++] = '\0';
+								break;
+							}
+						}
+						else {
+							p[x] = data[i];
+						}
+					}
+					len = (int)strnlen(p, size + (strcnt * 4));
+					log_string(p, len);
+					free(p);
+				}
+				// unicode strings
+				else {
+					unsigned long i, x;
+					unsigned int strcnt = 0;
+					int found_doublenull = 0;
+					const wchar_t *wdata = (const wchar_t *)data;
+					wchar_t *p;
+					int len;
+					for (i = 0; i < (size/sizeof(wchar_t)) - 1; i++) {
+						if (wdata[i] == L'\0')
+							strcnt++;
+						if (wdata[i + 1] == L'\0') {
+							found_doublenull = 1;
+							break;
+						}
+					}
+					if (!found_doublenull)
+						goto buffer_log;
+					p = (wchar_t *)malloc(size + (strcnt * 4 * sizeof(wchar_t)));
+					if (p == NULL)
+						goto buffer_log;
+					for (i = 0, x = 0; i < size - 1; i++) {
+						if (wdata[i] == '\0') {
+							p[x++] = L'\\';
+							p[x++] = L'x';
+							p[x++] = L'0';
+							p[x++] = L'0';
+							if (wdata[i + 1] == L'\0') {
+								p[x++] = L'\0';
+								break;
+							}
+						}
+						else {
+							p[x] = data[i];
+						}
+					}
+					len = (int)wcsnlen(p, (size/sizeof(wchar_t)) + (strcnt * 4));
+					log_wstring(p, len);
+					free(p);
+				}
+			}
+			else {
+buffer_log:
+				bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY,
                     (const char *) data, size);
             }
 
