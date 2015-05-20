@@ -209,6 +209,7 @@ void perform_device_fakery(PVOID OutputBuffer, ULONG OutputBufferLength, ULONG I
 	/* fake model name */
 	if (IoControlCode == IOCTL_STORAGE_QUERY_PROPERTY) {
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "QEMU", "DELL");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "VBOX", "DELL");
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "VMware", "DELL__");
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "Virtual", "C300_BD");
 	}
