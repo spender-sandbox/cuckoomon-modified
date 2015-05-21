@@ -446,42 +446,61 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemInformation,
 	_In_ ULONG SystemInformationLength,
 	_Out_opt_ PULONG ReturnLength
 ) {
-	NTSTATUS ret = Old_NtQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
+	NTSTATUS ret;
+	char *buf;
+	lasterror_t lasterror;
+	ENSURE_ULONG(ReturnLength);
 
+	if (SystemInformationClass != SystemProcessInformation || SystemInformation == NULL) {
+normal_call:
+		ret = Old_NtQuerySystemInformation(SystemInformationClass, SystemInformation, SystemInformationLength, ReturnLength);
+		LOQ_ntstatus("misc", "i", "SystemInformationClass", SystemInformationClass);
+
+		if (!g_config.no_stealth && SystemInformationClass == SystemBasicInformation && SystemInformationLength >= sizeof(SYSTEM_BASIC_INFORMATION) && NT_SUCCESS(ret)) {
+			PSYSTEM_BASIC_INFORMATION p = (PSYSTEM_BASIC_INFORMATION)SystemInformation;
+			p->NumberOfProcessors = 2;
+		}
+		return ret;
+	}
+
+	get_lasterrors(&lasterror);
+	buf = calloc(1, SystemInformationLength);
+	set_lasterrors(&lasterror);
+	if (buf == NULL)
+		goto normal_call;
+
+	ret = Old_NtQuerySystemInformation(SystemInformationClass, buf, SystemInformationLength, ReturnLength);
 	LOQ_ntstatus("misc", "i", "SystemInformationClass", SystemInformationClass);
 
-	if (!g_config.no_stealth && SystemInformationClass == SystemBasicInformation && SystemInformationLength >= sizeof(SYSTEM_BASIC_INFORMATION) && NT_SUCCESS(ret)) {
-		PSYSTEM_BASIC_INFORMATION p = (PSYSTEM_BASIC_INFORMATION)SystemInformation;
-		p->NumberOfProcessors = 2;
-	}
-	if (SystemInformationClass == SystemProcessInformation && SystemInformationLength >= sizeof(SYSTEM_PROCESS_INFORMATION) && NT_SUCCESS(ret)) {
-		PSYSTEM_PROCESS_INFORMATION p = (PSYSTEM_PROCESS_INFORMATION)SystemInformation;
-		PSYSTEM_PROCESS_INFORMATION next = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)SystemInformation + p->NextEntryOffset);
-		PSYSTEM_PROCESS_INFORMATION last;
-		ULONG newoffset = 0;
+	if (SystemInformationLength >= sizeof(SYSTEM_PROCESS_INFORMATION) && NT_SUCCESS(ret)) {
+		PSYSTEM_PROCESS_INFORMATION our_p = (PSYSTEM_PROCESS_INFORMATION)buf;
+		char *their_p = (char *)SystemInformation;
+		ULONG lastlen = 0;
 		while (1) {
-			last = next;
-			newoffset = next->NextEntryOffset;
-			while (is_protected_pid((DWORD)last->UniqueProcessId)) {
-				if (!last->NextEntryOffset) {
-					newoffset = 0;
-					memset(last, 0, sizeof(SYSTEM_PROCESS_INFORMATION) + (last->NumberOfThreads * sizeof(SYSTEM_THREAD)));
-					break;
-				}
-				else {
-					PSYSTEM_PROCESS_INFORMATION savednext = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)SystemInformation + last->NextEntryOffset);
-					memset(last, 0, sizeof(SYSTEM_PROCESS_INFORMATION) + (last->NumberOfThreads * sizeof(SYSTEM_THREAD)));
-					last = savednext;
-					newoffset = (ULONG)((PCHAR)last - (PCHAR)SystemInformation);
-				}
+			if (!is_protected_pid((DWORD)our_p->UniqueProcessId)) {
+				PSYSTEM_PROCESS_INFORMATION tmp;
+				memcpy(their_p, our_p, sizeof(SYSTEM_PROCESS_INFORMATION) + (our_p->NumberOfThreads * sizeof(SYSTEM_THREAD)));
+				lastlen = sizeof(SYSTEM_PROCESS_INFORMATION) + (our_p->NumberOfThreads * sizeof(SYSTEM_THREAD));
+				tmp = (PSYSTEM_PROCESS_INFORMATION)their_p;
+				tmp->NextEntryOffset = lastlen;
+				their_p += lastlen;
 			}
-			p->NextEntryOffset = newoffset;
-			if (!p->NextEntryOffset)
+			if (!our_p->NextEntryOffset) {
+				*ReturnLength = (ULONG)(their_p - (char *)SystemInformation);
+				if (lastlen) {
+					PSYSTEM_PROCESS_INFORMATION tmp;
+					their_p -= lastlen;
+					tmp = (PSYSTEM_PROCESS_INFORMATION)their_p;
+					tmp->NextEntryOffset = 0;
+				}
 				break;
-			p = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)SystemInformation + p->NextEntryOffset);
-			next = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)SystemInformation + p->NextEntryOffset);
+			}
+			our_p = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)our_p + our_p->NextEntryOffset);
 		}
 	}
+
+	free(buf);
+
 	return ret;
 }
 
