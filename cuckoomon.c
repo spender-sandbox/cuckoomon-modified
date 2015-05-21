@@ -95,7 +95,7 @@ static hook_t g_hooks[] = {
     HOOK(kernel32, FindFirstFileExA),
     HOOK(kernel32, FindFirstFileExW),
 
-    // Covered by NtCreateFile() but still grap this information
+    // Covered by NtCreateFile() but still grab this information
     HOOK(kernel32, CopyFileA),
     HOOK(kernel32, CopyFileW),
     HOOK(kernel32, CopyFileExW),

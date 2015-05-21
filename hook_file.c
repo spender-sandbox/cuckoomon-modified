@@ -220,18 +220,20 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
     __in      ULONG EaLength
 ) {
 	NTSTATUS ret;
-
+	BOOL file_existed;
 	check_for_logging_resumption(ObjectAttributes);
 
 	if (is_protected_objattr(ObjectAttributes))
 		return STATUS_ACCESS_DENIED;
 
-    ret = Old_NtCreateFile(FileHandle, DesiredAccess,
+	file_existed = file_exists(ObjectAttributes);
+	
+	ret = Old_NtCreateFile(FileHandle, DesiredAccess,
         ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes,
         ShareAccess | FILE_SHARE_READ, CreateDisposition, CreateOptions, EaBuffer, EaLength);
-    LOQ_ntstatus("filesystem", "PhOiih", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("filesystem", "PhOiihs", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "CreateDisposition", CreateDisposition,
-        "ShareAccess", ShareAccess, "FileAttributes", FileAttributes);
+        "ShareAccess", ShareAccess, "FileAttributes", FileAttributes, "ExistedBefore", file_existed ? "yes" : "no");
     if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {
         handle_new_file(*FileHandle, ObjectAttributes);
     }
@@ -602,10 +604,15 @@ HOOKDEF(BOOL, WINAPI, CopyFileA,
     __in  LPCSTR lpNewFileName,
     __in  BOOL bFailIfExists
 ) {
-    BOOL ret = Old_CopyFileA(lpExistingFileName, lpNewFileName,
+	BOOL ret;
+	BOOL file_existed = FALSE;
+	if (GetFileAttributesA(lpNewFileName) != INVALID_FILE_ATTRIBUTES)
+		file_existed = TRUE;
+
+	ret = Old_CopyFileA(lpExistingFileName, lpNewFileName,
         bFailIfExists);
-	LOQ_bool("filesystem", "ff", "ExistingFileName", lpExistingFileName,
-        "NewFileName", lpNewFileName);
+	LOQ_bool("filesystem", "ffs", "ExistingFileName", lpExistingFileName,
+        "NewFileName", lpNewFileName, "ExistedBefore", file_existed ? "yes" : "no");
 
 	if (ret)
 		new_file_path_ascii(lpNewFileName);
@@ -618,10 +625,15 @@ HOOKDEF(BOOL, WINAPI, CopyFileW,
     __in  LPWSTR lpNewFileName,
     __in  BOOL bFailIfExists
 ) {
-    BOOL ret = Old_CopyFileW(lpExistingFileName, lpNewFileName,
+	BOOL ret;
+	BOOL file_existed = FALSE;
+	if (GetFileAttributesW(lpNewFileName) != INVALID_FILE_ATTRIBUTES)
+		file_existed = TRUE;
+
+	ret = Old_CopyFileW(lpExistingFileName, lpNewFileName,
         bFailIfExists);
-	LOQ_bool("filesystem", "FF", "ExistingFileName", lpExistingFileName,
-        "NewFileName", lpNewFileName);
+	LOQ_bool("filesystem", "FFs", "ExistingFileName", lpExistingFileName,
+		"NewFileName", lpNewFileName, "ExistedBefore", file_existed ? "yes" : "no");
 
 	if (ret)
 		new_file_path_unicode(lpNewFileName);
@@ -637,10 +649,15 @@ HOOKDEF(BOOL, WINAPI, CopyFileExW,
     _In_opt_  LPBOOL pbCancel,
     _In_      DWORD dwCopyFlags
 ) {
-    BOOL ret = Old_CopyFileExW(lpExistingFileName, lpNewFileName,
+	BOOL ret;
+	BOOL file_existed = FALSE;
+	if (GetFileAttributesW(lpNewFileName) != INVALID_FILE_ATTRIBUTES)
+		file_existed = TRUE;
+
+	ret = Old_CopyFileExW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
-	LOQ_bool("filesystem", "FFi", "ExistingFileName", lpExistingFileName,
-        "NewFileName", lpNewFileName, "CopyFlags", dwCopyFlags);
+	LOQ_bool("filesystem", "FFis", "ExistingFileName", lpExistingFileName,
+        "NewFileName", lpNewFileName, "CopyFlags", dwCopyFlags, file_existed ? "yes" : "no");
 
 	if (ret)
 		new_file_path_unicode(lpNewFileName);

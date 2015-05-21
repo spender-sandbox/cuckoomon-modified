@@ -59,6 +59,7 @@ DWORD random();
 void raw_sleep(int msecs);
 DWORD randint(DWORD min, DWORD max);
 BOOL is_directory_objattr(const OBJECT_ATTRIBUTES *obj);
+BOOL file_exists(const OBJECT_ATTRIBUTES *obj);
 void hide_module_from_peb(HMODULE module_handle);
 BOOLEAN is_suspended(DWORD pid, DWORD tid);
 

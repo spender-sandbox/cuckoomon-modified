@@ -492,6 +492,15 @@ BOOL is_directory_objattr(const OBJECT_ATTRIBUTES *obj)
     return FALSE;
 }
 
+BOOL file_exists(const OBJECT_ATTRIBUTES *obj)
+{
+	FILE_BASIC_INFORMATION basic_information;
+	if (NT_SUCCESS(pNtQueryAttributesFile(obj, &basic_information)))
+		return TRUE;
+	return FALSE;
+}
+
+
 DWORD loaded_dlls;
 struct dll_range dll_ranges[MAX_DLLS];
 
