@@ -474,28 +474,36 @@ normal_call:
 
 	if (SystemInformationLength >= sizeof(SYSTEM_PROCESS_INFORMATION) && NT_SUCCESS(ret)) {
 		PSYSTEM_PROCESS_INFORMATION our_p = (PSYSTEM_PROCESS_INFORMATION)buf;
+		char *their_last_p = NULL;
 		char *their_p = (char *)SystemInformation;
 		ULONG lastlen = 0;
 		while (1) {
 			if (!is_protected_pid((DWORD)our_p->UniqueProcessId)) {
 				PSYSTEM_PROCESS_INFORMATION tmp;
-				memcpy(their_p, our_p, sizeof(SYSTEM_PROCESS_INFORMATION) + (our_p->NumberOfThreads * sizeof(SYSTEM_THREAD)));
-				lastlen = sizeof(SYSTEM_PROCESS_INFORMATION) + (our_p->NumberOfThreads * sizeof(SYSTEM_THREAD));
+				if (our_p->NextEntryOffset)
+					lastlen = our_p->NextEntryOffset;
+				else
+					lastlen = *ReturnLength - (ULONG)((char *)our_p - buf);
+				// make sure we copy all data associated with the entry
+				memcpy(their_p, our_p, lastlen);
 				tmp = (PSYSTEM_PROCESS_INFORMATION)their_p;
 				tmp->NextEntryOffset = lastlen;
+				// adjust the only pointer field in the struct so that it points into the user's buffer,
+				// but only if the pointer exists, otherwise we'd rewrite a NULL pointer to something not NULL
+				if (tmp->ImageName.Buffer)
+					tmp->ImageName.Buffer = (PWSTR)(((ULONG_PTR)tmp->ImageName.Buffer - (ULONG_PTR)our_p) + (ULONG_PTR)their_p);
+				their_last_p = their_p;
 				their_p += lastlen;
 			}
-			if (!our_p->NextEntryOffset) {
-				*ReturnLength = (ULONG)(their_p - (char *)SystemInformation);
-				if (lastlen) {
-					PSYSTEM_PROCESS_INFORMATION tmp;
-					their_p -= lastlen;
-					tmp = (PSYSTEM_PROCESS_INFORMATION)their_p;
-					tmp->NextEntryOffset = 0;
-				}
+			if (!our_p->NextEntryOffset)
 				break;
-			}
 			our_p = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)our_p + our_p->NextEntryOffset);
+		}
+		if (their_last_p) {
+			PSYSTEM_PROCESS_INFORMATION tmp;
+			tmp = (PSYSTEM_PROCESS_INFORMATION)their_last_p;
+			*ReturnLength = (ULONG)(their_last_p + tmp->NextEntryOffset - (char *)SystemInformation);
+			tmp->NextEntryOffset = 0;
 		}
 	}
 

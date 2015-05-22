@@ -471,7 +471,6 @@ void set_hooks_dll(const wchar_t *library)
 
 void set_hooks()
 {
-
 	// before modifying any DLLs, let's first freeze all other threads in our process
 	// otherwise our racy modifications can cause the task to crash prematurely
 	// This code itself is racy as additional threads could be created while we're
