@@ -73,6 +73,7 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 	LPVOID dllpathbuf;
 	LPVOID loadlibraryaddr;
 	SIZE_T byteswritten = 0;
+	MEMORY_BASIC_INFORMATION meminfo;
 	int ret = ERROR_INVALID_PARAM;
 
 	if (pid <= 0 || tid < 0 || (tid == 0 && suspended))
@@ -95,6 +96,15 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 		}
 	}
 
+
+	loadlibraryaddr = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+
+	if (!VirtualQueryEx(prochandle, loadlibraryaddr, &meminfo, sizeof(meminfo)) ||
+		!(meminfo.Protect & (PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE | PAGE_EXECUTE_WRITECOPY))) {
+		ret = ERROR_NATIVE_PROCESS;
+		goto out;
+	}
+
 	dllpathbuf = VirtualAllocEx(prochandle, NULL, strlen(dllpath) + 1, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (dllpathbuf == NULL) {
 		ret = ERROR_ALLOCATE;
@@ -106,7 +116,6 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 		goto out;
 	}
 
-	loadlibraryaddr = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
 
 	if (injectmode == INJECT_QUEUEUSERAPC) {
 		if (!QueueUserAPC(loadlibraryaddr, threadhandle, (ULONG_PTR)dllpathbuf)) {
