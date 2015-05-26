@@ -416,7 +416,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadVirtualMemory,
     __out_opt   PSIZE_T NumberOfBytesRead
 ) {
 	NTSTATUS ret;
-    ENSURE_ULONG(NumberOfBytesRead);
+    ENSURE_SIZET(NumberOfBytesRead);
 
     ret = Old_NtReadVirtualMemory(ProcessHandle, BaseAddress, Buffer,
         NumberOfBytesToRead, NumberOfBytesRead);
@@ -459,7 +459,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteVirtualMemory,
 ) {
 	NTSTATUS ret;
 	DWORD pid;
-    ENSURE_ULONG(NumberOfBytesWritten);
+    ENSURE_SIZET(NumberOfBytesWritten);
 
     ret = Old_NtWriteVirtualMemory(ProcessHandle, BaseAddress, Buffer,
         NumberOfBytesToWrite, NumberOfBytesWritten);

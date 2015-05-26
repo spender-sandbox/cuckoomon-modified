@@ -29,7 +29,7 @@ void set_hooks_dll(const wchar_t *library);
 
 HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
-    __in_opt    ULONG Flags,
+    __in_opt    PULONG Flags,
     __in        PUNICODE_STRING ModuleFileName,
     __out       PHANDLE ModuleHandle
 ) {
@@ -63,10 +63,10 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 		}
 
 		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
-	        LOQspecial_ntstatus("system", "hFP", "Flags", Flags, "FileName", library.Buffer,
+	        LOQspecial_ntstatus("system", "HFP", "Flags", Flags, "FileName", library.Buffer,
 		       "BaseAddress", ModuleHandle);
 		else
-			LOQspecial_ntstatus("system", "hoP", "Flags", Flags, "FileName", &library,
+			LOQspecial_ntstatus("system", "HoP", "Flags", Flags, "FileName", &library,
 				"BaseAddress", ModuleHandle);
 	}
 

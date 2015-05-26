@@ -3,6 +3,7 @@
 // http://www.gnu.org/licenses/gpl.html
 
 #include "Loader.h"
+#include <stddef.h>
 
 static int grant_debug_privileges(void)
 {
@@ -64,6 +65,87 @@ static BOOLEAN is_suspended(int pid, int tid)
 	return TRUE;
 }
 
+static unsigned int get_shellcode(unsigned char *buf, PVOID injstruct)
+{
+#ifndef _WIN64
+	buf[0] = 0xb8; // mov eax, injstructaddr
+	memcpy(&buf[1], &injstruct, sizeof(injstruct));
+	buf[5] = 0x53; // push ebx
+	buf[6] = 0x8d; // lea ebx, injstructaddr+offsetof(INJECT_STRUCT.OutHandle)
+	buf[7] = 0x58;
+	buf[8] = (UCHAR)offsetof(INJECT_STRUCT, OutHandle);
+	buf[9] = 0x53; // push ebx ; ModuleHandle arg
+	buf[10] = 0x8d; // lea ebx, injstructaddr+offsetof(INJECT_STRUCT.DllName)
+	buf[11] = 0x58;
+	buf[12] = (UCHAR)offsetof(INJECT_STRUCT, DllName);
+	buf[13] = 0x53; // push ebx ; ModuleFileName arg
+	buf[14] = 0x6a; // push 0 (flags arg)
+	buf[15] = 0x00;
+	buf[16] = 0x8b; // mov ebx, injstructaddr+offsetof(INJECT_STRUCT.DllPath)
+	buf[17] = 0x58;
+	buf[18] = (UCHAR)offsetof(INJECT_STRUCT, DllPath);
+	buf[19] = 0x53; // push ebx ; PathToFile arg
+	buf[20] = 0x8b; // mov ebx, injstructaddr+offsetof(INJECT_STRUCT.LdrLoadDllAddress)
+	buf[21] = 0x58;
+	buf[22] = (UCHAR)offsetof(INJECT_STRUCT, LdrLoadDllAddress);
+	buf[23] = 0xff; // call ebx
+	buf[24] = 0xd3;
+	buf[25] = 0x5b; // pop ebx
+	buf[26] = 0xc2; // retn 0x4
+	buf[27] = 0x04;
+	buf[28] = 0x00;
+	return 29;
+#else
+	buf[0] = 0x53; // push rbx
+	buf[1] = 0x48; // sub rsp, 0x20
+	buf[2] = 0x83;
+	buf[3] = 0xec;
+	buf[4] = 0x20;
+	buf[5] = 0x48; // mov rax, rcx (injection address)
+	buf[6] = 0x8b;
+	buf[7] = 0xc1;
+	buf[8] = 0x48; // lea rbx, injstructaddr+offsetof(INJECT_STRUCT.OutHandle)
+	buf[9] = 0x8d;
+	buf[10] = 0x58;
+	buf[11] = (UCHAR)offsetof(INJECT_STRUCT, OutHandle);
+	buf[12] = 0x49; // mov r9, rbx ; ModuleHandle arg
+	buf[13] = 0x89;
+	buf[14] = 0xd9;
+	buf[15] = 0x48; // lea rbx, injstructaddr+offsetof(INJECT_STRUCT.DllName)
+	buf[16] = 0x8d;
+	buf[17] = 0x58;
+	buf[18] = (UCHAR)offsetof(INJECT_STRUCT, DllName);
+	buf[19] = 0x49; // mov r8, rbx ; ModuleFileName arg
+	buf[20] = 0x89;
+	buf[21] = 0xd8;
+	buf[22] = 0x48; // xor rdx, rdx ; Flags arg
+	buf[23] = 0x31;
+	buf[24] = 0xd2;
+	buf[25] = 0x48;// mov rbx, injstructaddr+offsetof(INJECT_STRUCT.DllPath)
+	buf[26] = 0x8b; 
+	buf[27] = 0x58;
+	buf[28] = (UCHAR)offsetof(INJECT_STRUCT, DllPath);
+	buf[29] = 0x48; // mov rcx, rbx ; PathToFile arg
+	buf[30] = 0x89;
+	buf[31] = 0xd9;
+	buf[32] = 0x48; // mov rbx, injstructaddr+offsetof(INJECT_STRUCT.LdrLoadDllAddress)
+	buf[33] = 0x8b; 
+	buf[34] = 0x58;
+	buf[35] = (UCHAR)offsetof(INJECT_STRUCT, LdrLoadDllAddress);
+	buf[36] = 0xff; // call ebx
+	buf[37] = 0xd3;
+	buf[38] = 0x48; // add rsp, 0x20
+	buf[39] = 0x83;
+	buf[40] = 0xc4;
+	buf[41] = 0x20; 
+	buf[42] = 0x5b; // pop rbx
+	buf[43] = 0xc2; // retn 0x4
+	buf[44] = 0x04;
+	buf[45] = 0x00;
+	return 46;
+#endif
+}
+
 // returns < 0 if injection failed, 0 if injection succeeded and process is alive, and 1 if we injected but the process is suspended, so we shouldn't wait for it
 static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 {
@@ -71,9 +153,28 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 	HANDLE prochandle = NULL;
 	HANDLE threadhandle = NULL;
 	LPVOID dllpathbuf;
+	LPVOID dllbasebuf;
+	LPVOID injstructbuf;
 	LPVOID loadlibraryaddr;
+	LPVOID shellcodeaddr;
+	unsigned int shellcodelen;
+	unsigned char shellcodebuf[64];
+	PWSTR wbuf = NULL;
+	PWSTR wbuf2 = NULL;
+	INJECT_STRUCT inj;
+	char *dllpathcopy = _strdup(dllpath);
+	int pathlen;
+	int baselen;
+	int i;
+	char *basename;
+
 	SIZE_T byteswritten = 0;
 	int ret = ERROR_INVALID_PARAM;
+
+	if (dllpathcopy == NULL) {
+		ret = ERROR_ALLOCATE;
+		goto out;
+	}
 
 	if (pid <= 0 || tid < 0 || (tid == 0 && suspended))
 		goto out;
@@ -95,21 +196,89 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 		}
 	}
 
-	dllpathbuf = VirtualAllocEx(prochandle, NULL, strlen(dllpath) + 1, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	basename = strrchr(dllpathcopy, '\\');
+	if (basename == NULL) {
+		ret = ERROR_DLL_PATH;
+		goto out;
+	}
+
+	*basename = '\0';
+	basename++;
+
+	pathlen = (int)strlen(dllpathcopy);
+	baselen = (int)strlen(basename);
+	wbuf = calloc(1, (pathlen + 1) * sizeof(WCHAR));
+	if (wbuf == NULL) {
+		ret = ERROR_ALLOCATE;
+		goto out;
+	}
+	for (i = 0; i < pathlen; i++) {
+		wbuf[i] = (unsigned short)dllpathcopy[i];
+	}
+	wbuf2 = calloc(1, (baselen + 1) * sizeof(WCHAR));
+	if (wbuf == NULL) {
+		ret = ERROR_ALLOCATE;
+		goto out;
+	}
+	for (i = 0; i < baselen; i++) {
+		wbuf2[i] = (unsigned short)basename[i];
+	}
+
+	dllpathbuf = VirtualAllocEx(prochandle, NULL, (wcslen(wbuf) + 1) * sizeof(WCHAR), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
 	if (dllpathbuf == NULL) {
 		ret = ERROR_ALLOCATE;
 		goto out;
 	}
 
-	if (!WriteProcessMemory(prochandle, dllpathbuf, dllpath, strlen(dllpath) + 1, &byteswritten)) {
+	dllbasebuf = VirtualAllocEx(prochandle, NULL, (wcslen(wbuf2) + 1) * sizeof(WCHAR), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	if (dllpathbuf == NULL) {
+		ret = ERROR_ALLOCATE;
+		goto out;
+	}
+
+	if (!WriteProcessMemory(prochandle, dllpathbuf, wbuf, (wcslen(wbuf) + 1) * sizeof(WCHAR), &byteswritten)) {
 		ret = ERROR_WRITEMEMORY;
 		goto out;
 	}
 
-	loadlibraryaddr = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+	if (!WriteProcessMemory(prochandle, dllbasebuf, wbuf2, (wcslen(wbuf2) + 1) * sizeof(WCHAR), &byteswritten)) {
+		ret = ERROR_WRITEMEMORY;
+		goto out;
+	}
+
+	loadlibraryaddr = GetProcAddress(GetModuleHandleA("ntdll.dll"), "LdrLoadDll");
+
+	inj.DllPath = dllpathbuf;
+	inj.LdrLoadDllAddress = (ULONG_PTR)loadlibraryaddr;
+	inj.DllName.Buffer = dllbasebuf;
+	inj.DllName.Length = inj.DllName.MaximumLength = (USHORT)(wcslen(wbuf2) * sizeof(WCHAR));
+
+	injstructbuf = VirtualAllocEx(prochandle, NULL, sizeof(INJECT_STRUCT), MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+	if (injstructbuf == NULL) {
+		ret = ERROR_ALLOCATE;
+		goto out;
+	}
+
+	if (!WriteProcessMemory(prochandle, injstructbuf, &inj, sizeof(INJECT_STRUCT), &byteswritten)) {
+		ret = ERROR_WRITEMEMORY;
+		goto out;
+	}
+
+	shellcodelen = get_shellcode(shellcodebuf, injstructbuf);
+
+	shellcodeaddr = VirtualAllocEx(prochandle, NULL, shellcodelen, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+	if (shellcodeaddr == NULL) {
+		ret = ERROR_ALLOCATE;
+		goto out;
+	}
+
+	if (!WriteProcessMemory(prochandle, shellcodeaddr, shellcodebuf, shellcodelen, &byteswritten)) {
+		ret = ERROR_WRITEMEMORY;
+		goto out;
+	}
 
 	if (injectmode == INJECT_QUEUEUSERAPC) {
-		if (!QueueUserAPC(loadlibraryaddr, threadhandle, (ULONG_PTR)dllpathbuf)) {
+		if (!QueueUserAPC(shellcodeaddr, threadhandle, (ULONG_PTR)injstructbuf)) {
 			ret = ERROR_QUEUEUSERAPC;
 			goto out;
 		}
@@ -117,7 +286,7 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 	else if (injectmode == INJECT_CREATEREMOTETHREAD) {
 		DWORD threadid;
 		HANDLE newhandle;
-		newhandle = CreateRemoteThread(prochandle, NULL, 0, loadlibraryaddr, dllpathbuf, 0, &threadid);
+		newhandle = CreateRemoteThread(prochandle, NULL, 0, shellcodeaddr, injstructbuf, 0, &threadid);
 		if (newhandle)
 			CloseHandle(newhandle);
 		else {
@@ -140,7 +309,7 @@ static int inject(int pid, int tid, const char *dllpath, BOOLEAN suspended)
 				memcpy(origbuf, pCsrClientCallServer, sizeof(payload));
 				memcpy(pCsrClientCallServer, payload, sizeof(payload));
 
-				newhandle = CreateRemoteThread(prochandle, NULL, 0, loadlibraryaddr, dllpathbuf, 0, &threadid);
+				newhandle = CreateRemoteThread(prochandle, NULL, 0, shellcodeaddr, injstructbuf, 0, &threadid);
 
 				memcpy(pCsrClientCallServer, origbuf, sizeof(payload));
 
@@ -170,6 +339,13 @@ out:
 		CloseHandle(prochandle);
 	if (threadhandle)
 		CloseHandle(threadhandle);
+	if (dllpathcopy)
+		free(dllpathcopy);
+	if (wbuf)
+		free(wbuf);
+	if (wbuf2)
+		free(wbuf2);
+
 	return ret;
 }
 
