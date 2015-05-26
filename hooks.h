@@ -927,8 +927,8 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtReadVirtualMemory,
     __in        HANDLE ProcessHandle,
     __in        LPCVOID BaseAddress,
     __out       LPVOID Buffer,
-    __in        ULONG NumberOfBytesToRead,
-    __out_opt   PULONG NumberOfBytesReaded
+    __in        SIZE_T NumberOfBytesToRead,
+    __out_opt   PSIZE_T NumberOfBytesRead
 );
 
 extern HOOKDEF(BOOL, WINAPI, ReadProcessMemory,
@@ -936,15 +936,15 @@ extern HOOKDEF(BOOL, WINAPI, ReadProcessMemory,
     _In_    LPCVOID lpBaseAddress,
     _Out_   LPVOID lpBuffer,
     _In_    SIZE_T nSize,
-    _Out_   SIZE_T *lpNumberOfBytesRead
+    _Out_   PSIZE_T lpNumberOfBytesRead
 );
 
 extern HOOKDEF(NTSTATUS, WINAPI, NtWriteVirtualMemory,
     __in        HANDLE ProcessHandle,
     __in        LPVOID BaseAddress,
     __in        LPCVOID Buffer,
-    __in        ULONG NumberOfBytesToWrite,
-    __out_opt   ULONG *NumberOfBytesWritten
+    __in        SIZE_T NumberOfBytesToWrite,
+    __out_opt   PSIZE_T NumberOfBytesWritten
 );
 
 extern HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
@@ -952,13 +952,13 @@ extern HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
     _In_    LPVOID lpBaseAddress,
     _In_    LPCVOID lpBuffer,
     _In_    SIZE_T nSize,
-    _Out_   SIZE_T *lpNumberOfBytesWritten
+    _Out_   PSIZE_T lpNumberOfBytesWritten
 );
 
 extern HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
     IN      HANDLE ProcessHandle,
     IN OUT  PVOID *BaseAddress,
-    IN OUT  PULONG NumberOfBytesToProtect,
+    IN OUT  PSIZE_T NumberOfBytesToProtect,
     IN      ULONG NewAccessProtection,
     OUT     PULONG OldAccessProtection
 );

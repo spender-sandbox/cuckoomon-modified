@@ -412,18 +412,18 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadVirtualMemory,
     __in        HANDLE ProcessHandle,
     __in        LPCVOID BaseAddress,
     __out       LPVOID Buffer,
-    __in        ULONG NumberOfBytesToRead,
-    __out_opt   PULONG NumberOfBytesReaded
+    __in        SIZE_T NumberOfBytesToRead,
+    __out_opt   PSIZE_T NumberOfBytesRead
 ) {
 	NTSTATUS ret;
-    ENSURE_ULONG(NumberOfBytesReaded);
+    ENSURE_ULONG(NumberOfBytesRead);
 
     ret = Old_NtReadVirtualMemory(ProcessHandle, BaseAddress, Buffer,
-        NumberOfBytesToRead, NumberOfBytesReaded);
+        NumberOfBytesToRead, NumberOfBytesRead);
 
 	if (pid_from_process_handle(ProcessHandle) != GetCurrentProcessId()) {
 		LOQ_ntstatus("process", "ppB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-			"Buffer", NumberOfBytesReaded, Buffer);
+			"Buffer", NumberOfBytesRead, Buffer);
 	}
 
 	return ret;
@@ -434,7 +434,7 @@ HOOKDEF(BOOL, WINAPI, ReadProcessMemory,
     _In_    LPCVOID lpBaseAddress,
     _Out_   LPVOID lpBuffer,
     _In_    SIZE_T nSize,
-    _Out_   SIZE_T *lpNumberOfBytesRead
+    _Out_   PSIZE_T lpNumberOfBytesRead
 ) {
 	BOOL ret;
     ENSURE_SIZET(lpNumberOfBytesRead);
@@ -454,8 +454,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteVirtualMemory,
     __in        HANDLE ProcessHandle,
     __in        LPVOID BaseAddress,
     __in        LPCVOID Buffer,
-    __in        ULONG NumberOfBytesToWrite,
-    __out_opt   ULONG *NumberOfBytesWritten
+    __in        SIZE_T NumberOfBytesToWrite,
+    __out_opt   PSIZE_T NumberOfBytesWritten
 ) {
 	NTSTATUS ret;
 	DWORD pid;
@@ -485,7 +485,7 @@ HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
     _In_    LPVOID lpBaseAddress,
     _In_    LPCVOID lpBuffer,
     _In_    SIZE_T nSize,
-    _Out_   SIZE_T *lpNumberOfBytesWritten
+    _Out_   PSIZE_T lpNumberOfBytesWritten
 ) {
 	BOOL ret;
 	DWORD pid;
@@ -512,7 +512,7 @@ HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
 HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
     IN      HANDLE ProcessHandle,
     IN OUT  PVOID *BaseAddress,
-    IN OUT  PULONG NumberOfBytesToProtect,
+    IN OUT  PSIZE_T NumberOfBytesToProtect,
     IN      ULONG NewAccessProtection,
     OUT     PULONG OldAccessProtection
 ) {
@@ -524,7 +524,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
 	
 	ret = Old_NtProtectVirtualMemory(ProcessHandle, BaseAddress,
         NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
-    LOQ_ntstatus("process", "pPHhH", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+    LOQ_ntstatus("process", "pPPhH", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "NumberOfBytesProtected", NumberOfBytesToProtect,
         "NewAccessProtection", NewAccessProtection,
         "OldAccessProtection", OldAccessProtection);
