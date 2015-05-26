@@ -97,10 +97,10 @@ static unsigned int get_shellcode(unsigned char *buf, PVOID injstruct)
 	return 29;
 #else
 	buf[0] = 0x53; // push rbx
-	buf[1] = 0x48; // sub rsp, 0x20
+	buf[1] = 0x48; // sub rsp, 0x28
 	buf[2] = 0x83;
 	buf[3] = 0xec;
-	buf[4] = 0x20;
+	buf[4] = 0x28;
 	buf[5] = 0x48; // mov rax, rcx (injection address)
 	buf[6] = 0x8b;
 	buf[7] = 0xc1;
@@ -134,10 +134,10 @@ static unsigned int get_shellcode(unsigned char *buf, PVOID injstruct)
 	buf[35] = (UCHAR)offsetof(INJECT_STRUCT, LdrLoadDllAddress);
 	buf[36] = 0xff; // call ebx
 	buf[37] = 0xd3;
-	buf[38] = 0x48; // add rsp, 0x20
+	buf[38] = 0x48; // add rsp, 0x28
 	buf[39] = 0x83;
 	buf[40] = 0xc4;
-	buf[41] = 0x20; 
+	buf[41] = 0x28; 
 	buf[42] = 0x5b; // pop rbx
 	buf[43] = 0xc2; // retn 0x4
 	buf[44] = 0x04;
