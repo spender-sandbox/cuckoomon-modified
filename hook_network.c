@@ -537,3 +537,15 @@ HOOKDEF(BOOL, WINAPI, CryptRetrieveObjectByUrlW,
 	LOQ_bool("network", "u", "URL", pszUrl);
 	return ret;
 }
+
+HOOKDEF(ULONG, WINAPI, GetAdaptersAddresses,
+	_In_    ULONG                 Family,
+	_In_    ULONG                 Flags,
+	_In_    PVOID                 Reserved,
+	_Inout_ PVOID				  AdapterAddresses, // PIP_ADAPTER_ADDRESSES
+	_Inout_ PULONG                SizePointer
+) {
+	ULONG ret = Old_GetAdaptersAddresses(Family, Flags, Reserved, AdapterAddresses, SizePointer);
+	LOQ_zero("network", "");
+	return ret;
+}

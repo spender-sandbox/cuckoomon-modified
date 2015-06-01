@@ -344,6 +344,7 @@ static hook_t g_hooks[] = {
 
 	HOOK(mpr, WNetUseConnectionW),
 	HOOK(cryptnet, CryptRetrieveObjectByUrlW),
+	HOOK(iphlpapi, GetAdaptersAddresses),
 
     //
     // Service Hooks

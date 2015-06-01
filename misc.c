@@ -608,11 +608,27 @@ void hide_module_from_peb(HMODULE module_handle)
             // like InLoadOrderModuleList etc
             CUT_LIST(mod->HashTableEntry);
 
-            memset(mod, 0, sizeof(LDR_MODULE));
+			memset(mod, 0, sizeof(LDR_MODULE));
             break;
         }
     }
 }
+
+PUNICODE_STRING get_basename_of_module(HMODULE module_handle)
+{
+	LDR_MODULE *mod; PEB *peb = (PEB *)get_peb();
+
+	for (mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
+		mod->BaseAddress != NULL;
+		mod = (LDR_MODULE *)mod->InLoadOrderModuleList.Flink) {
+
+		if (mod->BaseAddress == module_handle)
+			return &mod->BaseDllName;
+	}
+
+	return NULL;
+}
+
 
 uint32_t path_from_handle(HANDLE handle,
     wchar_t *path, uint32_t path_buffer_len)

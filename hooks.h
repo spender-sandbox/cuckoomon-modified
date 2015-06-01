@@ -1579,6 +1579,14 @@ extern HOOKDEF(BOOL, WINAPI, CryptRetrieveObjectByUrlW,
 	_In_     PCRYPT_RETRIEVE_AUX_INFO pAuxInfo
 );
 
+extern HOOKDEF(ULONG, WINAPI, GetAdaptersAddresses,
+	_In_    ULONG                 Family,
+	_In_    ULONG                 Flags,
+	_In_    PVOID                 Reserved,
+	_Inout_ PVOID				  AdapterAddresses, // PIP_ADAPTER_ADDRESSES
+	_Inout_ PULONG                SizePointer
+);
+
 //
 // Service Hooks
 //
