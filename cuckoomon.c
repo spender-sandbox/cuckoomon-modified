@@ -301,6 +301,7 @@ static hook_t g_hooks[] = {
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyA),
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyW),
 	HOOK(imgutil, DecodeImageEx),
+	HOOK(imgutil, DecodeImage),
 
 	//
     // Network Hooks

@@ -1284,6 +1284,12 @@ extern HOOKDEF(HRESULT, WINAPI, DecodeImageEx,
 	__in_opt LPCWSTR pszMIMETypeParam
 );
 
+extern HOOKDEF(HRESULT, WINAPI, DecodeImage,
+	__in PVOID pStream, // IStream *
+	__in PVOID pMap, // IMapMIMEToCLSID *
+	__in PVOID pEventSink // IUnknown *
+);
+
 //
 // Network Hooks
 //

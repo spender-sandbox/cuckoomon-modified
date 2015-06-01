@@ -649,3 +649,13 @@ HOOKDEF(HRESULT, WINAPI, DecodeImageEx,
 	LOQ_hresult("misc", "");
 	return ret;
 }
+
+HOOKDEF(HRESULT, WINAPI, DecodeImage,
+	__in PVOID pStream, // IStream *
+	__in PVOID pMap, // IMapMIMEToCLSID *
+	__in PVOID pEventSink // IUnknown *
+) {
+	HRESULT ret = Old_DecodeImage(pStream, pMap, pEventSink);
+	LOQ_hresult("misc", "");
+	return ret;
+}
