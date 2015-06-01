@@ -638,3 +638,14 @@ HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyW,
 
 	return ret;
 }
+
+HOOKDEF(HRESULT, WINAPI, DecodeImageEx,
+	__in PVOID pStream, // IStream *
+	__in PVOID pMap, // IMapMIMEToCLSID *
+	__in PVOID pEventSink, // IUnknown *
+	__in_opt LPCWSTR pszMIMETypeParam
+) {
+	HRESULT ret = Old_DecodeImageEx(pStream, pMap, pEventSink, pszMIMETypeParam);
+	LOQ_hresult("misc", "");
+	return ret;
+}

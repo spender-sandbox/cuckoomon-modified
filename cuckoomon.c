@@ -300,6 +300,7 @@ static hook_t g_hooks[] = {
 	HOOK(setupapi, SetupDiGetClassDevsW),
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyA),
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyW),
+	HOOK(imgutil, DecodeImageEx),
 
 	//
     // Network Hooks
@@ -430,6 +431,9 @@ static hook_t g_hooks[] = {
 	HOOK(advapi32, CryptGenKey),
 	HOOK(advapi32, CryptCreateHash),
 
+	HOOK(wintrust, HTTPSCertificateTrust),
+	HOOK(wintrust, HTTPSFinalProv),
+	
 	// needed due to the DLL being delay-loaded in some cases
 	HOOK(cryptsp, CryptAcquireContextA),
 	HOOK(cryptsp, CryptAcquireContextW),

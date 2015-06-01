@@ -162,8 +162,8 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyW,
     __in   DWORD cchName
 ) {
 	LONG ret = Old_RegEnumKeyW(hKey, dwIndex, lpName, cchName);
-    LOQ_zero("registry", "piuE", "Handle", hKey, "Index", dwIndex, "Name", lpName,
-		"FullName", hKey, lpName);
+    LOQ_zero("registry", "piuE", "Handle", hKey, "Index", dwIndex, "Name", ret ? L"" : lpName,
+		"FullName", hKey, ret ? L"" : lpName);
 
 	return ret;
 }
@@ -180,8 +180,8 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExA,
 ) {
 	LONG ret = Old_RegEnumKeyExA(hKey, dwIndex, lpName, lpcName, lpReserved,
         lpClass, lpcClass, lpftLastWriteTime);
-    LOQ_zero("registry", "pisse", "Handle", hKey, "Index", dwIndex, "Name", lpName,
-		"Class", lpClass, "FullName", hKey, lpName);
+    LOQ_zero("registry", "pisse", "Handle", hKey, "Index", dwIndex, "Name", ret ? "" : lpName,
+		"Class", ret ? "" : lpClass, "FullName", hKey, ret ? "" : lpName);
     return ret;
 }
 
@@ -197,8 +197,8 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExW,
 ) {
 	LONG ret = Old_RegEnumKeyExW(hKey, dwIndex, lpName, lpcName, lpReserved,
         lpClass, lpcClass, lpftLastWriteTime);
-    LOQ_zero("registry", "piuuE", "Handle", hKey, "Index", dwIndex, "Name", lpName,
-		"Class", lpClass, "FullName", hKey, lpName);
+    LOQ_zero("registry", "piuuE", "Handle", hKey, "Index", dwIndex, "Name", ret ? L"" : lpName,
+		"Class", ret ? L"" : lpClass, "FullName", hKey, ret ? L"" : lpName);
     return ret;
 }
 

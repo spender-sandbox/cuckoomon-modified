@@ -1277,6 +1277,13 @@ extern HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyW,
 	_Out_opt_ PDWORD           RequiredSize
 );
 
+extern HOOKDEF(HRESULT, WINAPI, DecodeImageEx,
+	__in PVOID pStream, // IStream *
+	__in PVOID pMap, // IMapMIMEToCLSID *
+	__in PVOID pEventSink, // IUnknown *
+	__in_opt LPCWSTR pszMIMETypeParam
+);
+
 //
 // Network Hooks
 //
@@ -2060,6 +2067,14 @@ extern HOOKDEF(BOOL, WINAPI, CryptCreateHash,
 	_In_   HCRYPTKEY hKey,
 	_In_   DWORD dwFlags,
 	_Out_  HCRYPTHASH *phHash
+);
+
+extern HOOKDEF(HRESULT, WINAPI, HTTPSCertificateTrust,
+	PVOID data // PCRYPT_PROVIDER_DATA
+);
+
+extern HOOKDEF(HRESULT, WINAPI, HTTPSFinalProv,
+	PVOID data // PCRYPT_PROVIDER_DATA
 );
 
 //

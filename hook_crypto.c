@@ -278,3 +278,19 @@ HOOKDEF(BOOL, WINAPI, CryptCreateHash,
 	LOQ_bool("crypto", "h", "Algid", Algid);
 	return ret;
 }
+
+HOOKDEF(HRESULT, WINAPI, HTTPSCertificateTrust,
+	PVOID data // PCRYPT_PROVIDER_DATA
+) {
+	BOOL ret = Old_HTTPSCertificateTrust(data);
+	LOQ_hresult("crypto", "");
+	return ret;
+}
+
+HOOKDEF(HRESULT, WINAPI, HTTPSFinalProv,
+	PVOID data // PCRYPT_PROVIDER_DATA
+) {
+	BOOL ret = Old_HTTPSFinalProv(data);
+	LOQ_hresult("crypto", "");
+	return ret;
+}
