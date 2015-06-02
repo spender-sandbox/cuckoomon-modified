@@ -85,7 +85,6 @@ enum {
 
 typedef struct _INJECT_STRUCT {
 	ULONG_PTR LdrLoadDllAddress;
-	PWSTR DllPath;
 	UNICODE_STRING DllName;
 	HANDLE OutHandle;
 } INJECT_STRUCT, *PINJECT_STRUCT;
