@@ -829,30 +829,36 @@ buffer_log:
     bson_append_finish_array( g_bson );
     bson_finish( g_bson );
 
-	if (lastlog.buf) {
-		unsigned int our_len = bson_size(g_bson) - compare_offset;
-		if (lastlog.compare_len == our_len && !memcmp(lastlog.compare_ptr, bson_data(g_bson) + compare_offset, our_len)) {
-			// we're about to log a duplicate of the last log message, just increment the previous log's repeated count
-			(*lastlog.repeated_ptr)++;
-		}
-		else {
-			log_raw_direct(lastlog.buf, lastlog.len);
-			free(lastlog.buf);
-			lastlog.buf = NULL;
-			// flush logs once we're done seeing duplicates of a particular API
-			//log_flush();
-		}
+	if (index == LOG_ID_PROCESS || index == LOG_ID_THREAD || index == LOG_ID_ENVIRON) {
+		// don't hold back any of our critical notifications -- these *must* be flushed in log_init()
+		log_raw_direct(bson_data(g_bson), bson_size(g_bson));
 	}
-	if (lastlog.buf == NULL) {
-		lastlog.len = bson_size(g_bson);
-		lastlog.buf = malloc(lastlog.len);
-		memcpy(lastlog.buf, bson_data(g_bson), lastlog.len);
-		lastlog.compare_len = lastlog.len - compare_offset;
-		lastlog.compare_ptr = lastlog.buf + compare_offset;
-		lastlog.repeated_ptr = (int *)(lastlog.buf + repeat_offset);
+	else {
+		if (lastlog.buf) {
+			unsigned int our_len = bson_size(g_bson) - compare_offset;
+			if (lastlog.compare_len == our_len && !memcmp(lastlog.compare_ptr, bson_data(g_bson) + compare_offset, our_len)) {
+				// we're about to log a duplicate of the last log message, just increment the previous log's repeated count
+				(*lastlog.repeated_ptr)++;
+			}
+			else {
+				log_raw_direct(lastlog.buf, lastlog.len);
+				free(lastlog.buf);
+				lastlog.buf = NULL;
+				// flush logs once we're done seeing duplicates of a particular API
+				//log_flush();
+			}
+		}
+		if (lastlog.buf == NULL) {
+			lastlog.len = bson_size(g_bson);
+			lastlog.buf = malloc(lastlog.len);
+			memcpy(lastlog.buf, bson_data(g_bson), lastlog.len);
+			lastlog.compare_len = lastlog.len - compare_offset;
+			lastlog.compare_ptr = lastlog.buf + compare_offset;
+			lastlog.repeated_ptr = (int *)(lastlog.buf + repeat_offset);
+		}
 	}
 
-    bson_destroy( g_bson );
+	bson_destroy( g_bson );
     LeaveCriticalSection(&g_mutex);
 
 	//log_flush();
