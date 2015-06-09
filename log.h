@@ -88,6 +88,15 @@ extern DWORD g_log_thread_id;
 extern DWORD g_logwatcher_thread_id;
 extern HANDLE g_log_handle;
 
+enum {
+	API_OTHER = 0,
+	API_NTREADFILE = 1,
+};
+void set_special_api(DWORD API, BOOLEAN deletelast);
+DWORD get_last_api(void);
+
+#define BUFFER_LOG_MAX 256
+
 #define _LOQ(eval, cat, fmt, ...) do { static int _index; if(_index == 0) \
     _index = ++g_log_index; loq(_index, cat, \
     &__FUNCTION__[4], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)

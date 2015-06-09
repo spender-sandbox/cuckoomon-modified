@@ -265,6 +265,13 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
     return ret;
 }
 
+static HANDLE LastFileHandle;
+static ULONG AccumulatedLength;
+static LONG volatile init_readfile_critsec;
+static CRITICAL_SECTION readfile_critsec;
+static PVOID InitialBuffer;
+static SIZE_T InitialBufferLength;
+
 HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
     __in      HANDLE FileHandle,
     __in_opt  HANDLE Event,
@@ -279,11 +286,41 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
     NTSTATUS ret = Old_NtReadFile(FileHandle, Event, ApcRoutine, ApcContext,
         IoStatusBlock, Buffer, Length, ByteOffset, Key);
 	wchar_t *fname = calloc(32768, sizeof(wchar_t));
+	BOOLEAN deletelast;
+
+	if (!InterlockedExchange(&init_readfile_critsec, 1))
+		InitializeCriticalSection(&readfile_critsec);
 
 	path_from_handle(FileHandle, fname, 32768);
 
+	if (get_last_api() == API_NTREADFILE && FileHandle == LastFileHandle) {
+		// can overflow, but we don't care much
+		AccumulatedLength += IoStatusBlock->Information;
+		deletelast = TRUE;
+	}
+	else {
+		PVOID prev;
+		SIZE_T len = min(IoStatusBlock->Information, BUFFER_LOG_MAX);
+		PVOID newbuf;
+
+		EnterCriticalSection(&readfile_critsec);
+		newbuf = malloc(len);
+		memcpy(newbuf, Buffer, len);
+		prev = InitialBuffer;
+		InitialBuffer = newbuf;
+		if (prev)
+			free(prev);
+		LastFileHandle = FileHandle;
+		AccumulatedLength = IoStatusBlock->Information;
+		InitialBufferLength = len;
+		LeaveCriticalSection(&readfile_critsec);
+
+		deletelast = FALSE;
+	}
+	set_special_api(API_NTREADFILE, deletelast);
+
 	LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
-		"HandleName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
+		"HandleName", fname, "Buffer", InitialBufferLength, InitialBuffer, "Length", AccumulatedLength);
 
 	free(fname);
 

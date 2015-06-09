@@ -30,7 +30,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // the size of the logging buffer
 #define BUFFERSIZE 16 * 1024 * 1024
-#define BUFFER_LOG_MAX 256
 #define LARGE_BUFFER_LOG_MAX 2048
 #define BUFFER_REGVAL_MAX 512
 
@@ -42,6 +41,9 @@ static unsigned int g_starttick;
 
 static char *g_buffer;
 static volatile int g_idx;
+static DWORD last_api_logged;
+static BOOLEAN special_api_triggered;
+static BOOLEAN delete_last_log;
 HANDLE g_log_handle;
 
 // current to-be-logged API call
@@ -316,6 +318,19 @@ static void log_large_buffer(const char *buf, size_t length) {
 	bson_append_binary(g_bson, g_istr, BSON_BIN_BINARY, buf, trunclength);
 }
 
+void set_special_api(DWORD API, BOOLEAN deleteLastLog)
+{
+	EnterCriticalSection(&g_mutex);
+	special_api_triggered = TRUE;
+	last_api_logged = API;
+	delete_last_log = deleteLastLog;
+	LeaveCriticalSection(&g_mutex);
+}
+DWORD get_last_api(void)
+{
+	return last_api_logged;
+}
+
 static lastlog_t lastlog;
 
 void loq(int index, const char *category, const char *name,
@@ -336,6 +351,16 @@ void loq(int index, const char *category, const char *name,
 	get_lasterrors(&lasterror);
 
 	EnterCriticalSection(&g_mutex);
+
+	if (!special_api_triggered)
+		last_api_logged = API_OTHER;
+	else {
+		special_api_triggered = FALSE;
+		if (delete_last_log) {
+			free(lastlog.buf);
+			lastlog.buf = NULL;
+		}
+	}
 
 	if(logtbl_explained[index] == 0) {
         const char * pname;
