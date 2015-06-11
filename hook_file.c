@@ -295,7 +295,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 
 	if (get_last_api() == API_NTREADFILE && FileHandle == LastFileHandle) {
 		// can overflow, but we don't care much
-		AccumulatedLength += IoStatusBlock->Information;
+		AccumulatedLength += (ULONG)IoStatusBlock->Information;
 		deletelast = TRUE;
 	}
 	else {
@@ -311,7 +311,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 		if (prev)
 			free(prev);
 		LastFileHandle = FileHandle;
-		AccumulatedLength = IoStatusBlock->Information;
+		AccumulatedLength = (ULONG)IoStatusBlock->Information;
 		InitialBufferLength = len;
 		LeaveCriticalSection(&readfile_critsec);
 

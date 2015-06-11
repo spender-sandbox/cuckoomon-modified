@@ -1294,8 +1294,8 @@ extern HOOKDEF(int, WINAPI, JsEval,
 	PVOID Arg1,
 	PVOID Arg2,
 	PVOID Arg3,
-	int Arg4,
-	PVOID Arg5
+	int Index,
+	DWORD *scriptobj
 );
 
 //
