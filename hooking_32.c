@@ -512,7 +512,9 @@ int hook_api(hook_t *h, int type)
 			addr = (unsigned char *)get_near_rel_target(&baseaddr[instroff]);
 		}
 		else if (!strcmp(h->funcname, "JsEval")) {
-			addr = (unsigned char *)get_jseval_addr(GetModuleHandleW(h->library));
+			HMODULE hmod = GetModuleHandle(h->library);
+			if (hmod)
+				addr = (unsigned char *)get_jseval_addr(hmod);
 		}
 		else {
 			addr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library), h->funcname);
