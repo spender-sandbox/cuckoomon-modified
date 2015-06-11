@@ -57,7 +57,8 @@ static char logtbl_explained[256] = {0};
 #define LOG_ID_ANOMALY 2
 #define LOG_ID_ANOMALY_EXTRA 3
 #define LOG_ID_ENVIRON 4
-#define LOG_ID_PREDEFINED_MAX 4
+// must be one larger than the largeest log ID
+#define LOG_ID_PREDEFINED_MAX 5
 
 int g_log_index = 10;  // index must start after the special IDs (see defines)
 
