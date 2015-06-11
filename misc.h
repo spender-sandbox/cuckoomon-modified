@@ -125,6 +125,8 @@ void num_to_string(char *buf, unsigned int buflen, unsigned int num);
 
 DWORD get_image_size(ULONG_PTR base);
 
+ULONG_PTR get_jseval_addr(HMODULE mod);
+
 void replace_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr);
 void replace_wstring_in_buf(PWCHAR buf, ULONG len, PWCHAR findstr, PWCHAR repstr);
 void replace_ci_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr);

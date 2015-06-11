@@ -659,3 +659,15 @@ HOOKDEF(HRESULT, WINAPI, DecodeImage,
 	LOQ_hresult("misc", "");
 	return ret;
 }
+
+HOOKDEF(int, WINAPI, JsEval,
+	PVOID Arg1,
+	PVOID Arg2,
+	PVOID Arg3,
+	int Arg4,
+	PVOID Arg5
+) {
+	int ret = Old_JsEval(Arg1, Arg2, Arg3, Arg4, Arg5);
+	LOQ_ntstatus("misc", "");
+	return ret;
+}

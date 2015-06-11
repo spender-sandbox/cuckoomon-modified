@@ -303,6 +303,9 @@ static hook_t g_hooks[] = {
 	HOOK(imgutil, DecodeImageEx),
 	HOOK(imgutil, DecodeImage),
 
+	// has special handling
+	HOOK(jsutil, JsEval),
+
 	//
     // Network Hooks
     //

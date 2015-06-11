@@ -1328,3 +1328,50 @@ out:
 
 	return ret;
 }
+
+ULONG_PTR get_jseval_addr(HMODULE mod)
+{
+	PUCHAR buf = (PUCHAR)mod;
+	PIMAGE_DOS_HEADER doshdr;
+	PIMAGE_NT_HEADERS nthdr;
+	PIMAGE_SECTION_HEADER sechdr;
+	unsigned int numsecs, i;
+	PUCHAR start, end;
+	PUCHAR p;
+
+	doshdr = (PIMAGE_DOS_HEADER)buf;
+	nthdr = (PIMAGE_NT_HEADERS)(buf + doshdr->e_lfanew);
+	sechdr = (PIMAGE_SECTION_HEADER)((PUCHAR)&nthdr->OptionalHeader + nthdr->FileHeader.SizeOfOptionalHeader);
+	numsecs = nthdr->FileHeader.NumberOfSections;
+
+	for (i = 0; i < numsecs; i++) {
+		if (memcmp(sechdr[i].Name, ".text", 5))
+			continue;
+		start = buf + sechdr[i].VirtualAddress;
+		end = start + sechdr[i].Misc.VirtualSize;
+
+		for (p = start; p < end - 20; p++) {
+			if (!memcmp(p, L"eval code", 20)) {
+				PUCHAR evalcodestr = p;
+				// found string
+				// search for push <imm of eval code string>
+				// only 32-bit supported
+				for (p = start; p < end - 10; p++) {
+					if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)evalcodestr) {
+						PUCHAR jsevaladdr = p;
+						// found the push, now find the function prologue
+						while (jsevaladdr >(p - 0x1000) && jsevaladdr > start) {
+							if (!memcmp(jsevaladdr, "\x8b\xff\x55\x8b\xec", 5))
+								return (ULONG_PTR)jsevaladdr;
+							jsevaladdr--;
+						}
+						break;
+					}
+				}
+				break;
+			}
+		}
+		break;
+	}
+	return 0;
+}
