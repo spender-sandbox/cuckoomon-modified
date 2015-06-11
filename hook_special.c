@@ -77,6 +77,7 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 
     if(NT_SUCCESS(ret)) {
 		PWCHAR end;
+		PWCHAR start = NULL, start2 = NULL;
 
 		// inform the call below not to add this DLL to the list of system DLLs if it's
 		// the DLL of interest
@@ -88,9 +89,16 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 		// we ensure null termination via the COPY_UNICODE_STRING macro above, so we don't need a length
 		// first strip off the .dll
 		end = wcsrchr(library.Buffer, L'.');
+		start = wcsrchr(library.Buffer, L'\\');
+		start2 = wcsrchr(library.Buffer, L'/');
 		if (end && !wcsicmp(end, L".dll"))
 			*end = L'\0';
-        set_hooks_dll(library.Buffer);
+		if (start2 && start2 > start)
+			set_hooks_dll(start2 + 1);
+		else if (start && start > start2)
+			set_hooks_dll(start + 1);
+		else
+			set_hooks_dll(library.Buffer);
     }
 
 	set_lasterrors(&lasterror);

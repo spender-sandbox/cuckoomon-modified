@@ -847,7 +847,7 @@ HOOKDEF(BOOL, WINAPI, GetFileVersionInfoW,
 ) {
 	BOOL ret = Old_GetFileVersionInfoW(lptstrFilename, dwHandle, dwLen, lpData);
 
-	if (lptstrFilename && lstrlenW(lptstrFilename) > 3 && lptstrFilename[1] == L':' && lptstrFilename[2] == L'\\')
+	if (lptstrFilename && lstrlenW(lptstrFilename) > 3 && lptstrFilename[1] == L':' && (lptstrFilename[2] == L'\\' || lptstrFilename[2] == L'/'))
 		LOQ_bool("filesystem", "F", "PathName", lptstrFilename);
 	else
 		LOQ_bool("filesystem", "u", "PathName", lptstrFilename);
@@ -860,7 +860,7 @@ HOOKDEF(DWORD, WINAPI, GetFileVersionInfoSizeW,
 ) {
 	DWORD ret = Old_GetFileVersionInfoSizeW(lptstrFilename, lpdwHandle);
 
-	if (lptstrFilename && lstrlenW(lptstrFilename) > 3 && lptstrFilename[1] == L':' && lptstrFilename[2] == L'\\')
+	if (lptstrFilename && lstrlenW(lptstrFilename) > 3 && lptstrFilename[1] == L':' && (lptstrFilename[2] == L'\\' || lptstrFilename[2] == L'/'))
 		LOQ_nonzero("filesystem", "F", "PathName", lptstrFilename);
 	else
 		LOQ_nonzero("filesystem", "u", "PathName", lptstrFilename);

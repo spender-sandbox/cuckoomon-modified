@@ -1360,7 +1360,7 @@ ULONG_PTR get_jseval_addr(HMODULE mod)
 					if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)evalcodestr) {
 						PUCHAR jsevaladdr = p;
 						// found the push, now find the function prologue
-						while (jsevaladdr >(p - 0x1000) && jsevaladdr > start) {
+						while (jsevaladdr > (p - 0x1000) && jsevaladdr > start) {
 							if (!memcmp(jsevaladdr, "\x8b\xff\x55\x8b\xec", 5))
 								return (ULONG_PTR)jsevaladdr;
 							jsevaladdr--;
