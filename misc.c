@@ -1329,6 +1329,7 @@ out:
 	return ret;
 }
 
+// only 32-bit supported
 ULONG_PTR get_jseval_addr(HMODULE mod)
 {
 	PUCHAR buf = (PUCHAR)mod;
@@ -1355,7 +1356,6 @@ ULONG_PTR get_jseval_addr(HMODULE mod)
 				PUCHAR evalcodestr = p;
 				// found string
 				// search for push <imm of eval code string>
-				// only 32-bit supported
 				for (p = start; p < end - 10; p++) {
 					if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)evalcodestr) {
 						PUCHAR jsevaladdr = p;
@@ -1372,6 +1372,65 @@ ULONG_PTR get_jseval_addr(HMODULE mod)
 			}
 		}
 		break;
+	}
+	return 0;
+}
+
+// only 32-bit supported
+ULONG_PTR get_cdocument_write_addr(HMODULE mod)
+{
+	PUCHAR buf = (PUCHAR)mod;
+
+	PIMAGE_DOS_HEADER doshdr;
+	PIMAGE_NT_HEADERS nthdr;
+	PIMAGE_SECTION_HEADER sechdr;
+	unsigned int numsecs, i;
+	PUCHAR start, end;
+	PUCHAR p;
+
+	doshdr = (PIMAGE_DOS_HEADER)buf;
+	nthdr = (PIMAGE_NT_HEADERS)(buf + doshdr->e_lfanew);
+	sechdr = (PIMAGE_SECTION_HEADER)((PUCHAR)&nthdr->OptionalHeader + nthdr->FileHeader.SizeOfOptionalHeader);
+	numsecs = nthdr->FileHeader.NumberOfSections;
+
+	for (i = 0; i < numsecs; i++) {
+		if (memcmp(sechdr[i].Name, ".text", 5))
+			continue;
+		start = buf + sechdr[i].VirtualAddress;
+		end = start + sechdr[i].Misc.VirtualSize;
+
+		for (p = start; p < end - 6; p++) {
+			if (!memcmp(p, L"\r\n", 6)) {
+				PUCHAR newline = p;
+				// got the newline, now find a push of the address of it followed immediately by a relative call within short distance of a retn 8
+				// this will give us CDocument::writeln
+				for (p = start; p < end - 10; p++) {
+					if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)newline && p[5] == 0xe8) {
+						PUCHAR x;
+						for (x = p + 10; x < p + 0x80; x++) {
+							if (!memcmp(x, "\xc2\x08\x00", 3)) {
+								PUCHAR y;
+								// found the retn 8
+								// now scan back to find a call pointing into .text preceded immediately by some form of a push (register or indirect through ebp plus offset)
+								for (y = p; y > p - 0x80; y--) {
+									if (y[0] == 0xe8) {
+										PUCHAR target = y + 5 + *(int *)&y[1];
+										if (target > start && target < end) {
+											// if we find it, the target of the call is CDocument::write
+											if (*(y - 3) == 0xff && *(y - 2) == 0x75 && *(y - 1) < 0x20)
+												return (ULONG_PTR)target;
+											else if ((*(y - 1) & 0xf8) == 0x50)
+												return (ULONG_PTR)target;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				break;
+			}
+		}
 	}
 	return 0;
 }

@@ -63,6 +63,7 @@ static hook_t g_hooks[] = {
     HOOK2(kernel32, CreateProcessInternalW, TRUE),
 	// has special handling
 	HOOK2(jscript, JsEval, TRUE),
+	HOOK2(mshtml, CDocument_write, TRUE),
 
 	// COM object creation hook
 	HOOK2(ole32, CoCreateInstance, TRUE),

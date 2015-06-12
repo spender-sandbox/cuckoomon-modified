@@ -241,3 +241,39 @@ HOOKDEF2(int, WINAPI, JsEval,
 
 	return ret;
 }
+
+// 32-bit only
+// based on code by Stephan Chenette and Moti Joseph of Websense, Inc. released under the GPLv3
+// http://securitylabs.websense.com/content/Blogs/3198.aspx
+
+HOOKDEF2(int, WINAPI, CDocument_write,
+	PVOID this,
+	SAFEARRAY *psa
+) {
+	DWORD i;
+	PWCHAR buf;
+	int ret = Old2_CDocument_write(this, psa);
+	VARIANT *pvars = (VARIANT *)psa->pvData;
+	unsigned int buflen = 0;
+	unsigned int offset = 0;
+	for (i = 0; i < psa->rgsabound[0].cElements; i++) {
+		if (pvars[i].vt == VT_BSTR)
+			buflen += (unsigned int)wcslen((const wchar_t *)pvars[i].pbstrVal) + 8;
+	}
+	buf = calloc(1, (buflen + 1) * sizeof(wchar_t));
+	if (buf == NULL)
+		return ret;
+
+	for (i = 0; i < psa->rgsabound[0].cElements; i++) {
+		if (pvars[i].vt == VT_BSTR) {
+			wcscpy(buf + offset, (const wchar_t *)pvars[i].pbstrVal);
+			offset += (unsigned int)wcslen((const wchar_t *)pvars[i].pbstrVal);
+			wcscpy(buf + offset, L"\r\n||||\r\n");
+			offset += 8;
+		}
+	}
+
+	LOQspecial_ntstatus("misc", "u", "Buffer", buf);
+
+	return ret;
+}

@@ -516,6 +516,11 @@ int hook_api(hook_t *h, int type)
 			if (hmod)
 				addr = (unsigned char *)get_jseval_addr(hmod);
 		}
+		else if (!strcmp(h->funcname, "CDocument_write")) {
+			HMODULE hmod = GetModuleHandleW(h->library);
+			if (hmod)
+				addr = (unsigned char *)get_cdocument_write_addr(hmod);
+		}
 		else {
 			addr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library), h->funcname);
 		}

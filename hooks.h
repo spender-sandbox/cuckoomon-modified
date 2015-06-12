@@ -2115,6 +2115,11 @@ extern HOOKDEF2(int, WINAPI, JsEval,
 	DWORD *scriptobj
 );
 
+extern HOOKDEF2(int, WINAPI, CDocument_write,
+	PVOID this,
+	SAFEARRAY *psa
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemInformation,
 	_In_ ULONG SystemInformationClass,
 	_Inout_ PVOID SystemInformation,
