@@ -1290,14 +1290,6 @@ extern HOOKDEF(HRESULT, WINAPI, DecodeImage,
 	__in PVOID pEventSink // IUnknown *
 );
 
-extern HOOKDEF(int, WINAPI, JsEval,
-	PVOID Arg1,
-	PVOID Arg2,
-	PVOID Arg3,
-	int Index,
-	DWORD *scriptobj
-);
-
 //
 // Network Hooks
 //
@@ -2113,6 +2105,14 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
     __in     UINT InheritDisposition,
     __in     ULONG AllocationType,
     __in     ULONG Win32Protect
+);
+
+extern HOOKDEF2(int, WINAPI, JsEval,
+	PVOID Arg1,
+	PVOID Arg2,
+	PVOID Arg3,
+	int Index,
+	DWORD *scriptobj
 );
 
 extern HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemInformation,

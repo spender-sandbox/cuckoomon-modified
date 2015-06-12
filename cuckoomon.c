@@ -61,6 +61,8 @@ static hook_t g_hooks[] = {
 
 	HOOK2(ntdll, LdrLoadDll, TRUE),
     HOOK2(kernel32, CreateProcessInternalW, TRUE),
+	// has special handling
+	HOOK2(jscript, JsEval, TRUE),
 
 	// COM object creation hook
 	HOOK2(ole32, CoCreateInstance, TRUE),
@@ -302,9 +304,6 @@ static hook_t g_hooks[] = {
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyW),
 	HOOK(imgutil, DecodeImageEx),
 	HOOK(imgutil, DecodeImage),
-
-	// has special handling
-	HOOK(jscript, JsEval),
 
 	//
     // Network Hooks

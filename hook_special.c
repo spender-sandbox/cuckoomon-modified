@@ -221,3 +221,23 @@ HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 
 	return ret;
 }
+
+// 32-bit only
+HOOKDEF2(int, WINAPI, JsEval,
+	PVOID Arg1,
+	PVOID Arg2,
+	PVOID Arg3,
+	int Index,
+	DWORD *scriptobj
+	) {
+	PWCHAR jsbuf;
+	PUCHAR p;
+	int ret = Old2_JsEval(Arg1, Arg2, Arg3, Index, scriptobj);
+
+	p = (PUCHAR)scriptobj[4 * Index - 2];
+	jsbuf = *(PWCHAR *)(p + 8);
+	if (jsbuf)
+		LOQspecial_ntstatus("misc", "u", "Javascript", jsbuf);
+
+	return ret;
+}

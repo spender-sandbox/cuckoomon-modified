@@ -659,23 +659,3 @@ HOOKDEF(HRESULT, WINAPI, DecodeImage,
 	LOQ_hresult("misc", "");
 	return ret;
 }
-
-// 32-bit only
-HOOKDEF(int, WINAPI, JsEval,
-	PVOID Arg1,
-	PVOID Arg2,
-	PVOID Arg3,
-	int Index,
-	DWORD *scriptobj
-) {
-	PWCHAR jsbuf;
-	PUCHAR p;
-	int ret = Old_JsEval(Arg1, Arg2, Arg3, Index, scriptobj);
-
-	p = (PUCHAR)scriptobj[4 * Index - 2];
-	jsbuf = *(PWCHAR *)(p + 8);
-	if (jsbuf)
-		LOQ_ntstatus("misc", "u", "Javascript", jsbuf);
-
-	return ret;
-}
