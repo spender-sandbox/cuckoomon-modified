@@ -549,3 +549,32 @@ HOOKDEF(ULONG, WINAPI, GetAdaptersAddresses,
 	LOQ_zero("network", "");
 	return ret;
 }
+
+HOOKDEF(ULONG, WINAPI, NetGetJoinInformation,
+	_In_  LPCWSTR               lpServer,
+	_Out_ LPWSTR                *lpNameBuffer,
+	_Out_ DWORD *				BufferType
+) {
+	ULONG ret = Old_NetGetJoinInformation(lpServer, lpNameBuffer, BufferType);
+
+	LOQ_zero("network", "uuI", "Server", lpServer, "NetBIOSName", *lpNameBuffer, "JoinStatus", BufferType);
+
+	return ret;
+}
+
+HOOKDEF(ULONG, WINAPI, NetUserGetLocalGroups,
+	_In_  LPCWSTR servername,
+	_In_  LPCWSTR username,
+	_In_  DWORD   level,
+	_In_  DWORD   flags,
+	_Out_ LPBYTE  *bufptr,
+	_In_  DWORD   prefmaxlen,
+	_Out_ LPDWORD entriesread,
+	_Out_ LPDWORD totalentries
+) {
+	ULONG ret = Old_NetUserGetLocalGroups(servername, username, level, flags, bufptr, prefmaxlen, entriesread, totalentries);
+
+	LOQ_zero("network", "uui", "ServerName", servername, "UserName", username, "Level", level);
+
+	return ret;
+}

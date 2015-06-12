@@ -305,12 +305,14 @@ static hook_t g_hooks[] = {
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyW),
 	HOOK(imgutil, DecodeImageEx),
 	HOOK(imgutil, DecodeImage),
-
+	HOOK(advapi32, LsaOpenPolicy),
 	//
     // Network Hooks
     //
 	HOOK(netapi32, NetUserGetInfo),
-    HOOK(urlmon, URLDownloadToFileW),
+	HOOK(netapi32, NetGetJoinInformation),
+	HOOK(netapi32, NetUserGetLocalGroups),
+	HOOK(urlmon, URLDownloadToFileW),
 	HOOK(urlmon, ObtainUserAgentString),
 	HOOK(wininet, InternetGetConnectedState),
     HOOK(wininet, InternetOpenA),
@@ -577,6 +579,9 @@ LONG WINAPI cuckoomon_exception_handler(
 			}
 		}
 		strcat(msg, ", ");
+	}
+	else {
+		strcat(msg, "invalid stack, ");
 	}
 	if (is_valid_address_range(eip, 16)) {
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Bytes at EIP: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",

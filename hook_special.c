@@ -237,7 +237,7 @@ HOOKDEF2(int, WINAPI, JsEval,
 	p = (PUCHAR)scriptobj[4 * Index - 2];
 	jsbuf = *(PWCHAR *)(p + 8);
 	if (jsbuf)
-		LOQspecial_ntstatus("misc", "u", "Javascript", jsbuf);
+		LOQspecial_ntstatus("browser", "u", "Javascript", jsbuf);
 
 	return ret;
 }
@@ -273,7 +273,7 @@ HOOKDEF2(int, WINAPI, CDocument_write,
 		}
 	}
 
-	LOQspecial_ntstatus("misc", "u", "Buffer", buf);
+	LOQspecial_ntstatus("browser", "u", "Buffer", buf);
 
 	return ret;
 }

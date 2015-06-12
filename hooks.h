@@ -1290,6 +1290,13 @@ extern HOOKDEF(HRESULT, WINAPI, DecodeImage,
 	__in PVOID pEventSink // IUnknown *
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, LsaOpenPolicy,
+	PLSA_UNICODE_STRING SystemName,
+	PVOID ObjectAttributes,
+	ACCESS_MASK DesiredAccess,
+	PVOID PolicyHandle
+);
+
 //
 // Network Hooks
 //
@@ -1598,6 +1605,23 @@ extern HOOKDEF(ULONG, WINAPI, GetAdaptersAddresses,
 	_In_    PVOID                 Reserved,
 	_Inout_ PVOID				  AdapterAddresses, // PIP_ADAPTER_ADDRESSES
 	_Inout_ PULONG                SizePointer
+);
+
+extern HOOKDEF(ULONG, WINAPI, NetGetJoinInformation,
+	_In_  LPCWSTR               lpServer,
+	_Out_ LPWSTR                *lpNameBuffer,
+	_Out_ DWORD *				BufferType
+);
+
+extern HOOKDEF(ULONG, WINAPI, NetUserGetLocalGroups,
+	_In_  LPCWSTR servername,
+	_In_  LPCWSTR username,
+	_In_  DWORD   level,
+	_In_  DWORD   flags,
+	_Out_ LPBYTE  *bufptr,
+	_In_  DWORD   prefmaxlen,
+	_Out_ LPDWORD entriesread,
+	_Out_ LPDWORD totalentries
 );
 
 //

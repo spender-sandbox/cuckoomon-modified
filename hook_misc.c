@@ -659,3 +659,14 @@ HOOKDEF(HRESULT, WINAPI, DecodeImage,
 	LOQ_hresult("misc", "");
 	return ret;
 }
+
+HOOKDEF(NTSTATUS, WINAPI, LsaOpenPolicy,
+	PLSA_UNICODE_STRING SystemName,
+	PVOID ObjectAttributes,
+	ACCESS_MASK DesiredAccess,
+	PVOID PolicyHandle
+) {
+	NTSTATUS ret = Old_LsaOpenPolicy(SystemName, ObjectAttributes, DesiredAccess, PolicyHandle);
+	LOQ_ntstatus("misc", "");
+	return ret;
+}
