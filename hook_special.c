@@ -106,6 +106,23 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     return ret;
 }
 
+extern void revalidate_all_hooks(void);
+
+HOOKDEF2(NTSTATUS, WINAPI, LdrUnloadDll,
+	PVOID DllImageBase
+) {
+	NTSTATUS ret = Old2_LdrUnloadDll(DllImageBase);
+
+	if (!is_valid_address_range((ULONG_PTR)DllImageBase, 0x1000)) {
+		// if this unload actually caused removal of the DLL instead of a reference counter decrement,
+		// then we need to loop through our hooks and unmark the hooks eliminated by this removal
+		revalidate_all_hooks();
+	}
+
+	return ret;
+}
+
+
 HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     __in_opt    LPVOID lpUnknown1,
     __in_opt    LPWSTR lpApplicationName,

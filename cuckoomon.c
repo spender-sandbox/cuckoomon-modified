@@ -60,6 +60,7 @@ static hook_t g_hooks[] = {
     //
 
 	HOOK2(ntdll, LdrLoadDll, TRUE),
+	HOOK2(ntdll, LdrUnloadDll, TRUE),
     HOOK2(kernel32, CreateProcessInternalW, TRUE),
 	// has special handling
 	HOOK2(jscript, JsEval, TRUE),
@@ -478,6 +479,17 @@ void set_hooks_dll(const wchar_t *library)
 				pipe("WARNING:Unable to hook %z", g_hooks[i].funcname);
         }
     }
+}
+
+void revalidate_all_hooks(void)
+{
+	int i;
+	for (i = 0; i < ARRAYSIZE(g_hooks); i++) {
+		if (g_hooks[i].addr && !is_valid_address_range((ULONG_PTR)g_hooks[i].addr, 1)) {
+			g_hooks[i].is_hooked = 0;
+			g_hooks[i].addr = NULL;
+		}
+	}
 }
 
 void set_hooks()

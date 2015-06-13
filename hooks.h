@@ -2118,6 +2118,10 @@ extern HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
     __out       PHANDLE ModuleHandle
 );
 
+extern HOOKDEF2(NTSTATUS, WINAPI, LdrUnloadDll,
+	PVOID DllImageBase
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
     _In_     HANDLE SectionHandle,
     _In_     HANDLE ProcessHandle,
