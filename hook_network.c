@@ -314,7 +314,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
 	HINTERNET ret;
 	LPCSTR referer;
 
-	if (lpszReferer == NULL && g_config.url_of_interest && g_config.referrer && strlen(g_config.referrer))
+	if (lpszReferer == NULL && g_config.url_of_interest && g_config.referrer && strlen(g_config.referrer) && !did_initial_request)
 		referer = g_config.referrer;
 	else
 		referer = lpszReferer;
@@ -342,7 +342,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
 	HINTERNET ret;
 	LPCWSTR referer;
 
-	if (lpszReferer == NULL && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer))
+	if (lpszReferer == NULL && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer) && !did_initial_request)
 		referer = g_config.w_referrer;
 	else
 		referer = lpszReferer; 
