@@ -299,38 +299,62 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlW,
     return ret;
 }
 
+static did_initial_request;
+
 HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
     __in  HINTERNET hConnect,
-    __in  LPCTSTR lpszVerb,
-    __in  LPCTSTR lpszObjectName,
-    __in  LPCTSTR lpszVersion,
-    __in  LPCTSTR lpszReferer,
-    __in  LPCTSTR *lplpszAcceptTypes,
+    __in  LPCSTR lpszVerb,
+    __in  LPCSTR lpszObjectName,
+    __in  LPCSTR lpszVersion,
+    __in  LPCSTR lpszReferer,
+    __in  LPCSTR *lplpszAcceptTypes,
     __in  DWORD dwFlags,
     __in  DWORD_PTR dwContext
 ) {
-    HINTERNET ret = Old_HttpOpenRequestA(hConnect, lpszVerb, lpszObjectName,
-        lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
+	HINTERNET ret;
+	LPCSTR referer;
+
+	if (lpszReferer == NULL && g_config.url_of_interest && g_config.referrer && strlen(g_config.referrer))
+		referer = g_config.referrer;
+	else
+		referer = lpszReferer;
+
+	ret = Old_HttpOpenRequestA(hConnect, lpszVerb, lpszObjectName,
+        lpszVersion, referer, lplpszAcceptTypes, dwFlags, dwContext);
     LOQ_nonnull("network", "psh", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
+
+	did_initial_request = TRUE;
+
     return ret;
 }
 
 HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
     __in  HINTERNET hConnect,
-    __in  LPWSTR lpszVerb,
-    __in  LPWSTR lpszObjectName,
-    __in  LPWSTR lpszVersion,
-    __in  LPWSTR lpszReferer,
-    __in  LPWSTR *lplpszAcceptTypes,
+    __in  LPCWSTR lpszVerb,
+    __in  LPCWSTR lpszObjectName,
+    __in  LPCWSTR lpszVersion,
+    __in  LPCWSTR lpszReferer,
+    __in  LPCWSTR *lplpszAcceptTypes,
     __in  DWORD dwFlags,
     __in  DWORD_PTR dwContext
 ) {
-    HINTERNET ret = Old_HttpOpenRequestW(hConnect, lpszVerb, lpszObjectName,
-        lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
+	HINTERNET ret;
+	LPCWSTR referer;
+
+	if (lpszReferer == NULL && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer))
+		referer = g_config.w_referrer;
+	else
+		referer = lpszReferer; 
+	
+	ret = Old_HttpOpenRequestW(hConnect, lpszVerb, lpszObjectName,
+        lpszVersion, referer, lplpszAcceptTypes, dwFlags, dwContext);
     LOQ_nonnull("network", "puh", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags);
-    return ret;
+
+	did_initial_request = TRUE;
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, HttpSendRequestA,

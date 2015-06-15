@@ -40,6 +40,10 @@ struct _g_config {
 	// URL of interest
 	wchar_t *url_of_interest;
 
+	// Referrer for initial URL request
+	wchar_t *w_referrer;
+	char *referrer;
+
 	// if this mutex exists then we're shutting down
     char shutdown_mutex[MAX_PATH];
 

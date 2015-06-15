@@ -1474,22 +1474,22 @@ extern HOOKDEF(BOOL, WINAPI, InternetCrackUrlW,
 
 extern HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
     __in  HINTERNET hConnect,
-    __in  LPCTSTR lpszVerb,
-    __in  LPCTSTR lpszObjectName,
-    __in  LPCTSTR lpszVersion,
-    __in  LPCTSTR lpszReferer,
-    __in  LPCTSTR *lplpszAcceptTypes,
+    __in  LPCSTR lpszVerb,
+    __in  LPCSTR lpszObjectName,
+    __in  LPCSTR lpszVersion,
+    __in  LPCSTR lpszReferer,
+    __in  LPCSTR *lplpszAcceptTypes,
     __in  DWORD dwFlags,
     __in  DWORD_PTR dwContext
 );
 
 extern HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
     __in  HINTERNET hConnect,
-    __in  LPWSTR lpszVerb,
-    __in  LPWSTR lpszObjectName,
-    __in  LPWSTR lpszVersion,
-    __in  LPWSTR lpszReferer,
-    __in  LPWSTR *lplpszAcceptTypes,
+    __in  LPCWSTR lpszVerb,
+    __in  LPCWSTR lpszObjectName,
+    __in  LPCWSTR lpszVersion,
+    __in  LPCWSTR lpszReferer,
+    __in  LPCWSTR *lplpszAcceptTypes,
     __in  DWORD dwFlags,
     __in  DWORD_PTR dwContext
 );

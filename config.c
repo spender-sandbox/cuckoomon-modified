@@ -24,7 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 int read_config(void)
 {
     // TODO unicode support
-    char buf[512], config_fname[MAX_PATH];
+    char buf[32768], config_fname[MAX_PATH];
 	FILE *fp;
 	unsigned int i;
 	unsigned int vallen;
@@ -40,6 +40,7 @@ int read_config(void)
 	}
 
 	g_config.force_sleepskip = -1;
+	memset(buf, 0, sizeof(buf));
 	while (fgets(buf, sizeof(buf), fp) != NULL)
 	{
         // cut off the newline
@@ -89,14 +90,22 @@ int read_config(void)
 					}
 					else {
 						// is a URL
-						wchar_t *utmp = calloc(1, 512 * sizeof(wchar_t));
 						unsigned int url_len = (unsigned int)strlen(value);
+						wchar_t *utmp = calloc(1, (url_len + 1) * sizeof(wchar_t));
 						for (i = 0; i < url_len; i++)
 							utmp[i] = (wchar_t)(unsigned short)value[i];
 						g_config.url_of_interest = utmp;
 						g_config.suspend_logging = TRUE;
 					}
 				}
+			}
+			else if (!strcmp(key, "referrer")) {
+				unsigned int ref_len = (unsigned int)strlen(value);
+				wchar_t *rtmp = calloc(1, (ref_len + 1) * sizeof(wchar_t));
+				for (i = 0; i < ref_len; i++)
+					rtmp[i] = (wchar_t)(unsigned short)value[i];
+				g_config.w_referrer = rtmp;
+				g_config.referrer = strdup(value);
 			}
 			else if (!strcmp(key, "analyzer")) {
                 strncpy(g_config.analyzer, value,

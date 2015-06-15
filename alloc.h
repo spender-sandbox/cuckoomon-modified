@@ -51,7 +51,7 @@ static __inline void *cm_calloc(size_t count, size_t size)
 }
 #endif
 
-static __inline char *cm_strdup(char *ptr)
+static __inline char *cm_strdup(const char *ptr)
 {
 	char *buf = cm_alloc(strlen(ptr) + 1);
 	if (buf)
