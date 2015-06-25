@@ -893,6 +893,12 @@ extern HOOKDEF(BOOLEAN, WINAPI, RtlDispatchException,
 	__in PCONTEXT Context
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtRaiseException,
+	__in PEXCEPTION_RECORD ExceptionRecord,
+	__in PCONTEXT Context,
+	__in BOOLEAN SearchFrames
+);
+
 extern HOOKDEF(BOOL, WINAPI, ShellExecuteExW,
     __inout  SHELLEXECUTEINFOW *pExecInfo
 );
@@ -2141,6 +2147,16 @@ extern HOOKDEF2(int, WINAPI, JsEval,
 	PVOID Arg3,
 	int Index,
 	DWORD *scriptobj
+);
+
+extern HOOKDEF2(int, WINAPI, COleScript_Compile,
+	PVOID Arg1,
+	PWCHAR ScriptBuf,
+	int Arg3,
+	int Arg4,
+	int Arg5,
+	PWCHAR LocationBuf,
+	PVOID Arg7
 );
 
 extern HOOKDEF2(int, WINAPI, CDocument_write,

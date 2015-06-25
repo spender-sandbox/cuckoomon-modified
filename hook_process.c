@@ -651,8 +651,40 @@ HOOKDEF(BOOLEAN, WINAPI, RtlDispatchException,
 	__in PEXCEPTION_RECORD ExceptionRecord,
 	__in PCONTEXT Context)
 {
+	if (ExceptionRecord && (ULONG_PTR)ExceptionRecord->ExceptionAddress >= g_our_dll_base && (ULONG_PTR)ExceptionRecord->ExceptionAddress < (g_our_dll_base + g_our_dll_size)) {
+		char buf[128];
+		_snprintf(buf, sizeof(buf), "Exception reported at offset 0x%x in cuckoomon itself", (DWORD)((ULONG_PTR)ExceptionRecord->ExceptionAddress - g_our_dll_base));
+		log_anomaly("cuckoocrash", buf);
+	}
+
 	// flush logs prior to handling of an exception without having to register a vectored exception handler
 	log_flush();
 
 	return Old_RtlDispatchException(ExceptionRecord, Context);
+}
+
+#if REPORT_EXCEPTIONS
+extern LONG WINAPI cuckoomon_exception_handler(
+	__in struct _EXCEPTION_POINTERS *ExceptionInfo
+	);
+#endif
+
+HOOKDEF(NTSTATUS, WINAPI, NtRaiseException,
+	__in PEXCEPTION_RECORD ExceptionRecord,
+	__in PCONTEXT Context,
+	__in BOOLEAN SearchFrames
+) {
+	EXCEPTION_POINTERS exc;
+	NTSTATUS ret;
+
+	exc.ContextRecord = Context;
+	exc.ExceptionRecord = ExceptionRecord;
+
+#if REPORT_EXCEPTIONS
+	cuckoomon_exception_handler(&exc);
+#endif
+
+	ret = Old_NtRaiseException(ExceptionRecord, Context, SearchFrames);
+
+	return ret;
 }

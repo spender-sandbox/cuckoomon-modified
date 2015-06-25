@@ -63,7 +63,9 @@ static hook_t g_hooks[] = {
 	HOOK2(ntdll, LdrUnloadDll, TRUE),
     HOOK2(kernel32, CreateProcessInternalW, TRUE),
 	// has special handling
-	HOOK2(jscript, JsEval, TRUE),
+	HOOK2(jscript, COleScript_Compile, TRUE),
+	HOOK2(vbscript, COleScript_Compile, TRUE),
+	//HOOK2(jscript, JsEval, TRUE),
 	HOOK2(mshtml, CDocument_write, TRUE),
 
 	// COM object creation hook
@@ -237,6 +239,7 @@ static hook_t g_hooks[] = {
 	HOOK(kernel32, WaitForDebugEvent),
 	HOOK(ntdll, DbgUiWaitStateChange),
 	HOOK(ntdll, RtlDispatchException),
+	HOOK(ntdll, NtRaiseException),
 
     // all variants of ShellExecute end up in ShellExecuteExW
     HOOK(shell32, ShellExecuteExW),
@@ -552,14 +555,27 @@ LONG WINAPI cuckoomon_exception_handler(
 	char msg[8192];
 	char *dllname;
 	unsigned int offset;
-	ULONG_PTR eip = (ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
-	PUCHAR eipptr = (PUCHAR)eip;
+	ULONG_PTR eip;
+	PUCHAR eipptr;
 #ifdef _WIN64
-	ULONG_PTR *stack = (ULONG_PTR *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Rsp);
+	ULONG_PTR *stack;
 #else
-	DWORD *stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
+	DWORD *stack;
 #endif
 	lasterror_t lasterror;
+
+	if (ExceptionInfo->ExceptionRecord == NULL || ExceptionInfo->ContextRecord == NULL)
+		return EXCEPTION_CONTINUE_SEARCH;
+
+	eip = (ULONG_PTR)ExceptionInfo->ExceptionRecord->ExceptionAddress;
+	eipptr = (PUCHAR)eip;
+
+#ifdef _WIN64
+	stack = (ULONG_PTR *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Rsp);
+#else
+	stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
+#endif
+
 
 #if REPORT_ALL_EXCEPTIONS == 0
 	if (ExceptionInfo->ExceptionRecord->ExceptionCode < 0xc0000000)
@@ -744,7 +760,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 #if !CUCKOODBG
 		// hide our module from peb
-        hide_module_from_peb(hModule);
+        //hide_module_from_peb(hModule);
 #endif
 
         // read the config settings

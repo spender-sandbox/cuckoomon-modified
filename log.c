@@ -820,7 +820,7 @@ void loq(int index, const char *category, const char *name,
 					p = (wchar_t *)malloc(size + (strcnt * 4 * sizeof(wchar_t)));
 					if (p == NULL)
 						goto buffer_log;
-					for (i = 0, x = 0; i < size - 1; i++) {
+					for (i = 0, x = 0; i < (size/sizeof(wchar_t)) - 1; i++) {
 						if (wdata[i] == '\0') {
 							p[x++] = L'\\';
 							p[x++] = L'x';
@@ -1022,7 +1022,7 @@ void log_environ()
 	free(sysvolguid);
 	free(machineguid);
 }
-void log_anomaly(const char *subcategory, int success,
+void log_hook_anomaly(const char *subcategory, int success,
     const char *funcname, const char *msg)
 {
     loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", success, 0, "isss",
@@ -1031,6 +1031,15 @@ void log_anomaly(const char *subcategory, int success,
         "FunctionName", funcname,
         "Message", msg);
 }
+
+void log_anomaly(const char *subcategory, const char *msg)
+{
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "iss",
+		"ThreadIdentifier", GetCurrentThreadId(),
+		"Subcategory", subcategory,
+		"Message", msg);
+}
+
 
 void log_hook_modification(const char *funcname, const char *origbytes, const char *newbytes, unsigned int len)
 {

@@ -1377,6 +1377,58 @@ ULONG_PTR get_jseval_addr(HMODULE mod)
 }
 
 // only 32-bit supported
+ULONG_PTR get_olescript_compile_addr(HMODULE mod)
+{
+	PUCHAR buf = (PUCHAR)mod;
+	PIMAGE_DOS_HEADER doshdr;
+	PIMAGE_NT_HEADERS nthdr;
+	PIMAGE_SECTION_HEADER sechdr;
+	unsigned int numsecs, i;
+	PUCHAR start, end;
+	PUCHAR p;
+
+	doshdr = (PIMAGE_DOS_HEADER)buf;
+	nthdr = (PIMAGE_NT_HEADERS)(buf + doshdr->e_lfanew);
+	sechdr = (PIMAGE_SECTION_HEADER)((PUCHAR)&nthdr->OptionalHeader + nthdr->FileHeader.SizeOfOptionalHeader);
+	numsecs = nthdr->FileHeader.NumberOfSections;
+
+	for (i = 0; i < numsecs; i++) {
+		if (memcmp(sechdr[i].Name, ".text", 5))
+			continue;
+		start = buf + sechdr[i].VirtualAddress;
+		end = start + sechdr[i].Misc.VirtualSize;
+
+		for (p = start; p < end - 20; p++) {
+			if (!memcmp(p, L"eval code", 20)) {
+				PUCHAR evalcodestr = p;
+				// found string
+				// search for push <imm of eval code string>
+				for (p = start; p < end - 10; p++) {
+					if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)evalcodestr) {
+						PUCHAR y;
+						// found the push, now search down for relative call
+						for (y = p; y < p + 0x40; y++) {
+							if (y[0] == 0xe8) {
+								PUCHAR target = y + 5 + *(int *)&y[1];
+								if (target > start && target < end) {
+									// if we find it, the target of the call is COleScript::Compile
+									return (ULONG_PTR)target;
+								}
+							}
+						}
+						break;
+					}
+				}
+				break;
+			}
+		}
+		break;
+	}
+	return 0;
+}
+
+
+// only 32-bit supported
 ULONG_PTR get_cdocument_write_addr(HMODULE mod)
 {
 	PUCHAR buf = (PUCHAR)mod;

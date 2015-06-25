@@ -66,7 +66,8 @@ void loq(int index, const char *category, const char *name,
     int is_success, ULONG_PTR return_value, const char *fmt, ...);
 void log_new_process();
 void log_new_thread();
-void log_anomaly(const char *subcategory, int success,
+void log_anomaly(const char *subcategory, const char *msg);
+void log_hook_anomaly(const char *subcategory, int success,
     const char *funcname, const char *msg);
 void log_hook_modification(const char *funcname, const char *origbytes, const char *newbytes, unsigned int len);
 void log_hook_removal(const char *funcname);

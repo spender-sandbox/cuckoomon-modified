@@ -246,7 +246,7 @@ HOOKDEF2(int, WINAPI, JsEval,
 	PVOID Arg3,
 	int Index,
 	DWORD *scriptobj
-	) {
+) {
 	PWCHAR jsbuf;
 	PUCHAR p;
 	int ret = Old2_JsEval(Arg1, Arg2, Arg3, Index, scriptobj);
@@ -256,6 +256,20 @@ HOOKDEF2(int, WINAPI, JsEval,
 	if (jsbuf)
 		LOQspecial_ntstatus("browser", "u", "Javascript", jsbuf);
 
+	return ret;
+}
+
+HOOKDEF2(int, WINAPI, COleScript_Compile,
+	PVOID Arg1,
+	PWCHAR ScriptBuf,
+	int Arg3,
+	int Arg4,
+	int Arg5,
+	PWCHAR LocationBuf,
+	PVOID Arg7
+) {
+	int ret = Old2_COleScript_Compile(Arg1, ScriptBuf, Arg3, Arg4, Arg5, LocationBuf, Arg7);
+	LOQspecial_ntstatus("browser", "uu", "Source", LocationBuf, "Script", ScriptBuf);
 	return ret;
 }
 
