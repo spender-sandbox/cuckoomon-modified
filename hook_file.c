@@ -626,6 +626,7 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
 		lasterror.Win32Error = 0x00000002;
 		lasterror.NtstatusError = 0xc000000f;
 		FindClose(ret);
+		set_lasterrors(&lasterror);
 		ret = INVALID_HANDLE_VALUE;
 	}
 
@@ -652,6 +653,7 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
 		lasterror.Win32Error = 0x00000002;
 		lasterror.NtstatusError = 0xc000000f;
 		FindClose(ret);
+		set_lasterrors(&lasterror);
 		ret = INVALID_HANDLE_VALUE;
 	}
 
