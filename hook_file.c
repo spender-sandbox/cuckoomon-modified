@@ -618,8 +618,20 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
 ) {
     HANDLE ret = Old_FindFirstFileExA(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
+
+	// XXX: change me if we ever move the analyzer dir out of the root directory
+	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && !stricmp(((PWIN32_FIND_DATAA)lpFindFileData)->cFileName, g_config.analyzer + 3)) {
+		lasterror_t lasterror;
+
+		lasterror.Win32Error = 0x00000002;
+		lasterror.NtstatusError = 0xc000000f;
+		FindClose(ret);
+		ret = INVALID_HANDLE_VALUE;
+	}
+
 	LOQ_handle("filesystem", "f", "FileName", lpFileName);
-    return ret;
+
+	return ret;
 }
 
 HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
@@ -632,8 +644,34 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
 ) {
     HANDLE ret = Old_FindFirstFileExW(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
+
+	// XXX: change me if we ever move the analyzer dir out of the root directory
+	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && !wcsicmp(((PWIN32_FIND_DATAW)lpFindFileData)->cFileName, g_config.w_analyzer + 3)) {
+		lasterror_t lasterror;
+
+		lasterror.Win32Error = 0x00000002;
+		lasterror.NtstatusError = 0xc000000f;
+		FindClose(ret);
+		ret = INVALID_HANDLE_VALUE;
+	}
+
 	LOQ_handle("filesystem", "F", "FileName", lpFileName);
     return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, FindNextFileW,
+	__in HANDLE hFindFile,
+	__out LPWIN32_FIND_DATAW lpFindFileData
+) {
+	BOOL ret = Old_FindNextFileW(hFindFile, lpFindFileData);
+
+	if (!g_config.no_stealth && ret && !wcsicmp(lpFindFileData->cFileName, g_config.w_analyzer + 3)) {
+		ret = Old_FindNextFileW(hFindFile, lpFindFileData);
+	}
+
+	// not logging this due to the flood of logs it would cause
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, CopyFileA,

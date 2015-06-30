@@ -100,6 +100,7 @@ static hook_t g_hooks[] = {
 
     HOOK(kernel32, FindFirstFileExA),
     HOOK(kernel32, FindFirstFileExW),
+	HOOK(kernel32, FindNextFileW),
 
     // Covered by NtCreateFile() but still grab this information
     HOOK(kernel32, CopyFileA),
@@ -696,6 +697,7 @@ DWORD g_tls_hook_index;
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
+	char config_fname[MAX_PATH];
 	lasterror_t lasterror;
 
 	get_lasterrors(&lasterror);
@@ -713,22 +715,14 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #if HOOKTYPE != HOOK_JMP_INDIRECT
 #error Update hook check
 #endif
-		if (((PUCHAR)ReadProcessMemory)[0] == 0xff && ((PUCHAR)ReadProcessMemory)[1] == 0x25) {
-			char config_fname[MAX_PATH];
-			sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
-			DeleteFile(config_fname);
-			goto out;
-		}
+		if (((PUCHAR)ReadProcessMemory)[0] == 0xff && ((PUCHAR)ReadProcessMemory)[1] == 0x25)
+			goto early_abort;
 #else
 #if HOOKTYPE != HOOK_HOTPATCH_JMP_INDIRECT
 #error Update hook check
 #endif
-		if (((PUCHAR)ReadProcessMemory)[0] == 0x8b && ((PUCHAR)ReadProcessMemory)[1] == 0xff && ((PUCHAR)ReadProcessMemory)[2] == 0xff && ((PUCHAR)ReadProcessMemory)[3] == 0x25) {
-			char config_fname[MAX_PATH];
-			sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
-			DeleteFile(config_fname);
-			goto out;
-		}
+		if (((PUCHAR)ReadProcessMemory)[0] == 0x8b && ((PUCHAR)ReadProcessMemory)[1] == 0xff && ((PUCHAR)ReadProcessMemory)[2] == 0xff && ((PUCHAR)ReadProcessMemory)[3] == 0x25)
+			goto early_abort;
 #endif
 
 		g_our_dll_base = (ULONG_PTR)hModule;
@@ -747,7 +741,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		g_tls_hook_index = TlsAlloc();
 		if (g_tls_hook_index == TLS_OUT_OF_INDEXES)
-			goto out;
+			goto early_abort;
 
 #if REPORT_EXCEPTIONS
 		AddVectoredExceptionHandler(1, cuckoomon_exception_handler);
@@ -760,7 +754,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 #if !CUCKOODBG
 		// hide our module from peb
-        //hide_module_from_peb(hModule);
+        hide_module_from_peb(hModule);
 #endif
 
         // read the config settings
@@ -769,8 +763,13 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			;
 #else
 			// if we're not debugging, then failure to read the cuckoomon config should be a critical error
-			goto out;
+			goto early_abort;
 #endif
+
+		// don't inject into our own binaries run out of the analyzer directory
+		if (!wcsnicmp(our_process_path, g_config.w_analyzer, wcslen(g_config.w_analyzer)))
+			goto out;
+
 		// obtain all protected pids
         pipe2(pids, &length, "GETPIDS");
         for (i = 0; i < length / sizeof(pids[0]); i++) {
@@ -827,6 +826,10 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 out:
 	set_lasterrors(&lasterror);
-
+	return TRUE;
+early_abort:
+	sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
+	DeleteFile(config_fname);
+	set_lasterrors(&lasterror);
 	return TRUE;
 }

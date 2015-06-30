@@ -195,6 +195,11 @@ extern HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
     __in        DWORD dwAdditionalFlags
 );
 
+extern HOOKDEF(BOOL, WINAPI, FindNextFileW,
+	__in HANDLE hFindFile,
+	__out LPWIN32_FIND_DATAW lpFindFileData
+);
+
 extern HOOKDEF(BOOL, WINAPI, CopyFileA,
     __in  LPCTSTR lpExistingFileName,
     __in  LPCTSTR lpNewFileName,
