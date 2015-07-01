@@ -285,6 +285,12 @@ extern HOOKDEF(DWORD, WINAPI, GetFileVersionInfoSizeW,
 	_Out_opt_  LPDWORD lpdwHandle
 );
 
+extern HOOKDEF(HANDLE, WINAPI, FindFirstChangeNotificationW,
+	_In_	LPCWSTR lpPathName,
+	_In_	BOOL bWatchSubtree,
+	_In_	DWORD dwNotifyFilter
+);
+
 //
 // Registry Hooks
 //
@@ -468,6 +474,14 @@ extern HOOKDEF(LONG, WINAPI, RegQueryInfoKeyW,
 
 extern HOOKDEF(LONG, WINAPI, RegCloseKey,
     __in    HKEY hKey
+);
+
+extern HOOKDEF(LONG, WINAPI, RegNotifyChangeKeyValue,
+	_In_     HKEY   hKey,
+	_In_     BOOL   bWatchSubtree,
+	_In_     DWORD  dwNotifyFilter,
+	_In_opt_ HANDLE hEvent,
+	_In_     BOOL   fAsynchronous
 );
 
 //

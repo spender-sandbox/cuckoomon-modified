@@ -907,3 +907,15 @@ HOOKDEF(DWORD, WINAPI, GetFileVersionInfoSizeW,
 
 	return ret;
 }
+
+HOOKDEF(HANDLE, WINAPI, FindFirstChangeNotificationW,
+	_In_	LPCWSTR lpPathName,
+	_In_	BOOL bWatchSubtree,
+	_In_	DWORD dwNotifyFilter
+) {
+	HANDLE ret = Old_FindFirstChangeNotificationW(lpPathName, bWatchSubtree, dwNotifyFilter);
+
+	LOQ_handle("filesystem", "Fhi", "PathName", lpPathName, "NotifyFilter", dwNotifyFilter, "WatchSubtree", bWatchSubtree);
+
+	return ret;
+}

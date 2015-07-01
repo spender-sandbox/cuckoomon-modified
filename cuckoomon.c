@@ -123,6 +123,8 @@ static hook_t g_hooks[] = {
 	HOOK(version, GetFileVersionInfoW),
 	HOOK(version, GetFileVersionInfoSizeW),
 
+	HOOK(kernel32, FindFirstChangeNotificationW),
+
     //
     // Registry Hooks
     //
@@ -163,6 +165,8 @@ static hook_t g_hooks[] = {
     HOOK(advapi32, RegQueryInfoKeyW),
 
     HOOK(advapi32, RegCloseKey),
+
+	HOOK(advapi32, RegNotifyChangeKeyValue),
 
     //
     // Native Registry Hooks

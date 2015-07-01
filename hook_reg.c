@@ -459,3 +459,23 @@ HOOKDEF(LONG, WINAPI, RegCloseKey,
     LOQ_zero("registry", "p", "Handle", hKey);
     return ret;
 }
+
+HOOKDEF(LONG, WINAPI, RegNotifyChangeKeyValue,
+	_In_     HKEY   hKey,
+	_In_     BOOL   bWatchSubtree,
+	_In_     DWORD  dwNotifyFilter,
+	_In_opt_ HANDLE hEvent,
+	_In_     BOOL   fAsynchronous
+) {
+	LONG ret = 0;
+
+	if (!fAsynchronous)
+		LOQ_zero("registry", "Ehii", "FullName", hKey, NULL, "NotifyFilter", dwNotifyFilter, "WatchSubtree", bWatchSubtree, "Asynchronous", fAsynchronous);
+
+	ret = Old_RegNotifyChangeKeyValue(hKey, bWatchSubtree, dwNotifyFilter, hEvent, fAsynchronous);
+
+	if (fAsynchronous)
+		LOQ_zero("registry", "Ehii", "FullName", hKey, NULL, "NotifyFilter", dwNotifyFilter, "WatchSubtree", bWatchSubtree, "Asynchronous", fAsynchronous);
+
+	return ret;
+}
