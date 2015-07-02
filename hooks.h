@@ -2168,14 +2168,31 @@ extern HOOKDEF2(int, WINAPI, JsEval,
 	DWORD *scriptobj
 );
 
-extern HOOKDEF2(int, WINAPI, COleScript_Compile,
+extern HOOKDEF2(int, WINAPI, COleScript_ParseScriptText,
 	PVOID Arg1,
 	PWCHAR ScriptBuf,
-	int Arg3,
-	int Arg4,
-	int Arg5,
-	PWCHAR LocationBuf,
-	PVOID Arg7
+	PVOID Arg3,
+	PVOID Arg4,
+	PVOID Arg5,
+	PVOID Arg6,
+	PVOID Arg7,
+	PVOID Arg8,
+	PVOID Arg9,
+	PVOID Arg10
+);
+
+extern HOOKDEF2(PVOID, WINAPI, JsParseScript,
+	const wchar_t *script,
+	PVOID SourceContext,
+	const wchar_t *sourceUrl,
+	PVOID *result
+);
+
+extern HOOKDEF2(PVOID, WINAPI, JsRunScript,
+	const wchar_t *script,
+	PVOID SourceContext,
+	const wchar_t *sourceUrl,
+	PVOID *result
 );
 
 extern HOOKDEF2(int, WINAPI, CDocument_write,

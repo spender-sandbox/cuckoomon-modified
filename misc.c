@@ -1329,160 +1329,262 @@ out:
 	return ret;
 }
 
-// only 32-bit supported
+static PUCHAR get_rel_target(PUCHAR buf)
+{
+	return buf + 5 + *(int *)&buf[1];
+}
+
+static PUCHAR find_first_caller_of_target(PUCHAR start, PUCHAR end, PUCHAR target)
+{
+	PUCHAR p;
+
+	for (p = start; p < end - 5; p++) {
+		if (p[0] == 0xe8 && get_rel_target(p) == target)
+			return p;
+	}
+	return NULL;
+}
+
+static PUCHAR find_first_imm_push_of_target(PUCHAR start, PUCHAR end, PUCHAR target)
+{
+	PUCHAR p;
+
+	for (p = start; p < end - 5; p++) {
+		if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)(ULONG_PTR)target)
+			return p;
+	}
+	return NULL;
+}
+
+static PUCHAR find_first_lea_of_target(PUCHAR start, PUCHAR end, PUCHAR target)
+{
+	PUCHAR p;
+
+	for (p = start; p < end - 7; p++) {
+		if (p[0] == 0x48 && p[1] == 0x8d && get_rel_target(&p[2]) == target)
+			return p;
+	}
+	return NULL;
+}
+
+static PUCHAR find_first_mov_reg_of_target(PUCHAR start, PUCHAR end, PUCHAR target)
+{
+	PUCHAR p;
+
+	for (p = start; p < end - 5; p++) {
+		if (((p[0] & 0xf8) == 0xb8) && *(DWORD *)&p[1] == (DWORD)(ULONG_PTR)target)
+			return p;
+	}
+	return NULL;
+
+}
+
+static PUCHAR find_string_in_bounds(PUCHAR start, PUCHAR end, PUCHAR str, DWORD len)
+{
+	PUCHAR p;
+
+	for (p = start; p < end - len; p++)
+		if (!memcmp(p, str, len))
+			return p;
+	return NULL;
+}
+
+static PUCHAR find_next_relative_call(PUCHAR start, PUCHAR end, PUCHAR target)
+{
+	PUCHAR p;
+
+	for (p = target; p < end - 5; p++) {
+		if (p[0] == 0xe8) {
+			PUCHAR resolv = get_rel_target(p);
+			if (resolv >= start && resolv < end)
+				return p;
+		}
+	}
+	return NULL;
+}
+
+static PUCHAR find_function_prologue(PUCHAR start, PUCHAR end, PUCHAR target)
+{
+	PUCHAR p;
+#ifdef _WIN64
+	for (p = target - 5; p >(target - 0x1000) && p >= start; p--)
+		if (!memcmp(p, "\x90\x90\x90\x90\x90", 5))
+			return p + 6;
+#else
+	for (p = target - 5; p > (target - 0x1000) && p >= start; p--)
+		if (!memcmp(p, "\x8b\xff\x55\x8b\xec", 5))
+			return p;
+#endif
+	return NULL;
+}
+
+static BOOL get_section_bounds(HMODULE mod, const char * sectionname, PUCHAR *start, PUCHAR *end)
+{
+	PUCHAR buf = (PUCHAR)mod;
+	PIMAGE_DOS_HEADER doshdr;
+	PIMAGE_NT_HEADERS nthdr;
+	PIMAGE_SECTION_HEADER sechdr;
+	unsigned int numsecs, i;
+
+	doshdr = (PIMAGE_DOS_HEADER)buf;
+	nthdr = (PIMAGE_NT_HEADERS)(buf + doshdr->e_lfanew);
+	sechdr = (PIMAGE_SECTION_HEADER)((PUCHAR)&nthdr->OptionalHeader + nthdr->FileHeader.SizeOfOptionalHeader);
+	numsecs = nthdr->FileHeader.NumberOfSections;
+
+	for (i = 0; i < numsecs; i++) {
+		if (memcmp(sechdr[i].Name, sectionname, strlen(sectionname)))
+			continue;
+		*start = buf + sechdr[i].VirtualAddress;
+		*end = *start + sechdr[i].Misc.VirtualSize;
+		return TRUE;
+	}
+	return FALSE;
+}
+
 ULONG_PTR get_jseval_addr(HMODULE mod)
 {
-	PUCHAR buf = (PUCHAR)mod;
-	PIMAGE_DOS_HEADER doshdr;
-	PIMAGE_NT_HEADERS nthdr;
-	PIMAGE_SECTION_HEADER sechdr;
-	unsigned int numsecs, i;
 	PUCHAR start, end;
 	PUCHAR p;
 
-	doshdr = (PIMAGE_DOS_HEADER)buf;
-	nthdr = (PIMAGE_NT_HEADERS)(buf + doshdr->e_lfanew);
-	sechdr = (PIMAGE_SECTION_HEADER)((PUCHAR)&nthdr->OptionalHeader + nthdr->FileHeader.SizeOfOptionalHeader);
-	numsecs = nthdr->FileHeader.NumberOfSections;
-
-	for (i = 0; i < numsecs; i++) {
-		if (memcmp(sechdr[i].Name, ".text", 5))
-			continue;
-		start = buf + sechdr[i].VirtualAddress;
-		end = start + sechdr[i].Misc.VirtualSize;
-
-		for (p = start; p < end - 20; p++) {
-			if (!memcmp(p, L"eval code", 20)) {
-				PUCHAR evalcodestr = p;
-				// found string
-				// search for push <imm of eval code string>
-				for (p = start; p < end - 10; p++) {
-					if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)evalcodestr) {
-						PUCHAR jsevaladdr = p;
-						// found the push, now find the function prologue
-						while (jsevaladdr > (p - 0x1000) && jsevaladdr > start) {
-							if (!memcmp(jsevaladdr, "\x8b\xff\x55\x8b\xec", 5))
-								return (ULONG_PTR)jsevaladdr;
-							jsevaladdr--;
-						}
-						break;
-					}
-				}
-				break;
-			}
-		}
-		break;
-	}
-	return 0;
+	if (!get_section_bounds(mod, ".text", &start, &end))
+		return 0;
+	p = find_string_in_bounds(start, end, (PUCHAR)L"eval code", 20);
+	if (p == NULL)
+		return 0;
+#ifdef _WIN64
+	p = find_first_lea_of_target(start, end, p);
+#else
+	p = find_first_imm_push_of_target(start, end, p);
+#endif
+	if (p == NULL)
+		return 0;
+	p = find_function_prologue(start, end, p);
+	return (ULONG_PTR)p;
 }
 
-// only 32-bit supported
 ULONG_PTR get_olescript_compile_addr(HMODULE mod)
 {
-	PUCHAR buf = (PUCHAR)mod;
-	PIMAGE_DOS_HEADER doshdr;
-	PIMAGE_NT_HEADERS nthdr;
-	PIMAGE_SECTION_HEADER sechdr;
-	unsigned int numsecs, i;
 	PUCHAR start, end;
 	PUCHAR p;
 
-	doshdr = (PIMAGE_DOS_HEADER)buf;
-	nthdr = (PIMAGE_NT_HEADERS)(buf + doshdr->e_lfanew);
-	sechdr = (PIMAGE_SECTION_HEADER)((PUCHAR)&nthdr->OptionalHeader + nthdr->FileHeader.SizeOfOptionalHeader);
-	numsecs = nthdr->FileHeader.NumberOfSections;
-
-	for (i = 0; i < numsecs; i++) {
-		if (memcmp(sechdr[i].Name, ".text", 5))
-			continue;
-		start = buf + sechdr[i].VirtualAddress;
-		end = start + sechdr[i].Misc.VirtualSize;
-
-		for (p = start; p < end - 20; p++) {
-			if (!memcmp(p, L"eval code", 20)) {
-				PUCHAR evalcodestr = p;
-				// found string
-				// search for push <imm of eval code string>
-				for (p = start; p < end - 10; p++) {
-					if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)evalcodestr) {
-						PUCHAR y;
-						// found the push, now search down for relative call
-						for (y = p; y < p + 0x40; y++) {
-							if (y[0] == 0xe8) {
-								PUCHAR target = y + 5 + *(int *)&y[1];
-								if (target > start && target < end) {
-									// if we find it, the target of the call is COleScript::Compile
-									return (ULONG_PTR)target;
-								}
-							}
-						}
-						break;
-					}
-				}
-				break;
-			}
-		}
-		break;
-	}
-	return 0;
+	if (!get_section_bounds(mod, ".text", &start, &end))
+		return 0;
+	p = find_string_in_bounds(start, end, (PUCHAR)L"eval code", 20);
+	if (p == NULL)
+		return 0;
+#ifdef _WIN64
+	p = find_first_lea_of_target(start, end, p);
+#else
+	p = find_first_imm_push_of_target(start, end, p);
+#endif
+	if (p == NULL)
+		return 0;
+	p = find_next_relative_call(start, end, p);
+	if (p == NULL)
+		return 0;
+	p = get_rel_target(p);
+	return (ULONG_PTR)p;
 }
 
 
-// only 32-bit supported
-ULONG_PTR get_cdocument_write_addr(HMODULE mod)
+ULONG_PTR get_olescript_parsescripttext_addr(HMODULE mod)
 {
-	PUCHAR buf = (PUCHAR)mod;
-
-	PIMAGE_DOS_HEADER doshdr;
-	PIMAGE_NT_HEADERS nthdr;
-	PIMAGE_SECTION_HEADER sechdr;
-	unsigned int numsecs, i;
 	PUCHAR start, end;
 	PUCHAR p;
+	PUCHAR scriptblockaddr;
 
-	doshdr = (PIMAGE_DOS_HEADER)buf;
-	nthdr = (PIMAGE_NT_HEADERS)(buf + doshdr->e_lfanew);
-	sechdr = (PIMAGE_SECTION_HEADER)((PUCHAR)&nthdr->OptionalHeader + nthdr->FileHeader.SizeOfOptionalHeader);
-	numsecs = nthdr->FileHeader.NumberOfSections;
+	if (!get_section_bounds(mod, ".text", &start, &end))
+		return 0;
+	scriptblockaddr = find_string_in_bounds(start, end, (PUCHAR)L"script block", 26);
+	if (scriptblockaddr == NULL)
+		return 0;
+#ifdef _WIN64
+	p = find_first_lea_of_target(start, end, scriptblockaddr);
+#else
+	p = find_first_imm_push_of_target(start, end, scriptblockaddr);
+	if (p == NULL)
+		p = find_first_mov_reg_of_target(start, end, scriptblockaddr);
+#endif
+	if (p == NULL)
+		return 0;
+	p = find_function_prologue(start, end, p);
+	if (p == NULL)
+		return 0;
+	p = find_first_caller_of_target(start, end, p);
+	if (p == NULL)
+		return 0;
+	p = find_function_prologue(start, end, p);
+	return (ULONG_PTR)p;
+}
 
-	for (i = 0; i < numsecs; i++) {
-		if (memcmp(sechdr[i].Name, ".text", 5))
-			continue;
-		start = buf + sechdr[i].VirtualAddress;
-		end = start + sechdr[i].Misc.VirtualSize;
+ULONG_PTR get_cdocument_write_addr(HMODULE mod)
+{
+	PUCHAR start, end;
+	PUCHAR p;
+	PUCHAR newline;
 
-		for (p = start; p < end - 6; p++) {
-			if (!memcmp(p, L"\r\n", 6)) {
-				PUCHAR newline = p;
-				// got the newline, now find a push of the address of it followed immediately by a relative call within short distance of a retn 8
-				// this will give us CDocument::writeln
-				for (p = start; p < end - 10; p++) {
-					if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)newline && p[5] == 0xe8) {
-						PUCHAR x;
-						for (x = p + 10; x < p + 0x80; x++) {
-							if (!memcmp(x, "\xc2\x08\x00", 3)) {
-								PUCHAR y;
-								// found the retn 8
-								// now scan back to find a call pointing into .text preceded immediately by some form of a push (register or indirect through ebp plus offset)
-								for (y = p; y > p - 0x80; y--) {
-									if (y[0] == 0xe8) {
-										PUCHAR target = y + 5 + *(int *)&y[1];
-										if (target > start && target < end) {
-											// if we find it, the target of the call is CDocument::write
-											if (*(y - 3) == 0xff && *(y - 2) == 0x75 && *(y - 1) < 0x20)
-												return (ULONG_PTR)target;
-											else if ((*(y - 1) & 0xf8) == 0x50)
-												return (ULONG_PTR)target;
-										}
-									}
-								}
+	if (!get_section_bounds(mod, ".text", &start, &end))
+		return 0;
+	newline = find_string_in_bounds(start, end, (PUCHAR)L"\r\n", 6);
+	if (newline == NULL)
+		return 0;
+
+#ifdef _WIN64
+	for (p = start; p < end - 10; p++) {
+		if (p[0] == 0x48 && p[1] == 0x8d && p[2] == 0x15 && (get_rel_target(&p[2]) == newline) && p[7] == 0xe8) {
+			PUCHAR x;
+			PUCHAR firstfunc = NULL, secondfunc = NULL;
+			PUCHAR writelnstart = find_function_prologue(start, end, p);
+			if (writelnstart == NULL)
+				goto next_iter;
+			// find function with 3 calls, the first and third being to the same function
+			for (x = writelnstart; x < p; x++) {
+				if (x[0] == 0xe8) {
+					PUCHAR target = get_rel_target(x);
+					if (target >= start && target < end) {
+						if (firstfunc == NULL)
+							firstfunc = target;
+						else if (secondfunc == NULL)
+							secondfunc = target;
+						else if (target != firstfunc)
+							goto next_iter;
+					}
+				}
+			}
+			if (firstfunc && secondfunc)
+				return (ULONG_PTR)secondfunc;
+		}
+next_iter:
+		;
+	}
+#else
+	// got the newline, now find a push of the address of it followed immediately by a relative call within short distance of a retn 8
+	// this will give us CDocument::writeln
+	for (p = start; p < end - 10; p++) {
+		if (p[0] == 0x68 && *(DWORD *)&p[1] == (DWORD)newline && p[5] == 0xe8) {
+			PUCHAR x;
+			for (x = p + 10; x < p + 0x80; x++) {
+				if (!memcmp(x, "\xc2\x08\x00", 3)) {
+					PUCHAR y;
+					// found the retn 8
+					// now scan back to find a call pointing into .text preceded immediately by some form of a push (register or indirect through ebp plus offset)
+					for (y = p; y > p - 0x80; y--) {
+						if (y[0] == 0xe8) {
+							PUCHAR target = get_rel_target(y);
+							if (target > start && target < end) {
+								// if we find it, the target of the call is CDocument::write
+								if (*(y - 3) == 0xff && *(y - 2) == 0x75 && *(y - 1) < 0x20)
+									return (ULONG_PTR)target;
+								else if ((*(y - 1) & 0xf8) == 0x50)
+									return (ULONG_PTR)target;
 							}
 						}
 					}
 				}
-				break;
 			}
 		}
 	}
+#endif
+
 	return 0;
 }

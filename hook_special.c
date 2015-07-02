@@ -239,7 +239,6 @@ HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 	return ret;
 }
 
-// 32-bit only
 HOOKDEF2(int, WINAPI, JsEval,
 	PVOID Arg1,
 	PVOID Arg2,
@@ -259,21 +258,49 @@ HOOKDEF2(int, WINAPI, JsEval,
 	return ret;
 }
 
-HOOKDEF2(int, WINAPI, COleScript_Compile,
+HOOKDEF2(int, WINAPI, COleScript_ParseScriptText,
 	PVOID Arg1,
 	PWCHAR ScriptBuf,
-	int Arg3,
-	int Arg4,
-	int Arg5,
-	PWCHAR LocationBuf,
-	PVOID Arg7
+	PVOID Arg3,
+	PVOID Arg4,
+	PVOID Arg5,
+	PVOID Arg6,
+	PVOID Arg7,
+	PVOID Arg8,
+	PVOID Arg9,
+	PVOID Arg10
 ) {
-	int ret = Old2_COleScript_Compile(Arg1, ScriptBuf, Arg3, Arg4, Arg5, LocationBuf, Arg7);
-	LOQspecial_ntstatus("browser", "uu", "Source", LocationBuf, "Script", ScriptBuf);
+	int ret = Old2_COleScript_ParseScriptText(Arg1, ScriptBuf, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10);
+	LOQspecial_ntstatus("browser", "u", "Script", ScriptBuf);
 	return ret;
 }
 
-// 32-bit only
+HOOKDEF2(PVOID, WINAPI, JsParseScript,
+	const wchar_t *script,
+	PVOID SourceContext,
+	const wchar_t *sourceUrl,
+	PVOID *result
+) {
+	PVOID ret = Old2_JsParseScript(script, SourceContext, sourceUrl, result);
+
+	LOQspecial_ntstatus("browser", "uu", "Script", script, "Source", sourceUrl);
+
+	return ret;
+}
+
+HOOKDEF2(PVOID, WINAPI, JsRunScript,
+	const wchar_t *script,
+	PVOID SourceContext,
+	const wchar_t *sourceUrl,
+	PVOID *result
+	) {
+	PVOID ret = Old2_JsRunScript(script, SourceContext, sourceUrl, result);
+
+	LOQspecial_ntstatus("browser", "uu", "Script", script, "Source", sourceUrl);
+
+	return ret;
+}
+
 // based on code by Stephan Chenette and Moti Joseph of Websense, Inc. released under the GPLv3
 // http://securitylabs.websense.com/content/Blogs/3198.aspx
 

@@ -63,9 +63,10 @@ static hook_t g_hooks[] = {
 	HOOK2(ntdll, LdrUnloadDll, TRUE),
     HOOK2(kernel32, CreateProcessInternalW, TRUE),
 	// has special handling
-	HOOK2(jscript, COleScript_Compile, TRUE),
-	HOOK2(vbscript, COleScript_Compile, TRUE),
-	//HOOK2(jscript, JsEval, TRUE),
+	HOOK2(jscript, COleScript_ParseScriptText, TRUE),
+	HOOK2(jscript, JsEval, TRUE),
+	HOOK2(jscript9, JsParseScript, TRUE),
+	HOOK2(jscript9, JsRunScript, TRUE),
 	HOOK2(mshtml, CDocument_write, TRUE),
 
 	// COM object creation hook
