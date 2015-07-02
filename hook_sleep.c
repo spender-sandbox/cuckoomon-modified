@@ -65,7 +65,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 
 	// handle INFINITE wait
 	if (Timeout == NULL || Timeout->QuadPart == 0x8000000000000000ULL) {
-		LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", -1, "Status", "Infinite");
+		// only log potentially interesting cases
+		if (hook_info()->main_caller_retaddr)
+			LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", -1, "Status", "Infinite");
 		set_lasterrors(&lasterror);
 		return Old_NtWaitForSingleObject(Handle, Alertable, Timeout);
 	}

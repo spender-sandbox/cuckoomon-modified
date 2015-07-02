@@ -446,10 +446,22 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryInformationFile,
     __in   ULONG Length,
     __in   FILE_INFORMATION_CLASS FileInformationClass
 ) {
-    NTSTATUS ret = Old_NtQueryInformationFile(FileHandle, IoStatusBlock,
+	wchar_t *fname = calloc(32768, sizeof(wchar_t));
+	wchar_t *absolutepath = calloc(32768, sizeof(wchar_t));
+	NTSTATUS ret;
+
+
+	path_from_handle(FileHandle, fname, 32768);
+	ensure_absolute_unicode_path(absolutepath, fname);
+
+	ret = Old_NtQueryInformationFile(FileHandle, IoStatusBlock,
         FileInformation, Length, FileInformationClass);
-	LOQ_ntstatus("filesystem", "pib", "FileHandle", FileHandle, "FileInformationClass", FileInformationClass,
+	LOQ_ntstatus("filesystem", "puib", "FileHandle", FileHandle, "HandleName", absolutepath, "FileInformationClass", FileInformationClass,
         "FileInformation", IoStatusBlock->Information, FileInformation);
+
+	free(fname);
+	free(absolutepath);
+
     return ret;
 }
 
@@ -458,6 +470,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryAttributesFile,
 	__out  PFILE_BASIC_INFORMATION FileInformation
 ) {
 	NTSTATUS ret = Old_NtQueryAttributesFile(ObjectAttributes, FileInformation);
+
 	LOQ_ntstatus("filesystem", "O", "FileName", ObjectAttributes);
 	return ret;
 }
@@ -480,7 +493,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetInformationFile,
 ) {
 	wchar_t *fname = calloc(32768, sizeof(wchar_t));
 	wchar_t *absolutepath = calloc(32768, sizeof(wchar_t));
-	BOOL ret;
+	NTSTATUS ret;
 
 
 	path_from_handle(FileHandle, fname, 32768);
