@@ -281,7 +281,11 @@ HOOKDEF(int, WINAPI, GetSystemMetrics,
     _In_  int nIndex
 ) {
     int ret = Old_GetSystemMetrics(nIndex);
-    LOQ_nonzero("misc", "i", "SystemMetricIndex", nIndex);
+
+	if (nIndex == SM_CXSCREEN || nIndex == SM_CXVIRTUALSCREEN || nIndex == SM_CYSCREEN ||
+		nIndex == SM_CYVIRTUALSCREEN || nIndex == SM_REMOTECONTROL || nIndex == SM_REMOTESESSION ||
+		nIndex == SM_SHUTTINGDOWN || nIndex == SM_SWAPBUTTON)
+	    LOQ_nonzero("misc", "i", "SystemMetricIndex", nIndex);
     return ret;
 }
 
