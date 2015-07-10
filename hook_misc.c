@@ -688,7 +688,7 @@ HOOKDEF(DWORD, WINAPI, WNetGetProviderNameW,
 
 	ret = Old_WNetGetProviderNameW(dwNetType, tmp, lpBufferSize);
 
-	LOQ_zero("misc", "iu", dwNetType, ret == NO_ERROR ? tmp : L"");
+	LOQ_zero("misc", "iu", "NetType", dwNetType, "ProviderName", ret == NO_ERROR ? tmp : L"");
 
 	// WNNC_NET_RDR2SAMPLE, used for vbox detection
 	if (!g_config.no_stealth && ret && dwNetType == 0x250000) {
