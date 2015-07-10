@@ -674,3 +674,35 @@ HOOKDEF(NTSTATUS, WINAPI, LsaOpenPolicy,
 	LOQ_ntstatus("misc", "");
 	return ret;
 }
+
+HOOKDEF(DWORD, WINAPI, WNetGetProviderNameW,
+	__in DWORD dwNetType,
+	__out LPWSTR lpProviderName,
+	__inout LPDWORD lpBufferSize
+) {
+	DWORD ret;
+	WCHAR *tmp = calloc(1, (*lpBufferSize + 1) * sizeof(wchar_t));
+
+	if (tmp == NULL)
+		return Old_WNetGetProviderNameW(dwNetType, lpProviderName, lpBufferSize);
+
+	ret = Old_WNetGetProviderNameW(dwNetType, tmp, lpBufferSize);
+
+	LOQ_zero("misc", "iu", dwNetType, ret == NO_ERROR ? tmp : L"");
+
+	// WNNC_NET_RDR2SAMPLE, used for vbox detection
+	if (!g_config.no_stealth && ret && dwNetType == 0x250000) {
+		lasterror_t lasterrors;
+
+		ret = ERROR_NO_NETWORK;
+		lasterrors.Win32Error = ERROR_NO_NETWORK;
+		lasterrors.NtstatusError = STATUS_ENTRYPOINT_NOT_FOUND;
+	}
+	else if (ret == NO_ERROR && lpProviderName) {
+		wcscpy(lpProviderName, tmp);
+	}
+
+	free(tmp);
+
+	return ret;
+}

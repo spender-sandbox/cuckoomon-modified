@@ -316,6 +316,8 @@ static hook_t g_hooks[] = {
 	HOOK(imgutil, DecodeImageEx),
 	HOOK(imgutil, DecodeImage),
 	HOOK(advapi32, LsaOpenPolicy),
+	HOOK(mpr, WNetGetProviderNameW),
+
 	//
     // Network Hooks
     //
