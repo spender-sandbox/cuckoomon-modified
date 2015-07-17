@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "hooking.h"
 #include "log.h"
 #include "pipe.h"
+#include "config.h"
 
 static BOOLEAN servicename_from_handle(SC_HANDLE hService, PWCHAR servicename)
 {
@@ -178,6 +179,8 @@ HOOKDEF(SC_HANDLE, WINAPI, OpenServiceW,
     return ret;
 }
 
+extern wchar_t *our_process_path;
+
 HOOKDEF(BOOL, WINAPI, StartServiceA,
     __in      SC_HANDLE hService,
     __in      DWORD dwNumServiceArgs,
@@ -187,7 +190,7 @@ HOOKDEF(BOOL, WINAPI, StartServiceA,
 	BOOLEAN dispret = servicename_from_handle(hService, servicename);
 	BOOL ret;
 
-	if (dispret)
+	if (dispret && (wcsicmp(servicename, L"osppsvc") || !g_config.file_of_interest || wcsicmp(our_process_path, g_config.file_of_interest)))
 		pipe("SERVICE:%Z", servicename);
 	ret = Old_StartServiceA(hService, dwNumServiceArgs,
         lpServiceArgVectors);
@@ -206,7 +209,7 @@ HOOKDEF(BOOL, WINAPI, StartServiceW,
 	BOOLEAN dispret = servicename_from_handle(hService, servicename);
 	BOOL ret;
 
-	if (dispret)
+	if (dispret && (wcsicmp(servicename, L"osppsvc") || !g_config.file_of_interest || wcsicmp(our_process_path, g_config.file_of_interest)))
 		pipe("SERVICE:%Z", servicename);
     ret = Old_StartServiceW(hService, dwNumServiceArgs,
         lpServiceArgVectors);
