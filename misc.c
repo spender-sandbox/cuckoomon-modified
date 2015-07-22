@@ -275,6 +275,7 @@ void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
 		replace_string_in_buf(Data, DataLength, "VMware", "DELL__");
 		replace_string_in_buf(Data, DataLength, "Virtual", "C300_BD");
+		replace_string_in_buf(Data, DataLength, "VBOX", "DELL");
 	}
 
 	if (!wcsnicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor", 63) &&
@@ -332,6 +333,7 @@ void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLeng
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU", L"DELL");
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VMware", L"DELL__");
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"Virtual", L"C300_BD");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VBOX", L"DELL");
 	}
 
 	if (!wcsnicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor", 63) &&
