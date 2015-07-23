@@ -243,6 +243,64 @@ int terminate_event_init()
 	return -1;
 }
 
+static HANDLE g_procname_watch_thread_handle;
+
+static UNICODE_STRING InitialProcessName;
+static UNICODE_STRING InitialProcessPath;
+
+static DWORD WINAPI _procname_watch_thread(LPVOID param)
+{
+	hook_disable();
+
+	while (1) {
+		LDR_MODULE *mod; PEB *peb = (PEB *)get_peb();
+		__try {
+			mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
+			if (InitialProcessName.Length != mod->BaseDllName.Length || InitialProcessPath.Length != mod->FullDllName.Length || 
+				memcmp(InitialProcessName.Buffer, mod->BaseDllName.Buffer, InitialProcessName.Length) ||
+				memcmp(InitialProcessPath.Buffer, mod->FullDllName.Buffer, InitialProcessPath.Length)) {
+				// allow concurrent modifications to settle, as malware doesn't particularly care about proper locking
+				Sleep(50);
+
+				log_procname_anomaly(&InitialProcessName, &InitialProcessPath, &mod->BaseDllName, &mod->FullDllName);
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			;
+		}
+
+		Sleep(1000);
+	}
+
+	return 0;
+}
+
+DWORD g_procname_watcher_thread_id;
+
+int procname_watch_init()
+{
+	LDR_MODULE *mod; PEB *peb = (PEB *)get_peb();
+	mod = (LDR_MODULE *)peb->LoaderData->InLoadOrderModuleList.Flink;
+
+	InitialProcessName.MaximumLength = InitialProcessName.Length = mod->BaseDllName.Length;
+	InitialProcessName.Buffer = malloc(InitialProcessName.Length);
+	memcpy(InitialProcessName.Buffer, mod->BaseDllName.Buffer, InitialProcessName.Length);
+
+	InitialProcessPath.MaximumLength = InitialProcessPath.Length = mod->FullDllName.Length;
+	InitialProcessPath.Buffer = malloc(InitialProcessPath.Length);
+	memcpy(InitialProcessPath.Buffer, mod->FullDllName.Buffer, InitialProcessPath.Length);
+
+	g_procname_watch_thread_handle =
+		CreateThread(NULL, 0, &_procname_watch_thread, NULL, 0, &g_procname_watcher_thread_id);
+
+	if (g_procname_watch_thread_handle != NULL)
+		return 0;
+
+	pipe("CRITICAL:Error initializing terminate event thread!");
+	return -1;
+}
+
+
 DWORD g_watchdog_thread_id;
 
 #ifndef _WIN64

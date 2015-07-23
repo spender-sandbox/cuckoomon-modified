@@ -802,6 +802,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		// initialize our unhook detection
         unhook_init_detection();
 
+        // initialize detection of process name spoofing
+		procname_watch_init();
+
 		// initialize terminate notification event
 		terminate_event_init();
 

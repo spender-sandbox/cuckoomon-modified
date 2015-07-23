@@ -1040,6 +1040,16 @@ void log_anomaly(const char *subcategory, const char *msg)
 		"Message", msg);
 }
 
+void log_procname_anomaly(PUNICODE_STRING InitialName, PUNICODE_STRING InitialPath, PUNICODE_STRING CurrentName, PUNICODE_STRING CurrentPath)
+{
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "isoooo",
+		"ThreadIdentifier", GetCurrentThreadId(),
+		"Subcategory", "procname",
+		"OriginalProcessName", InitialName,
+		"OriginalProcessPath", InitialPath,
+		"ModifiedProcessName", CurrentName,
+		"ModifiedProcessPath", CurrentPath);
+}
 
 void log_hook_modification(const char *funcname, const char *origbytes, const char *newbytes, unsigned int len)
 {

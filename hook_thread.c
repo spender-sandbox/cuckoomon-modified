@@ -197,7 +197,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtSuspendThread,
 
 	if (pid == GetCurrentProcessId() && tid && (tid == g_unhook_detect_thread_id || tid == g_unhook_watcher_thread_id ||
 		tid == g_watchdog_thread_id || tid == g_terminate_event_thread_id || tid == g_log_thread_id ||
-		tid == g_logwatcher_thread_id)) {
+		tid == g_logwatcher_thread_id || tid == g_procname_watcher_thread_id)) {
 		ret = 0;
 		*PreviousSuspendCount = 0;
 		LOQ_ntstatus("threading", "pLs", "ThreadHandle", ThreadHandle,
@@ -239,7 +239,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateThread,
 
 	if (pid == GetCurrentProcessId() && tid && (tid == g_unhook_detect_thread_id || tid == g_unhook_watcher_thread_id ||
 		tid == g_watchdog_thread_id || tid == g_terminate_event_thread_id || tid == g_log_thread_id ||
-		tid == g_logwatcher_thread_id)) {
+		tid == g_logwatcher_thread_id || tid == g_procname_watcher_thread_id)) {
 		ret = 0;
 		LOQ_ntstatus("threading", "phs", "ThreadHandle", ThreadHandle, "ExitStatus", ExitStatus, "Alert", "Attempted to kill cuckoomon thread");
 		return ret;

@@ -72,6 +72,7 @@ void log_hook_anomaly(const char *subcategory, int success,
 void log_hook_modification(const char *funcname, const char *origbytes, const char *newbytes, unsigned int len);
 void log_hook_removal(const char *funcname);
 void log_hook_restoration(const char *funcname);
+void log_procname_anomaly(PUNICODE_STRING InitialName, PUNICODE_STRING InitialPath, PUNICODE_STRING CurrentName, PUNICODE_STRING CurrentPath);
 
 void log_init(int debug);
 void log_flush();
