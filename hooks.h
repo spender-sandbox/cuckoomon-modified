@@ -1655,6 +1655,12 @@ extern HOOKDEF(ULONG, WINAPI, NetUserGetLocalGroups,
 	_Out_ LPDWORD totalentries
 );
 
+extern HOOKDEF(HRESULT, WINAPI, CoInternetSetFeatureEnabled,
+	INTERNETFEATURELIST FeatureEntry,
+	_In_ DWORD			dwFlags,
+	BOOL				fEnable
+);
+
 //
 // Service Hooks
 //

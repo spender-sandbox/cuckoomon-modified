@@ -602,3 +602,15 @@ HOOKDEF(ULONG, WINAPI, NetUserGetLocalGroups,
 
 	return ret;
 }
+
+HOOKDEF(HRESULT, WINAPI, CoInternetSetFeatureEnabled,
+	INTERNETFEATURELIST FeatureEntry,
+	_In_ DWORD			dwFlags,
+	BOOL				fEnable
+) {
+	HRESULT ret = Old_CoInternetSetFeatureEnabled(FeatureEntry, dwFlags, fEnable);
+
+	LOQ_hresult("network", "ihi", "FeatureEntry", FeatureEntry, "Flags", dwFlags, "Enable", fEnable);
+
+	return ret;
+}
