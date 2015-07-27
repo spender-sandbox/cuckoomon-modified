@@ -239,7 +239,7 @@ HOOKDEF(HINTERNET, WINAPI, InternetConnectA,
     _In_  DWORD dwFlags,
     _In_  DWORD_PTR dwContext
 ) {
-    HINTERNET ret = Old_InternetConnectA(hInternet, lpszServerName,
+	HINTERNET ret = Old_InternetConnectA(hInternet, lpszServerName,
         nServerPort, lpszUsername, lpszPassword, dwService, dwFlags,
         dwContext);
     LOQ_nonnull("network", "psissih", "InternetHandle", hInternet, "ServerName", lpszServerName,
@@ -387,6 +387,49 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestW,
         "PostData", dwOptionalLength, lpOptional);
     return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, HttpSendRequestExA,
+	__in  HINTERNET hRequest,
+	__in  LPINTERNET_BUFFERSA lpBuffersIn,
+	__out LPINTERNET_BUFFERSA lpBuffersOut,
+	__in  DWORD dwFlags,
+	__in  DWORD_PTR dwContext
+) {
+	BOOL ret = Old_HttpSendRequestExA(hRequest, lpBuffersIn, lpBuffersOut, dwFlags, dwContext);
+	/* TODO: handle entire chain of buffers */
+	if (lpBuffersIn && lpBuffersIn->dwStructSize >= sizeof(INTERNET_BUFFERSA)) {
+		LOQ_bool("network", "pSbh", "RequestHandle", hRequest,
+			"Headers", lpBuffersIn->dwHeadersLength, lpBuffersIn->lpcszHeader,
+			"PostData", lpBuffersIn->dwBufferLength, lpBuffersIn->lpvBuffer,
+			"Flags", dwFlags);
+	}
+	else {
+		LOQ_bool("network", "ph", "RequestHandle", hRequest, "Flags", dwFlags);
+	}
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, HttpSendRequestExW,
+	__in  HINTERNET hRequest,
+	__in  LPINTERNET_BUFFERSW lpBuffersIn,
+	__out LPINTERNET_BUFFERSW lpBuffersOut,
+	__in  DWORD dwFlags,
+	__in  DWORD_PTR dwContext
+) {
+	BOOL ret = Old_HttpSendRequestExW(hRequest, lpBuffersIn, lpBuffersOut, dwFlags, dwContext);
+	/* TODO: handle entire chain of buffers */
+	if (lpBuffersIn && lpBuffersIn->dwStructSize >= sizeof(INTERNET_BUFFERSW)) {
+		LOQ_bool("network", "pUbh", "RequestHandle", hRequest,
+			"Headers", lpBuffersIn->dwHeadersLength, lpBuffersIn->lpcszHeader,
+			"PostData", lpBuffersIn->dwBufferLength, lpBuffersIn->lpvBuffer,
+			"Flags", dwFlags);
+	}
+	else {
+		LOQ_bool("network", "ph", "RequestHandle", hRequest, "Flags", dwFlags);
+	}
+	return ret;
+}
+
 
 HOOKDEF(BOOL, WINAPI, InternetReadFile,
     _In_   HINTERNET hFile,
