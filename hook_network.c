@@ -366,7 +366,11 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestA,
 ) {
     BOOL ret = Old_HttpSendRequestA(hRequest, lpszHeaders, dwHeadersLength,
         lpOptional, dwOptionalLength);
-    if(dwHeadersLength == (DWORD) -1 && lpszHeaders != NULL) dwHeadersLength = (DWORD)strlen(lpszHeaders);
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
+	if(dwHeadersLength == (DWORD) -1 && lpszHeaders != NULL) dwHeadersLength = (DWORD)strlen(lpszHeaders);
     LOQ_bool("network", "pSb", "RequestHandle", hRequest,
         "Headers", dwHeadersLength, lpszHeaders,
         "PostData", dwOptionalLength, lpOptional);
@@ -382,7 +386,11 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestW,
 ) {
     BOOL ret = Old_HttpSendRequestW(hRequest, lpszHeaders, dwHeadersLength,
         lpOptional, dwOptionalLength);
-    LOQ_bool("network", "pUb", "RequestHandle", hRequest,
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+	
+	LOQ_bool("network", "pUb", "RequestHandle", hRequest,
         "Headers", dwHeadersLength, lpszHeaders,
         "PostData", dwOptionalLength, lpOptional);
     return ret;
@@ -396,6 +404,10 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestExA,
 	__in  DWORD_PTR dwContext
 ) {
 	BOOL ret = Old_HttpSendRequestExA(hRequest, lpBuffersIn, lpBuffersOut, dwFlags, dwContext);
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
 	/* TODO: handle entire chain of buffers */
 	if (lpBuffersIn && lpBuffersIn->dwStructSize >= sizeof(INTERNET_BUFFERSA)) {
 		LOQ_bool("network", "pSbh", "RequestHandle", hRequest,
@@ -417,6 +429,10 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestExW,
 	__in  DWORD_PTR dwContext
 ) {
 	BOOL ret = Old_HttpSendRequestExW(hRequest, lpBuffersIn, lpBuffersOut, dwFlags, dwContext);
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
 	/* TODO: handle entire chain of buffers */
 	if (lpBuffersIn && lpBuffersIn->dwStructSize >= sizeof(INTERNET_BUFFERSW)) {
 		LOQ_bool("network", "pUbh", "RequestHandle", hRequest,
@@ -427,6 +443,34 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestExW,
 	else {
 		LOQ_bool("network", "ph", "RequestHandle", hRequest, "Flags", dwFlags);
 	}
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, HttpAddRequestHeadersA,
+	__in HINTERNET hRequest,
+	__in LPCSTR lpszHeaders,
+	__in DWORD dwHeadersLength,
+	__in DWORD dwModifiers
+) {
+	BOOL ret = Old_HttpAddRequestHeadersA(hRequest, lpszHeaders, dwHeadersLength, dwModifiers);
+	if (dwHeadersLength == (DWORD)-1 && lpszHeaders != NULL) dwHeadersLength = (DWORD)strlen(lpszHeaders);
+	LOQ_bool("network", "pSh", "RequestHandle", hRequest,
+		"Headers", dwHeadersLength, lpszHeaders,
+		"Modifiers", dwModifiers);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, HttpAddRequestHeadersW,
+	__in HINTERNET hRequest,
+	__in LPCWSTR lpszHeaders,
+	__in DWORD dwHeadersLength,
+	__in DWORD dwModifiers
+) {
+	BOOL ret = Old_HttpAddRequestHeadersW(hRequest, lpszHeaders, dwHeadersLength, dwModifiers);
+	if (dwHeadersLength == (DWORD)-1 && lpszHeaders != NULL) dwHeadersLength = (DWORD)wcslen(lpszHeaders);
+	LOQ_bool("network", "pUh", "RequestHandle", hRequest,
+		"Headers", dwHeadersLength, lpszHeaders,
+		"Modifiers", dwModifiers);
 	return ret;
 }
 
@@ -516,7 +560,11 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_A,
 ) {
     DNS_STATUS ret = Old_DnsQuery_A(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("network", "sih", "Name", lpstrName, "Type", wType, "Options", Options);
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
+	LOQ_zero("network", "sih", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -530,7 +578,11 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_UTF8,
 ) {
     DNS_STATUS ret = Old_DnsQuery_UTF8(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("network", "sih", "Name", lpstrName, "Type", wType, "Options", Options);
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
+	LOQ_zero("network", "sih", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -544,7 +596,11 @@ HOOKDEF(DNS_STATUS, WINAPI, DnsQuery_W,
 ) {
     DNS_STATUS ret = Old_DnsQuery_W(lpstrName, wType, Options, pExtra,
         ppQueryResultsSet, pReserved);
-    LOQ_zero("network", "uih", "Name", lpstrName, "Type", wType, "Options", Options);
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
+	LOQ_zero("network", "uih", "Name", lpstrName, "Type", wType, "Options", Options);
     return ret;
 }
 
@@ -554,7 +610,7 @@ HOOKDEF(int, WINAPI, getaddrinfo,
     _In_opt_  const ADDRINFOA *pHints,
     _Out_     PADDRINFOA *ppResult
 ) {
-    int ret = Old_getaddrinfo(pNodeName, pServiceName, pHints, ppResult);
+	int ret = Old_getaddrinfo(pNodeName, pServiceName, pHints, ppResult);
 
 	if (g_config.url_of_interest && g_config.suspend_logging)
 		g_config.suspend_logging = FALSE;
@@ -570,7 +626,11 @@ HOOKDEF(int, WINAPI, GetAddrInfoW,
     _Out_     PADDRINFOW *ppResult
 ) {
     int ret = Old_GetAddrInfoW(pNodeName, pServiceName, pHints, ppResult);
-    LOQ_zero("network", "uu", "NodeName", pNodeName, "ServiceName", pServiceName);
+
+	if (g_config.url_of_interest && g_config.suspend_logging)
+		g_config.suspend_logging = FALSE;
+
+	LOQ_zero("network", "uu", "NodeName", pNodeName, "ServiceName", pServiceName);
     return ret;
 }
 

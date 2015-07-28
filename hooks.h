@@ -1557,6 +1557,20 @@ extern HOOKDEF(BOOL, WINAPI, HttpSendRequestExW,
 	__in  DWORD_PTR dwContext
 );
 
+extern HOOKDEF(BOOL, WINAPI, HttpAddRequestHeadersA,
+	__in HINTERNET hRequest,
+	__in LPCSTR lpszHeaders,
+	__in DWORD dwHeadersLength,
+	__in DWORD dwModifiers
+);
+
+extern HOOKDEF(BOOL, WINAPI, HttpAddRequestHeadersW,
+	__in HINTERNET hRequest,
+	__in LPCWSTR lpszHeaders,
+	__in DWORD dwHeadersLength,
+	__in DWORD dwModifiers
+);
+
 extern HOOKDEF(BOOL, WINAPI, InternetReadFile,
     _In_   HINTERNET hFile,
     _Out_  LPVOID lpBuffer,
