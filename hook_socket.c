@@ -132,9 +132,7 @@ HOOKDEF(int, WSAAPI, sendto,
 ) {
     int ret = Old_sendto(s, buf, len, flags, to, tolen);
     char ip[16]; int port = 0;
-    if(ret > 0) {
-        get_ip_port(to, ip, &port);
-    }
+    get_ip_port(to, ip, &port);
     LOQ_sockerr("network", "ibsi", "socket", s, "buffer", ret < 1 ? len : ret, buf,
         "ip", ip, "port", port);
     return ret;
