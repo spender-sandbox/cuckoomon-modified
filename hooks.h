@@ -2193,6 +2193,17 @@ extern HOOKDEF(HRESULT, WINAPI, HTTPSFinalProv,
 	PVOID data // PCRYPT_PROVIDER_DATA
 );
 
+extern HOOKDEF(BOOL, WINAPI, CryptDecodeObjectEx,
+	_In_          DWORD              dwCertEncodingType,
+	_In_          LPCSTR             lpszStructType,
+	_In_    const BYTE               *pbEncoded,
+	_In_          DWORD              cbEncoded,
+	_In_          DWORD              dwFlags,
+	_In_          PCRYPT_DECODE_PARA pDecodePara,
+	_Out_         void               *pvStructInfo,
+	_Inout_       DWORD              *pcbStructInfo
+);
+
 //
 // Special Hooks
 //

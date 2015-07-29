@@ -460,6 +460,8 @@ static hook_t g_hooks[] = {
 	HOOK(wintrust, HTTPSCertificateTrust),
 	HOOK(wintrust, HTTPSFinalProv),
 	
+	HOOK(crypt32, CryptDecodeObjectEx),
+
 	// needed due to the DLL being delay-loaded in some cases
 	HOOK(cryptsp, CryptAcquireContextA),
 	HOOK(cryptsp, CryptAcquireContextW),

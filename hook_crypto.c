@@ -294,3 +294,18 @@ HOOKDEF(HRESULT, WINAPI, HTTPSFinalProv,
 	LOQ_hresult("crypto", "");
 	return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, CryptDecodeObjectEx,
+	_In_          DWORD              dwCertEncodingType,
+	_In_          LPCSTR             lpszStructType,
+	_In_    const BYTE               *pbEncoded,
+	_In_          DWORD              cbEncoded,
+	_In_          DWORD              dwFlags,
+	_In_          PCRYPT_DECODE_PARA pDecodePara,
+	_Out_         void               *pvStructInfo,
+	_Inout_       DWORD              *pcbStructInfo
+) {
+	BOOL ret = Old_CryptDecodeObjectEx(dwCertEncodingType, lpszStructType, pbEncoded, cbEncoded, dwFlags, pDecodePara, pvStructInfo, pcbStructInfo);
+	LOQ_bool("crypto", "hbh", "CertEncodingType", dwCertEncodingType, "Encoded", cbEncoded, pbEncoded, "Flags", dwFlags);
+	return ret;
+}
