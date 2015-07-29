@@ -474,7 +474,14 @@ HOOKDEF(BOOL, WINAPI, HttpAddRequestHeadersW,
 	return ret;
 }
 
-
+HOOKDEF(int, WINAPI, NSPStartup,
+	__in LPGUID lpProviderId,
+	__out PVOID lpnspRoutines
+) {
+	int ret = Old_NSPStartup(lpProviderId, lpnspRoutines);
+	LOQ_nonzero("network", "");
+	return ret;
+}
 HOOKDEF(BOOL, WINAPI, InternetReadFile,
     _In_   HINTERNET hFile,
     _Out_  LPVOID lpBuffer,

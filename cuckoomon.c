@@ -433,6 +433,7 @@ static hook_t g_hooks[] = {
 
     HOOK(mswsock, ConnectEx),
     HOOK(mswsock, TransmitFile),
+	HOOK(mswsock, NSPStartup),
     //
     // Crypto Functions
     //

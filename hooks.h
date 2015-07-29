@@ -1691,6 +1691,11 @@ extern HOOKDEF(HRESULT, WINAPI, CoInternetSetFeatureEnabled,
 	BOOL				fEnable
 );
 
+extern HOOKDEF(int, WINAPI, NSPStartup,
+	__in LPGUID lpProviderId,
+	__out PVOID lpnspRoutines
+);
+
 //
 // Service Hooks
 //
