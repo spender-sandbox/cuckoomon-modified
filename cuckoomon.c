@@ -341,6 +341,8 @@ static hook_t g_hooks[] = {
 	HOOK(wininet, HttpSendRequestExW),
 	HOOK(wininet, HttpAddRequestHeadersA),
 	HOOK(wininet, HttpAddRequestHeadersW),
+	HOOK(wininet, HttpEndRequestA),
+	HOOK(wininet, HttpEndRequestW),
 	HOOK(wininet, InternetReadFile),
     HOOK(wininet, InternetWriteFile),
     HOOK(wininet, InternetCloseHandle),

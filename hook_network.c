@@ -446,6 +446,29 @@ HOOKDEF(BOOL, WINAPI, HttpSendRequestExW,
 	return ret;
 }
 
+HOOKDEF(BOOL, WINAPI, HttpEndRequestA,
+	__in  HINTERNET hRequest,
+	__out LPINTERNET_BUFFERSA lpBuffersOut,
+	__in  DWORD dwFlags,
+	__in  DWORD_PTR dwContext
+) {
+	BOOL ret = Old_HttpEndRequestA(hRequest, lpBuffersOut, dwFlags, dwContext);
+	LOQ_bool("network", "p", "RequestHandle", hRequest);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, HttpEndRequestW,
+	__in  HINTERNET hRequest,
+	__out LPINTERNET_BUFFERSW lpBuffersOut,
+	__in  DWORD dwFlags,
+	__in  DWORD_PTR dwContext
+) {
+	BOOL ret = Old_HttpEndRequestW(hRequest, lpBuffersOut, dwFlags, dwContext);
+	LOQ_bool("network", "p", "RequestHandle", hRequest);
+	return ret;
+}
+
+
 HOOKDEF(BOOL, WINAPI, HttpAddRequestHeadersA,
 	__in HINTERNET hRequest,
 	__in LPCSTR lpszHeaders,

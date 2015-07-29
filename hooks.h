@@ -1696,6 +1696,20 @@ extern HOOKDEF(int, WINAPI, NSPStartup,
 	__out PVOID lpnspRoutines
 );
 
+extern HOOKDEF(BOOL, WINAPI, HttpEndRequestA,
+	__in  HINTERNET hRequest,
+	__out LPINTERNET_BUFFERSA lpBuffersOut,
+	__in  DWORD dwFlags,
+	__in  DWORD_PTR dwContext
+);
+
+extern HOOKDEF(BOOL, WINAPI, HttpEndRequestW,
+	__in  HINTERNET hRequest,
+	__out LPINTERNET_BUFFERSW lpBuffersOut,
+	__in  DWORD dwFlags,
+	__in  DWORD_PTR dwContext
+);
+
 //
 // Service Hooks
 //
