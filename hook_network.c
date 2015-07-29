@@ -502,7 +502,7 @@ HOOKDEF(int, WINAPI, NSPStartup,
 	__out PVOID lpnspRoutines
 ) {
 	int ret = Old_NSPStartup(lpProviderId, lpnspRoutines);
-	LOQ_nonzero("network", "");
+	LOQ_zero("network", "");
 	return ret;
 }
 HOOKDEF(BOOL, WINAPI, InternetReadFile,
