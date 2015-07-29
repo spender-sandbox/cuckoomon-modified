@@ -309,3 +309,14 @@ HOOKDEF(BOOL, WINAPI, CryptDecodeObjectEx,
 	LOQ_bool("crypto", "hbh", "CertEncodingType", dwCertEncodingType, "Encoded", cbEncoded, pbEncoded, "Flags", dwFlags);
 	return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, CryptImportPublicKeyInfo,
+	_In_  HCRYPTPROV            hCryptProv,
+	_In_  DWORD                 dwCertEncodingType,
+	_In_  PCERT_PUBLIC_KEY_INFO pInfo,
+	_Out_ HCRYPTKEY             *phKey
+) {
+	BOOL ret = Old_CryptImportPublicKeyInfo(hCryptProv, dwCertEncodingType, pInfo, phKey);
+	LOQ_bool("crypto", "hsb", "CertEncodingType", dwCertEncodingType, "AlgOID", pInfo->Algorithm.pszObjId, "Blob", pInfo->PublicKey.cbData, pInfo->PublicKey.pbData);
+	return ret;
+}

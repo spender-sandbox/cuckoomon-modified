@@ -2204,6 +2204,13 @@ extern HOOKDEF(BOOL, WINAPI, CryptDecodeObjectEx,
 	_Inout_       DWORD              *pcbStructInfo
 );
 
+extern HOOKDEF(BOOL, WINAPI, CryptImportPublicKeyInfo,
+	_In_  HCRYPTPROV            hCryptProv,
+	_In_  DWORD                 dwCertEncodingType,
+	_In_  PCERT_PUBLIC_KEY_INFO pInfo,
+	_Out_ HCRYPTKEY             *phKey
+);
+
 //
 // Special Hooks
 //
