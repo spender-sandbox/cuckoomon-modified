@@ -1210,6 +1210,31 @@ extern HOOKDEF(BOOL, WINAPI, ExitWindowsEx,
     __in  DWORD dwReason
 );
 
+extern HOOKDEF(DWORD, WINAPI, InitiateShutdownW,
+	_In_opt_ LPWSTR lpMachineName,
+	_In_opt_ LPWSTR lpMessage,
+	_In_     DWORD  dwGracePeriod,
+	_In_     DWORD  dwShutdownFlags,
+	_In_     DWORD  dwReason
+);
+
+extern HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownW,
+	_In_opt_ LPWSTR lpMachineName,
+	_In_opt_ LPWSTR lpMessage,
+	_In_     DWORD  dwTimeout,
+	_In_     BOOL	bForceAppsClosed,
+	_In_     BOOL	bRebootAfterShutdown
+);
+
+extern HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownExW,
+	_In_opt_ LPWSTR lpMachineName,
+	_In_opt_ LPWSTR lpMessage,
+	_In_     DWORD  dwTimeout,
+	_In_     BOOL	bForceAppsClosed,
+	_In_     BOOL	bRebootAfterShutdown,
+	_In_	 DWORD	dwReason
+);
+
 extern HOOKDEF(BOOL, WINAPI, IsDebuggerPresent,
     void
 );

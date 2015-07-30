@@ -146,8 +146,48 @@ HOOKDEF(BOOL, WINAPI, ExitWindowsEx,
 ) {
     BOOL ret = 0;
     LOQ_bool("system", "hi", "Flags", uFlags, "Reason", dwReason);
-	log_flush();
+	pipe("SHUTDOWN:");
     return Old_ExitWindowsEx(uFlags, dwReason);
+}
+
+HOOKDEF(DWORD, WINAPI, InitiateShutdownW,
+	_In_opt_ LPWSTR lpMachineName,
+	_In_opt_ LPWSTR lpMessage,
+	_In_     DWORD  dwGracePeriod,
+	_In_     DWORD  dwShutdownFlags,
+	_In_     DWORD  dwReason
+) {
+	DWORD ret = 0;
+	LOQ_zero("system", "uuihh", "MachineName", lpMachineName, "Message", lpMessage, "GracePeriod", dwGracePeriod, "ShutdownFlags", dwShutdownFlags, "Reason", dwReason);
+	pipe("SHUTDOWN:");
+	return Old_InitiateShutdownW(lpMachineName, lpMessage, dwGracePeriod, dwShutdownFlags, dwReason);
+}
+
+HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownW,
+	_In_opt_ LPWSTR lpMachineName,
+	_In_opt_ LPWSTR lpMessage,
+	_In_     DWORD  dwTimeout,
+	_In_     BOOL	bForceAppsClosed,
+	_In_     BOOL	bRebootAfterShutdown
+) {
+	DWORD ret = 0;
+	LOQ_zero("system", "uuiii", "MachineName", lpMachineName, "Message", lpMessage, "Timeout", dwTimeout, "ForceAppsClosed", bForceAppsClosed, "RebootAfterShutdown", bRebootAfterShutdown);
+	pipe("SHUTDOWN:");
+	return Old_InitiateSystemShutdownW(lpMachineName, lpMessage, dwTimeout, bForceAppsClosed, bRebootAfterShutdown);
+}
+
+HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownExW,
+	_In_opt_ LPWSTR lpMachineName,
+	_In_opt_ LPWSTR lpMessage,
+	_In_     DWORD  dwTimeout,
+	_In_     BOOL	bForceAppsClosed,
+	_In_     BOOL	bRebootAfterShutdown,
+	_In_	 DWORD	dwReason
+) {
+	DWORD ret = 0;
+	LOQ_zero("system", "uuiiih", "MachineName", lpMachineName, "Message", lpMessage, "Timeout", dwTimeout, "ForceAppsClosed", bForceAppsClosed, "RebootAfterShutdown", bRebootAfterShutdown, "Reason", dwReason);
+	pipe("SHUTDOWN:");
+	return Old_InitiateSystemShutdownExW(lpMachineName, lpMessage, dwTimeout, bForceAppsClosed, bRebootAfterShutdown, dwReason);
 }
 
 static int num_isdebuggerpresent;
