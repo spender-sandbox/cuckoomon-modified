@@ -205,7 +205,10 @@ static hook_t g_hooks[] = {
     HOOK(user32, FindWindowW),
     HOOK(user32, FindWindowExA),
     HOOK(user32, FindWindowExW),
-    HOOK(user32, EnumWindows),
+	// Disable for now, invokes a user-specified callback that can contain calls to any functions that we
+	// won't end up logging. We need another hook type which logs the hook and then every function
+	// called by that hook (modulo perhaps some blacklisted functions for this specific hook type)
+    //HOOK(user32, EnumWindows),
 	HOOK(user32, SendNotifyMessageA),
 	HOOK(user32, SendNotifyMessageW),
 	HOOK(user32, SetWindowLongA),
@@ -495,7 +498,8 @@ static hook_t g_hooks[] = {
 void set_hooks_dll(const wchar_t *library)
 {
 	int i;
-    for (i = 0; i < ARRAYSIZE(g_hooks); i++) {
+
+	for (i = 0; i < ARRAYSIZE(g_hooks); i++) {
         if(!wcsicmp(g_hooks[i].library, library)) {
 			if (hook_api(&g_hooks[i], HOOKTYPE) < 0)
 				pipe("WARNING:Unable to hook %z", g_hooks[i].funcname);
@@ -514,6 +518,23 @@ void revalidate_all_hooks(void)
 	}
 }
 
+PVOID g_dll_notify_cookie;
+
+VOID CALLBACK DllLoadNotification(
+	_In_     ULONG                       NotificationReason,
+	_In_     const PLDR_DLL_NOTIFICATION_DATA NotificationData,
+	_In_opt_ PVOID                       Context)
+{
+	if (NotificationReason == 1) {
+		PWCHAR dllname;
+		COPY_UNICODE_STRING(library, NotificationData->Loaded.BaseDllName);
+		dllname = get_dll_basename(&library);
+		set_hooks_dll(dllname);
+	}
+}
+
+extern _LdrRegisterDllNotification pLdrRegisterDllNotification;
+
 void set_hooks()
 {
 	// before modifying any DLLs, let's first freeze all other threads in our process
@@ -529,9 +550,9 @@ void set_hooks()
 	DWORD our_pid = GetCurrentProcessId();
 	// the hooks contain executable code as well, so they have to be RWX
 	DWORD old_protect;
+
 	VirtualProtect(g_hooks, sizeof(g_hooks), PAGE_EXECUTE_READWRITE,
 		&old_protect);
-
 
 	memset(&threadInfo, 0, sizeof(threadInfo));
 	threadInfo.dwSize = sizeof(threadInfo);
@@ -563,6 +584,11 @@ void set_hooks()
 	}
 
 	free(suspended_threads);
+
+	if (pLdrRegisterDllNotification)
+		pLdrRegisterDllNotification(0, &DllLoadNotification, NULL, &g_dll_notify_cookie);
+	else
+		register_dll_notification_manually(&DllLoadNotification);
 
 	hook_enable();
 }

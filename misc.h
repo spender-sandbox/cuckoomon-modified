@@ -49,6 +49,40 @@ typedef NTSTATUS(WINAPI *_NtDelayExecution)(
 	PLARGE_INTEGER Interval
 	);
 
+typedef struct _LDR_DLL_LOADED_NOTIFICATION_DATA {
+	ULONG Flags;
+	const PUNICODE_STRING FullDllName;
+	const PUNICODE_STRING BaseDllName;
+	PVOID DllBase;
+	ULONG SizeOfImage;
+} LDR_DLL_LOADED_NOTIFICATION_DATA, *PLDR_DLL_LOADED_NOTIFICATION_DATA;
+
+typedef struct _LDR_DLL_UNLOADED_NOTIFICATION_DATA {
+	ULONG Flags;
+	const PUNICODE_STRING FullDllName;
+	const PUNICODE_STRING BaseDllName;
+	PVOID DllBase;
+	ULONG SizeOfImage;
+} LDR_DLL_UNLOADED_NOTIFICATION_DATA, *PLDR_DLL_UNLOADED_NOTIFICATION_DATA;
+
+typedef union _LDR_DLL_NOTIFICATION_DATA {
+	LDR_DLL_LOADED_NOTIFICATION_DATA Loaded;
+	LDR_DLL_UNLOADED_NOTIFICATION_DATA Unloaded;
+} LDR_DLL_NOTIFICATION_DATA, *PLDR_DLL_NOTIFICATION_DATA;
+
+typedef VOID (CALLBACK *PLDR_DLL_NOTIFICATION_FUNCTION)(
+	_In_     ULONG                       NotificationReason,
+	_In_     const PLDR_DLL_NOTIFICATION_DATA NotificationData,
+	_In_opt_ PVOID                       Context
+);
+
+typedef NTSTATUS(WINAPI *_LdrRegisterDllNotification)(
+	_In_     ULONG                          Flags,
+	_In_     PLDR_DLL_NOTIFICATION_FUNCTION NotificationFunction,
+	_In_opt_ PVOID                          Context,
+	_Out_    PVOID                          *Cookie
+);
+
 void resolve_runtime_apis(void);
 
 DWORD parent_process_id(); // By Napalm @ NetCore2K (rohitab.com)
@@ -113,6 +147,9 @@ char *convert_address_to_dll_name_and_offset(ULONG_PTR addr, unsigned int *offse
 int is_wow64_fs_redirection_disabled(void);
 
 void set_dll_of_interest(ULONG_PTR BaseAddress);
+
+PWCHAR get_dll_basename(PUNICODE_STRING library);
+void register_dll_notification_manually(PLDR_DLL_NOTIFICATION_FUNCTION notify);
 
 extern wchar_t *our_process_path;
 
