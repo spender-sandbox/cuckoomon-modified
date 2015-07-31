@@ -414,6 +414,109 @@ static void hook_create_pre_tramp(hook_t *h)
 	RtlAddFunctionTable(functable, 1, (DWORD64)h->hookdata);
 }
 
+static void hook_create_pre_tramp_notail(hook_t *h)
+{
+	unsigned char *p;
+	unsigned int off;
+
+	unsigned char pre_tramp1[] = {
+#if DISABLE_HOOK_CONTENT
+		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+#endif
+		// push rax/rcx/rdx/rbx
+		0x50, 0x51, 0x52, 0x53,
+		// push r8, r9, r10, r11
+		0x41, 0x50, 0x41, 0x51, 0x41, 0x52, 0x41, 0x53,
+		// call $+0
+		0xe8, 0x00, 0x00, 0x00, 0x00,
+		// pop r8
+		0x41, 0x58,
+		// sub r8, 17
+		0x49, 0x83, 0xe8, 0x11,
+		// mov r8, qword ptr [rsp+0x40]
+		// 0x4c, 0x8b, 0x44, 0x24, 0x40,
+		// lea rdx, [rsp+0x40]
+		0x48, 0x8d, 0x54, 0x24, 0x40,
+		// mov ecx, h->allow_hook_recursion
+		0xb9, h->allow_hook_recursion, 0x00, 0x00, 0x00,
+		// sub rsp, 0x28
+		0x48, 0x83, 0xec, 0x28,
+		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
+		0xff, 0x15, 0x02, 0x00, 0x00, 0x00,
+		// jmp $+8
+		0xeb, 0x08,
+		// address of enter_hook
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp2[] = {
+		// test eax, eax
+		0x85, 0xc0,
+		// jnz 0x1e
+		0x75, 0x1e,
+		// add rsp, 0x28
+		0x48, 0x83, 0xc4, 0x28,
+		// pop r11, r10, r9, r8
+		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
+		// pop rbx/rdx/rcx/rax
+		0x5b, 0x5a, 0x59, 0x58,
+		// jmp h->tramp (original function)
+		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp3[] = {
+		// mov rcx, [rsp+0x58]
+		0x48, 0x8b, 0x4c, 0x24, 0x58,
+		// mov rdx, [rsp+0x50]
+		0x48, 0x8b, 0x54, 0x24, 0x50,
+		// mov r8, [rsp+0x40]
+		0x4c, 0x8b, 0x44, 0x24, 0x40,
+		// mov r9, [rsp+0x38]
+		0x4c, 0x8b, 0x4c, 0x24, 0x38,
+		// call h->new_func (New_ func)
+		0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp4[] = {
+		// add rsp, 0x28
+		0x48, 0x83, 0xc4, 0x28,
+		// pop r11, r10, r9, r8
+		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
+		// pop rbx/rdx/rcx/rax
+		0x5b, 0x5a, 0x59, 0x58,
+		// jmp h->tramp (original function)
+		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	};
+
+#if DISABLE_HOOK_CONTENT
+	*(ULONG_PTR *)(pre_tramp1 + 6) = (ULONG_PTR)h->tramp;
+#endif
+
+	p = h->hookdata->pre_tramp;
+	off = sizeof(pre_tramp1) - sizeof(ULONG_PTR);
+	*(ULONG_PTR *)(pre_tramp1 + off) = (ULONG_PTR)&enter_hook;
+	memcpy(p, pre_tramp1, sizeof(pre_tramp1));
+	p += sizeof(pre_tramp1);
+
+	off = sizeof(pre_tramp2) - sizeof(ULONG_PTR);
+	*(ULONG_PTR *)(pre_tramp2 + off) = (ULONG_PTR)h->hookdata->tramp;
+	memcpy(p, pre_tramp2, sizeof(pre_tramp2));
+	p += sizeof(pre_tramp2);
+
+	off = sizeof(pre_tramp3) - sizeof(ULONG_PTR);
+	*(ULONG_PTR *)(pre_tramp3 + off) = (ULONG_PTR)h->new_func;
+	memcpy(p, pre_tramp3, sizeof(pre_tramp3));
+	p += sizeof(pre_tramp3);
+
+	off = sizeof(pre_tramp4) - sizeof(ULONG_PTR);
+	*(ULONG_PTR *)(pre_tramp4 + off) = (ULONG_PTR)h->hookdata->tramp;
+	memcpy(p, pre_tramp4, sizeof(pre_tramp4));
+
+	// don't need unwind info for this variant since we won't appear in the stack trace
+}
+
+
 static int hook_api_jmp_indirect(hook_t *h, unsigned char *from,
 	unsigned char *to)
 {
@@ -587,7 +690,10 @@ int hook_api(hook_t *h, int type)
 			uint8_t orig[16];
 			memcpy(orig, addr, 16);
 
-			hook_create_pre_tramp(h);
+			if (h->notail)
+				hook_create_pre_tramp_notail(h);
+			else
+				hook_create_pre_tramp(h);
 
 			// insert the hook (jump from the api to the
 			// pre-trampoline)

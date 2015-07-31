@@ -40,10 +40,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #define HOOK(library, funcname) {L###library, #funcname, NULL, \
-    &New_##funcname, (void **) &Old_##funcname}
+    &New_##funcname, (void **) &Old_##funcname, FALSE, 0, FALSE}
 
-#define HOOK2(library, funcname, recursion) {L###library, #funcname, NULL, \
-    &New2_##funcname, (void **) &Old2_##funcname, recursion}
+#define HOOK_SPECIAL(library, funcname) {L###library, #funcname, NULL, \
+    &New_##funcname, (void **) &Old_##funcname, TRUE, 0, FALSE}
+
+// NOTE: numargs > 4 not currently supported on x64
+#define HOOK_NOTAIL(library, funcname, numargs) {L###library, #funcname, NULL, \
+    &New_##funcname, (void **) &Old_##funcname, TRUE, numargs, TRUE}
+
 
 static hook_t g_hooks[] = {
 
@@ -59,18 +64,22 @@ static hook_t g_hooks[] = {
     // In other words, do *NOT* place "special" hooks behind "normal" hooks.
     //
 
-	HOOK2(ntdll, LdrLoadDll, TRUE),
-	HOOK2(ntdll, LdrUnloadDll, TRUE),
-    HOOK2(kernel32, CreateProcessInternalW, TRUE),
+	HOOK_SPECIAL(ntdll, LdrLoadDll),
+	HOOK_SPECIAL(ntdll, LdrUnloadDll),
+    HOOK_SPECIAL(kernel32, CreateProcessInternalW),
+
 	// has special handling
-	HOOK2(jscript, COleScript_ParseScriptText, TRUE),
-	HOOK2(jscript, JsEval, TRUE),
-	HOOK2(jscript9, JsParseScript, TRUE),
-	HOOK2(jscript9, JsRunScript, TRUE),
-	HOOK2(mshtml, CDocument_write, TRUE),
+	HOOK_SPECIAL(jscript, COleScript_ParseScriptText),
+	HOOK_SPECIAL(jscript, JsEval),
+	HOOK_SPECIAL(jscript9, JsParseScript),
+	HOOK_SPECIAL(jscript9, JsRunScript),
+	HOOK_SPECIAL(mshtml, CDocument_write),
 
 	// COM object creation hook
-	HOOK2(ole32, CoCreateInstance, TRUE),
+	HOOK_SPECIAL(ole32, CoCreateInstance),
+
+	HOOK_NOTAIL(ntdll, RtlDispatchException, 2),
+
 	//
     // File Hooks
     //
@@ -247,7 +256,6 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtMapViewOfSection),
 	HOOK(kernel32, WaitForDebugEvent),
 	HOOK(ntdll, DbgUiWaitStateChange),
-	HOOK(ntdll, RtlDispatchException),
 	HOOK(ntdll, NtRaiseException),
 
     // all variants of ShellExecute end up in ShellExecuteExW

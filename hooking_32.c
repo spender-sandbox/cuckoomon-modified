@@ -250,6 +250,95 @@ static void hook_create_pre_tramp(hook_t *h)
 	memcpy(p, pre_tramp3, sizeof(pre_tramp3));
 }
 
+static void hook_create_pre_tramp_notail(hook_t *h)
+{
+	unsigned char *p;
+	unsigned int off;
+
+	unsigned char pre_tramp1[] = {
+#if DISABLE_HOOK_CONTENT
+		0xe9, 0x00, 0x00, 0x00, 0x00,
+#endif
+		// pushf
+		0x9c,
+		// pusha
+		0x60,
+		// cld
+		0xfc,
+		// push dword ptr [esp+36]
+		0xff, 0x74, 0x24, 0x24,
+		// push ebp
+		0x55,
+		// push h->allow_hook_recursion
+		0x6a, h->allow_hook_recursion,
+		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
+		0xe8, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp2[] = {
+		// test eax, eax
+		0x85, 0xc0,
+		// jnz 0x7
+		0x75, 0x07,
+		// popad
+		0x61,
+		// popf
+		0x9d,
+		// jmp h->tramp (original function)
+		0xe9, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp3[] = {
+		// mov ecx, numargs
+		0xb9, h->numargs, 0x00, 0x00, 0x00,
+		// mov eax, ecx
+		0x8b, 0xc1,
+		// shl eax, 2 (eax = eax * 4)
+		0xc1, 0xe0, 0x02,
+		// sub esp, eax
+		0x29, 0xc4,
+		// mov edi, esp
+		0x89, 0xe7,
+		// lea esi, [esp+40]
+		0x8d, 0x74, 0x24, 0x28,
+		// movsd
+		0xa5,
+		// call h->new_func
+		0xe8, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp4[] = {
+		// popad
+		0x61,
+		// popf
+		0x9d,
+		// jmp h->tramp (original function)
+		0xe9, 0x00, 0x00, 0x00, 0x00
+	};
+
+#if DISABLE_HOOK_CONTENT
+	emit_rel(pre_tramp1 + 1, h->pre_tramp + 1, h->tramp);
+#endif
+
+	p = h->hookdata->pre_tramp;
+	off = sizeof(pre_tramp1) - sizeof(unsigned int);
+	emit_rel(pre_tramp1 + off, p + off, (unsigned char *)&enter_hook);
+	memcpy(p, pre_tramp1, sizeof(pre_tramp1));
+	p += sizeof(pre_tramp1);
+
+	off = sizeof(pre_tramp2) - sizeof(unsigned int);
+	emit_rel(pre_tramp2 + off, p + off, h->hookdata->tramp);
+	memcpy(p, pre_tramp2, sizeof(pre_tramp2));
+	p += sizeof(pre_tramp2);
+
+	off = sizeof(pre_tramp3) - sizeof(unsigned int);
+	emit_rel(pre_tramp3 + off, p + off, h->new_func);
+	memcpy(p, pre_tramp3, sizeof(pre_tramp3));
+	p += sizeof(pre_tramp3);
+
+	off = sizeof(pre_tramp4) - sizeof(unsigned int);
+	emit_rel(pre_tramp4 + off, p + off, h->hookdata->tramp);
+	memcpy(p, pre_tramp4, sizeof(pre_tramp4));
+}
+
+
 static int hook_api_jmp_direct(hook_t *h, unsigned char *from,
     unsigned char *to)
 {
@@ -600,7 +689,10 @@ int hook_api(hook_t *h, int type)
 			uint8_t orig[16];
 			memcpy(orig, addr, 16);
 
-			hook_create_pre_tramp(h);
+			if (h->notail)
+				hook_create_pre_tramp_notail(h);
+			else
+				hook_create_pre_tramp(h);
 
 			// insert the hook (jump from the api to the
 			// pre-trampoline)

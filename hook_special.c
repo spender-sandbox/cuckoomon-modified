@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void set_hooks_dll(const wchar_t *library);
 
-HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
+HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
     __in_opt    PULONG Flags,
     __in        PUNICODE_STRING ModuleFileName,
@@ -44,7 +44,7 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 
     COPY_UNICODE_STRING(library, ModuleFileName);
 
-    ret = Old2_LdrLoadDll(PathToFile, Flags, ModuleFileName,
+    ret = Old_LdrLoadDll(PathToFile, Flags, ModuleFileName,
         ModuleHandle);
 
 	get_lasterrors(&lasterror);
@@ -63,10 +63,10 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 		}
 
 		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
-	        LOQspecial_ntstatus("system", "HFP", "Flags", Flags, "FileName", library.Buffer,
+	        LOQ_ntstatus("system", "HFP", "Flags", Flags, "FileName", library.Buffer,
 		       "BaseAddress", ModuleHandle);
 		else
-			LOQspecial_ntstatus("system", "HoP", "Flags", Flags, "FileName", &library,
+			LOQ_ntstatus("system", "HoP", "Flags", Flags, "FileName", &library,
 				"BaseAddress", ModuleHandle);
 	}
 
@@ -97,10 +97,10 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
 
 extern void revalidate_all_hooks(void);
 
-HOOKDEF2(NTSTATUS, WINAPI, LdrUnloadDll,
+HOOKDEF(NTSTATUS, WINAPI, LdrUnloadDll,
 	PVOID DllImageBase
 ) {
-	NTSTATUS ret = Old2_LdrUnloadDll(DllImageBase);
+	NTSTATUS ret = Old_LdrUnloadDll(DllImageBase);
 
 	if (!is_valid_address_range((ULONG_PTR)DllImageBase, 0x1000)) {
 		// if this unload actually caused removal of the DLL instead of a reference counter decrement,
@@ -112,7 +112,7 @@ HOOKDEF2(NTSTATUS, WINAPI, LdrUnloadDll,
 }
 
 
-HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
+HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
     __in_opt    LPVOID lpUnknown1,
     __in_opt    LPWSTR lpApplicationName,
     __inout_opt LPWSTR lpCommandLine,
@@ -126,7 +126,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
     __out       LPPROCESS_INFORMATION lpProcessInformation,
     __in_opt    LPVOID lpUnknown2
 ) {
-    BOOL ret = Old2_CreateProcessInternalW(lpUnknown1, lpApplicationName,
+    BOOL ret = Old_CreateProcessInternalW(lpUnknown1, lpApplicationName,
         lpCommandLine, lpProcessAttributes, lpThreadAttributes,
         bInheritHandles, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment,
         lpCurrentDirectory, lpStartupInfo, lpProcessInformation, lpUnknown2);
@@ -154,7 +154,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
 					if (lpExtStartupInfo->lpAttributeList->Entries[i].Attribute == PROC_THREAD_ATTRIBUTE_PARENT_PROCESS)
 						ParentHandle = *(HANDLE *)lpExtStartupInfo->lpAttributeList->Entries[i].lpValue;
 			}
-			LOQspecial_bool("process", "uuhiippp", "ApplicationName", lpApplicationName,
+			LOQ_bool("process", "uuhiippp", "ApplicationName", lpApplicationName,
 				"CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
 				"ProcessId", lpProcessInformation->dwProcessId,
 				"ThreadId", lpProcessInformation->dwThreadId,
@@ -163,7 +163,7 @@ HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
 				"ThreadHandle", lpProcessInformation->hThread);
 		}
 		else {
-			LOQspecial_bool("process", "uuhiipp", "ApplicationName", lpApplicationName,
+			LOQ_bool("process", "uuhiipp", "ApplicationName", lpApplicationName,
 				"CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
 				"ProcessId", lpProcessInformation->dwProcessId,
 				"ThreadId", lpProcessInformation->dwThreadId,
@@ -194,20 +194,20 @@ static char *known_object(IID *app, IID *iface)
 	return NULL;
 }
 
-HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
+HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 	__in    REFCLSID rclsid,
 	__in	LPUNKNOWN pUnkOuter,
 	__in	DWORD dwClsContext,
 	__in	REFIID riid,
 	__out	LPVOID *ppv
-	) {
+) {
 	IID id1;
 	IID id2;
 	char idbuf1[40];
 	char idbuf2[40];
 	char *known;
 	lasterror_t lasterror;
-	HRESULT ret = Old2_CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
+	HRESULT ret = Old_CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
 
 	get_lasterrors(&lasterror);
 
@@ -221,14 +221,14 @@ HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
 	set_lasterrors(&lasterror);
 
 	if ((known = known_object(&id1, &id2)))
-		LOQspecial_hresult("com", "shss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);
+		LOQ_hresult("com", "shss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);
 	else
-		LOQspecial_hresult("com", "shs", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2);
+		LOQ_hresult("com", "shs", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2);
 
 	return ret;
 }
 
-HOOKDEF2(int, WINAPI, JsEval,
+HOOKDEF(int, WINAPI, JsEval,
 	PVOID Arg1,
 	PVOID Arg2,
 	PVOID Arg3,
@@ -237,17 +237,17 @@ HOOKDEF2(int, WINAPI, JsEval,
 ) {
 	PWCHAR jsbuf;
 	PUCHAR p;
-	int ret = Old2_JsEval(Arg1, Arg2, Arg3, Index, scriptobj);
+	int ret = Old_JsEval(Arg1, Arg2, Arg3, Index, scriptobj);
 
 	p = (PUCHAR)scriptobj[4 * Index - 2];
 	jsbuf = *(PWCHAR *)(p + 8);
 	if (jsbuf)
-		LOQspecial_ntstatus("browser", "u", "Javascript", jsbuf);
+		LOQ_ntstatus("browser", "u", "Javascript", jsbuf);
 
 	return ret;
 }
 
-HOOKDEF2(int, WINAPI, COleScript_ParseScriptText,
+HOOKDEF(int, WINAPI, COleScript_ParseScriptText,
 	PVOID Arg1,
 	PWCHAR ScriptBuf,
 	PVOID Arg3,
@@ -259,33 +259,33 @@ HOOKDEF2(int, WINAPI, COleScript_ParseScriptText,
 	PVOID Arg9,
 	PVOID Arg10
 ) {
-	int ret = Old2_COleScript_ParseScriptText(Arg1, ScriptBuf, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10);
-	LOQspecial_ntstatus("browser", "u", "Script", ScriptBuf);
+	int ret = Old_COleScript_ParseScriptText(Arg1, ScriptBuf, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9, Arg10);
+	LOQ_ntstatus("browser", "u", "Script", ScriptBuf);
 	return ret;
 }
 
-HOOKDEF2(PVOID, WINAPI, JsParseScript,
+HOOKDEF(PVOID, WINAPI, JsParseScript,
 	const wchar_t *script,
 	PVOID SourceContext,
 	const wchar_t *sourceUrl,
 	PVOID *result
 ) {
-	PVOID ret = Old2_JsParseScript(script, SourceContext, sourceUrl, result);
+	PVOID ret = Old_JsParseScript(script, SourceContext, sourceUrl, result);
 
-	LOQspecial_ntstatus("browser", "uu", "Script", script, "Source", sourceUrl);
+	LOQ_ntstatus("browser", "uu", "Script", script, "Source", sourceUrl);
 
 	return ret;
 }
 
-HOOKDEF2(PVOID, WINAPI, JsRunScript,
+HOOKDEF(PVOID, WINAPI, JsRunScript,
 	const wchar_t *script,
 	PVOID SourceContext,
 	const wchar_t *sourceUrl,
 	PVOID *result
 	) {
-	PVOID ret = Old2_JsRunScript(script, SourceContext, sourceUrl, result);
+	PVOID ret = Old_JsRunScript(script, SourceContext, sourceUrl, result);
 
-	LOQspecial_ntstatus("browser", "uu", "Script", script, "Source", sourceUrl);
+	LOQ_ntstatus("browser", "uu", "Script", script, "Source", sourceUrl);
 
 	return ret;
 }
@@ -293,13 +293,13 @@ HOOKDEF2(PVOID, WINAPI, JsRunScript,
 // based on code by Stephan Chenette and Moti Joseph of Websense, Inc. released under the GPLv3
 // http://securitylabs.websense.com/content/Blogs/3198.aspx
 
-HOOKDEF2(int, WINAPI, CDocument_write,
+HOOKDEF(int, WINAPI, CDocument_write,
 	PVOID this,
 	SAFEARRAY *psa
 ) {
 	DWORD i;
 	PWCHAR buf;
-	int ret = Old2_CDocument_write(this, psa);
+	int ret = Old_CDocument_write(this, psa);
 	VARIANT *pvars = (VARIANT *)psa->pvData;
 	unsigned int buflen = 0;
 	unsigned int offset = 0;
@@ -320,7 +320,7 @@ HOOKDEF2(int, WINAPI, CDocument_write,
 		}
 	}
 
-	LOQspecial_ntstatus("browser", "u", "Buffer", buf);
+	LOQ_ntstatus("browser", "u", "Buffer", buf);
 
 	return ret;
 }

@@ -882,7 +882,7 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtOpenSection,
     __in   POBJECT_ATTRIBUTES ObjectAttributes
 );
 
-extern HOOKDEF2(BOOL, WINAPI, CreateProcessInternalW,
+extern HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
     __in_opt    LPVOID lpUnknown1,
     __in_opt    LPWSTR lpApplicationName,
     __inout_opt LPWSTR lpCommandLine,
@@ -907,7 +907,7 @@ extern HOOKDEF(NTSTATUS, WINAPI, DbgUiWaitStateChange,
 	__in_opt PLARGE_INTEGER Timeout
 );
 
-extern HOOKDEF(BOOLEAN, WINAPI, RtlDispatchException,
+extern HOOKDEF(void, WINAPI, RtlDispatchException,
 	__in PEXCEPTION_RECORD ExceptionRecord,
 	__in PCONTEXT Context
 );
@@ -926,7 +926,7 @@ extern HOOKDEF(DWORD, WINAPI, GetLastError,
 	void
 );
 
-extern HOOKDEF2(HRESULT, WINAPI, CoCreateInstance,
+extern HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 	__in    REFCLSID rclsid,
 	__in	LPUNKNOWN pUnkOuter,
 	__in	DWORD dwClsContext,
@@ -2240,14 +2240,14 @@ extern HOOKDEF(BOOL, WINAPI, CryptImportPublicKeyInfo,
 // Special Hooks
 //
 
-extern HOOKDEF2(NTSTATUS, WINAPI, LdrLoadDll,
+extern HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
     __in_opt    PULONG Flags,
     __in        PUNICODE_STRING ModuleFileName,
     __out       PHANDLE ModuleHandle
 );
 
-extern HOOKDEF2(NTSTATUS, WINAPI, LdrUnloadDll,
+extern HOOKDEF(NTSTATUS, WINAPI, LdrUnloadDll,
 	PVOID DllImageBase
 );
 
@@ -2264,7 +2264,7 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
     __in     ULONG Win32Protect
 );
 
-extern HOOKDEF2(int, WINAPI, JsEval,
+extern HOOKDEF(int, WINAPI, JsEval,
 	PVOID Arg1,
 	PVOID Arg2,
 	PVOID Arg3,
@@ -2272,7 +2272,7 @@ extern HOOKDEF2(int, WINAPI, JsEval,
 	DWORD *scriptobj
 );
 
-extern HOOKDEF2(int, WINAPI, COleScript_ParseScriptText,
+extern HOOKDEF(int, WINAPI, COleScript_ParseScriptText,
 	PVOID Arg1,
 	PWCHAR ScriptBuf,
 	PVOID Arg3,
@@ -2285,21 +2285,21 @@ extern HOOKDEF2(int, WINAPI, COleScript_ParseScriptText,
 	PVOID Arg10
 );
 
-extern HOOKDEF2(PVOID, WINAPI, JsParseScript,
+extern HOOKDEF(PVOID, WINAPI, JsParseScript,
 	const wchar_t *script,
 	PVOID SourceContext,
 	const wchar_t *sourceUrl,
 	PVOID *result
 );
 
-extern HOOKDEF2(PVOID, WINAPI, JsRunScript,
+extern HOOKDEF(PVOID, WINAPI, JsRunScript,
 	const wchar_t *script,
 	PVOID SourceContext,
 	const wchar_t *sourceUrl,
 	PVOID *result
 );
 
-extern HOOKDEF2(int, WINAPI, CDocument_write,
+extern HOOKDEF(int, WINAPI, CDocument_write,
 	PVOID this,
 	SAFEARRAY *psa
 );

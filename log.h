@@ -115,15 +115,6 @@ DWORD get_last_api(void);
 #define LOQ_sockerr(cat, fmt, ...) _LOQ(ret != SOCKET_ERROR, cat, fmt, ##__VA_ARGS__)
 #define LOQ_sock(cat, fmt, ...) _LOQ(ret != INVALID_SOCKET, cat, fmt, ##__VA_ARGS__)
 
-
-#define _LOQspecial(eval, cat, fmt, ...) do { static int _index; if(_index == 0) \
-    _index = ++g_log_index; loq(_index, cat, \
-    &__FUNCTION__[5], eval, (int) ret, fmt, ##__VA_ARGS__); } while (0)
-
-#define LOQspecial_ntstatus(cat, fmt, ...) _LOQspecial(NT_SUCCESS(ret), cat, fmt, ##__VA_ARGS__)
-#define LOQspecial_bool(cat, fmt, ...) _LOQspecial(ret != FALSE, cat, fmt, ##__VA_ARGS__)
-#define LOQspecial_hresult(cat, fmt, ...) _LOQspecial(ret == S_OK, cat, fmt, ##__VA_ARGS__)
-
 #define ENSURE_DWORD(param) \
     DWORD _##param = 0; if(param == NULL) param = &_##param
 

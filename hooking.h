@@ -99,6 +99,10 @@ typedef struct _hook_t {
     // this hook has been performed
     int is_hooked;
 
+	unsigned char numargs;
+
+	int notail;
+
 	hook_data_t *hookdata;
 } hook_t;
 
@@ -187,10 +191,6 @@ static __inline ULONG_PTR get_stack_bottom(void)
 #define HOOKDEF(return_value, calling_convention, apiname, ...) \
     return_value (calling_convention *Old_##apiname)(__VA_ARGS__); \
     return_value calling_convention New_##apiname(__VA_ARGS__)
-
-#define HOOKDEF2(return_value, calling_convention, apiname, ...) \
-    return_value (calling_convention *Old2_##apiname)(__VA_ARGS__); \
-    return_value calling_convention New2_##apiname(__VA_ARGS__)
 
 // each thread has a special 260-wchar counting unicode_string buffer in its
 // thread information block, this is likely to be overwritten in certain
