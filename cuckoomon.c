@@ -45,7 +45,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define HOOK_SPECIAL(library, funcname) {L###library, #funcname, NULL, \
     &New_##funcname, (void **) &Old_##funcname, TRUE, 0, FALSE}
 
-// NOTE: numargs > 4 not currently supported on x64
 #define HOOK_NOTAIL(library, funcname, numargs) {L###library, #funcname, NULL, \
     &New_##funcname, (void **) &Old_##funcname, TRUE, numargs, TRUE}
 
@@ -303,10 +302,10 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, LdrGetDllHandle),
     HOOK(ntdll, LdrGetProcedureAddress),
     HOOK(kernel32, DeviceIoControl),
-    HOOK(user32, ExitWindowsEx),
-	HOOK(advapi32, InitiateShutdownW),
-	HOOK(advapi32, InitiateSystemShutdownW),
-	HOOK(advapi32, InitiateSystemShutdownExW),
+    HOOK_NOTAIL(user32, ExitWindowsEx, 2),
+	HOOK_NOTAIL(advapi32, InitiateShutdownW, 5),
+	HOOK_NOTAIL(advapi32, InitiateSystemShutdownW, 5),
+	HOOK_NOTAIL(advapi32, InitiateSystemShutdownExW, 6),
     HOOK(kernel32, IsDebuggerPresent),
     HOOK(advapi32, LookupPrivilegeValueW),
     HOOK(ntdll, NtClose),

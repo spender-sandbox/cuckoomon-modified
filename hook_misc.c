@@ -140,17 +140,16 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
 	return ret;
 }
 
-HOOKDEF(BOOL, WINAPI, ExitWindowsEx,
+HOOKDEF(void, WINAPI, ExitWindowsEx,
     __in  UINT uFlags,
     __in  DWORD dwReason
 ) {
     BOOL ret = 0;
     LOQ_bool("system", "hi", "Flags", uFlags, "Reason", dwReason);
 	pipe("SHUTDOWN:");
-    return Old_ExitWindowsEx(uFlags, dwReason);
 }
 
-HOOKDEF(DWORD, WINAPI, InitiateShutdownW,
+HOOKDEF(void, WINAPI, InitiateShutdownW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwGracePeriod,
@@ -160,10 +159,9 @@ HOOKDEF(DWORD, WINAPI, InitiateShutdownW,
 	DWORD ret = 0;
 	LOQ_zero("system", "uuihh", "MachineName", lpMachineName, "Message", lpMessage, "GracePeriod", dwGracePeriod, "ShutdownFlags", dwShutdownFlags, "Reason", dwReason);
 	pipe("SHUTDOWN:");
-	return Old_InitiateShutdownW(lpMachineName, lpMessage, dwGracePeriod, dwShutdownFlags, dwReason);
 }
 
-HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownW,
+HOOKDEF(void, WINAPI, InitiateSystemShutdownW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwTimeout,
@@ -173,10 +171,9 @@ HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownW,
 	DWORD ret = 0;
 	LOQ_zero("system", "uuiii", "MachineName", lpMachineName, "Message", lpMessage, "Timeout", dwTimeout, "ForceAppsClosed", bForceAppsClosed, "RebootAfterShutdown", bRebootAfterShutdown);
 	pipe("SHUTDOWN:");
-	return Old_InitiateSystemShutdownW(lpMachineName, lpMessage, dwTimeout, bForceAppsClosed, bRebootAfterShutdown);
 }
 
-HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownExW,
+HOOKDEF(void, WINAPI, InitiateSystemShutdownExW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwTimeout,
@@ -187,7 +184,6 @@ HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownExW,
 	DWORD ret = 0;
 	LOQ_zero("system", "uuiiih", "MachineName", lpMachineName, "Message", lpMessage, "Timeout", dwTimeout, "ForceAppsClosed", bForceAppsClosed, "RebootAfterShutdown", bRebootAfterShutdown, "Reason", dwReason);
 	pipe("SHUTDOWN:");
-	return Old_InitiateSystemShutdownExW(lpMachineName, lpMessage, dwTimeout, bForceAppsClosed, bRebootAfterShutdown, dwReason);
 }
 
 static int num_isdebuggerpresent;

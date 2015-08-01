@@ -1205,12 +1205,12 @@ extern HOOKDEF(DWORD, WINAPI, timeGetTime,
 	void
 );
 
-extern HOOKDEF(BOOL, WINAPI, ExitWindowsEx,
+extern HOOKDEF(void, WINAPI, ExitWindowsEx,
     __in  UINT uFlags,
     __in  DWORD dwReason
 );
 
-extern HOOKDEF(DWORD, WINAPI, InitiateShutdownW,
+extern HOOKDEF(void, WINAPI, InitiateShutdownW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwGracePeriod,
@@ -1218,7 +1218,7 @@ extern HOOKDEF(DWORD, WINAPI, InitiateShutdownW,
 	_In_     DWORD  dwReason
 );
 
-extern HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownW,
+extern HOOKDEF(void, WINAPI, InitiateSystemShutdownW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwTimeout,
@@ -1226,7 +1226,7 @@ extern HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownW,
 	_In_     BOOL	bRebootAfterShutdown
 );
 
-extern HOOKDEF(DWORD, WINAPI, InitiateSystemShutdownExW,
+extern HOOKDEF(void, WINAPI, InitiateSystemShutdownExW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwTimeout,
