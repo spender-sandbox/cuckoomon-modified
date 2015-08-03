@@ -1,7 +1,7 @@
 #ifdef _WIN64
 /*
 Cuckoo Sandbox - Automated Malware Analysis
-Copyright (C) 2014 Accuvant, Inc. (bspengler@accuvant.com), Cuckoo Sandbox Developers
+Copyright (C) 2014 Optiv, Inc. (brad.spengler@optiv.com), Cuckoo Sandbox Developers
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

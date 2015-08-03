@@ -1,4 +1,4 @@
-// Copyright 2014-2015 Accuvant, Inc. (bspengler@accuvant.com)
+// Copyright 2014-2015 Optiv, Inc. (brad.spengler@optiv.com)
 // This file is published under the GNU GPL v3
 // http://www.gnu.org/licenses/gpl.html
 
