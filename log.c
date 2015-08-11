@@ -607,7 +607,18 @@ void loq(int index, const char *category, const char *name,
         }
         else if(key == 'I' || key == 'H') {
             int *ptr = va_arg(args, int *);
-            log_int32(ptr != NULL ? *ptr : 0);
+			int theval = 0;
+			if ((ULONG_PTR)ptr < 0x1000) {
+				pipe("INFO: got bogus call from %z hook", name);
+			}
+			__try {
+				if (ptr != NULL)
+					theval = *ptr;
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				;
+			}
+            log_int32(theval);
         }
 		else if (key == 'l' || key == 'p') {
 			void *value = va_arg(args, void *);
@@ -615,7 +626,16 @@ void loq(int index, const char *category, const char *name,
 		}
 		else if (key == 'L' || key == 'P') {
 			void **ptr = va_arg(args, void **);
-			log_ptr(ptr != NULL ? *ptr : NULL);
+			void *theptr = NULL;
+
+			__try {
+				if (ptr != NULL)
+					theptr = *ptr;
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				;
+			}
+			log_ptr(theptr);
 		}
 		else if (key == 'e') {
 			HKEY reg = va_arg(args, HKEY);
