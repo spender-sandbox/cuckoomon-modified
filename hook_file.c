@@ -892,6 +892,35 @@ HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
 	return ret;
 }
 
+HOOKDEF(DWORD_PTR, WINAPI, SHGetFileInfoW,
+	_In_    LPCWSTR    pszPath,
+	DWORD      dwFileAttributes,
+	_Inout_ SHFILEINFOW *psfi,
+	UINT       cbFileInfo,
+	UINT       uFlags
+) {
+	DWORD_PTR ret = Old_SHGetFileInfoW(pszPath, dwFileAttributes, psfi, cbFileInfo, uFlags);
+	if (uFlags & SHGFI_PIDL) {
+		// TODO: something useful with this
+		LOQ_nonzero("filesystem", "h", "Flags", uFlags);
+	}
+	else if (uFlags & SHGFI_USEFILEATTRIBUTES) {
+		if (cbFileInfo >= sizeof(SHFILEINFOW))
+			LOQ_nonzero("filesystem", "uhuu", "Path", pszPath, "Flags", uFlags, "DisplayName", psfi->szDisplayName, "TypeName", psfi->szTypeName);
+		else
+			LOQ_nonzero("filesystem", "uh", "Path", pszPath, "Flags", uFlags);
+	}
+	else if (cbFileInfo >= sizeof(SHFILEINFOW)) {
+		LOQ_nonzero("filesystem", "Fhuu", "Path", pszPath, "Flags", uFlags, "DisplayName", psfi->szDisplayName, "TypeName", psfi->szTypeName);
+	}
+	else {
+		LOQ_nonzero("filesystem", "Fh", "Path", pszPath, "Flags", uFlags);
+	}
+
+	return ret;
+}
+
+
 HOOKDEF(BOOL, WINAPI, GetFileVersionInfoW,
 	_In_        LPCWSTR lptstrFilename,
 	_Reserved_  DWORD dwHandle,

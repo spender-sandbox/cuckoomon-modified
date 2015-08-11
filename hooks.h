@@ -273,6 +273,14 @@ extern HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
 	_Out_ LPWSTR pszPath
 );
 
+extern HOOKDEF(DWORD_PTR, WINAPI, SHGetFileInfoW,
+	_In_    LPCWSTR    pszPath,
+	DWORD      dwFileAttributes,
+	_Inout_ SHFILEINFOW *psfi,
+	UINT       cbFileInfo,
+	UINT       uFlags
+);
+
 extern HOOKDEF(BOOL, WINAPI, GetFileVersionInfoW,
 	_In_        LPCWSTR lptstrFilename,
 	_Reserved_  DWORD dwHandle,
