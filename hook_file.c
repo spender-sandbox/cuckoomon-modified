@@ -40,13 +40,48 @@ typedef struct _file_record_t {
     wchar_t filename[0];
 } file_record_t;
 
+typedef struct _file_log_t {
+	unsigned int read_count;
+	unsigned int write_count;
+} file_log_t;
+
 static lookup_t g_files;
+static lookup_t g_file_logs;
 
 void file_init()
 {
 	specialname_map_init();
 
     lookup_init(&g_files);
+	lookup_init(&g_file_logs);
+}
+
+static void add_file_to_log_tracking(HANDLE fhandle)
+{
+	file_log_t *r = lookup_add(&g_file_logs, (ULONG_PTR)fhandle, sizeof(file_log_t));
+
+	memset(r, 0, sizeof(*r));
+}
+
+static unsigned int increment_file_log_read_count(HANDLE fhandle)
+{
+	file_log_t *r = lookup_get(&g_file_logs, (ULONG_PTR)fhandle, NULL);
+	if (r != NULL)
+		return ++r->read_count;
+	return 0;
+}
+
+static unsigned int increment_file_log_write_count(HANDLE fhandle)
+{
+	file_log_t *r = lookup_get(&g_file_logs, (ULONG_PTR)fhandle, NULL);
+	if (r != NULL)
+		return ++r->write_count;
+	return 0;
+}
+
+void remove_file_from_log_tracking(HANDLE fhandle)
+{
+	lookup_del(&g_file_logs, (ULONG_PTR)fhandle);
 }
 
 static void new_file_path_ascii(const char *fname)
@@ -86,7 +121,7 @@ static void new_file(const UNICODE_STRING *obj)
 static void cache_file(HANDLE file_handle, const wchar_t *path,
     unsigned int length_in_chars, unsigned int attributes)
 {
-    file_record_t *r = lookup_add(&g_files, (unsigned int) file_handle,
+    file_record_t *r = lookup_add(&g_files, (ULONG_PTR)file_handle,
         sizeof(file_record_t) + length_in_chars * sizeof(wchar_t) + sizeof(wchar_t));
 
 	memset(r, 0, sizeof(*r));
@@ -103,7 +138,7 @@ void file_write(HANDLE file_handle)
 
 	get_lasterrors(&lasterror);
 
-	r = lookup_get(&g_files, (unsigned int)file_handle, NULL);
+	r = lookup_get(&g_files, (ULONG_PTR)file_handle, NULL);
     if(r != NULL) {
 		UNICODE_STRING str;
 		str.Length = (USHORT)r->length * sizeof(wchar_t);
@@ -182,7 +217,7 @@ void file_close(HANDLE file_handle)
 	lasterror_t lasterror;
 
 	get_lasterrors(&lasterror);
-    lookup_del(&g_files, (unsigned int) file_handle);
+    lookup_del(&g_files, (ULONG_PTR) file_handle);
 	set_lasterrors(&lasterror);
 }
 
@@ -234,8 +269,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
     LOQ_ntstatus("filesystem", "PhOiihs", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "CreateDisposition", CreateDisposition,
         "ShareAccess", ShareAccess, "FileAttributes", FileAttributes, "ExistedBefore", file_existed ? "yes" : "no");
-    if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {
-        handle_new_file(*FileHandle, ObjectAttributes);
+    if(NT_SUCCESS(ret)) {
+		add_file_to_log_tracking(*FileHandle);
+		if (DesiredAccess & DUMP_FILE_MASK)
+			handle_new_file(*FileHandle, ObjectAttributes);
     }
     return ret;
 }
@@ -256,13 +293,18 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
 		return STATUS_ACCESS_DENIED;
 
 	ret = Old_NtOpenFile(FileHandle, DesiredAccess, ObjectAttributes,
-		IoStatusBlock, ShareAccess | FILE_SHARE_READ, OpenOptions);
+						IoStatusBlock, ShareAccess | FILE_SHARE_READ, OpenOptions);
+
 	LOQ_ntstatus("filesystem", "PhOi", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
-        "FileName", ObjectAttributes, "ShareAccess", ShareAccess);
-    if(NT_SUCCESS(ret) && DesiredAccess & DUMP_FILE_MASK) {
-        handle_new_file(*FileHandle, ObjectAttributes);
-    }
-    return ret;
+				"FileName", ObjectAttributes, "ShareAccess", ShareAccess);
+
+	if (NT_SUCCESS(ret)) {
+		add_file_to_log_tracking(*FileHandle);
+		if (DesiredAccess & DUMP_FILE_MASK)
+			handle_new_file(*FileHandle, ObjectAttributes);
+	}
+
+	return ret;
 }
 
 static HANDLE LastFileHandle;
@@ -273,25 +315,24 @@ static PVOID InitialBuffer;
 static SIZE_T InitialBufferLength;
 
 HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
-    __in      HANDLE FileHandle,
-    __in_opt  HANDLE Event,
-    __in_opt  PIO_APC_ROUTINE ApcRoutine,
-    __in_opt  PVOID ApcContext,
-    __out     PIO_STATUS_BLOCK IoStatusBlock,
-    __out     PVOID Buffer,
-    __in      ULONG Length,
-    __in_opt  PLARGE_INTEGER ByteOffset,
-    __in_opt  PULONG Key
-) {
-    NTSTATUS ret = Old_NtReadFile(FileHandle, Event, ApcRoutine, ApcContext,
-        IoStatusBlock, Buffer, Length, ByteOffset, Key);
-	wchar_t *fname = calloc(32768, sizeof(wchar_t));
+	__in      HANDLE FileHandle,
+	__in_opt  HANDLE Event,
+	__in_opt  PIO_APC_ROUTINE ApcRoutine,
+	__in_opt  PVOID ApcContext,
+	__out     PIO_STATUS_BLOCK IoStatusBlock,
+	__out     PVOID Buffer,
+	__in      ULONG Length,
+	__in_opt  PLARGE_INTEGER ByteOffset,
+	__in_opt  PULONG Key
+	) {
+	NTSTATUS ret = Old_NtReadFile(FileHandle, Event, ApcRoutine, ApcContext,
+		IoStatusBlock, Buffer, Length, ByteOffset, Key);
+	wchar_t *fname;
 	BOOLEAN deletelast;
+	unsigned int read_count = 0;
 
 	if (!InterlockedExchange(&init_readfile_critsec, 1))
 		InitializeCriticalSection(&readfile_critsec);
-
-	path_from_handle(FileHandle, fname, 32768);
 
 	if (get_last_api() == API_NTREADFILE && FileHandle == LastFileHandle) {
 		// can overflow, but we don't care much
@@ -316,39 +357,63 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 		LeaveCriticalSection(&readfile_critsec);
 
 		deletelast = FALSE;
+
+		read_count = increment_file_log_read_count(FileHandle);
 	}
+
 	set_special_api(API_NTREADFILE, deletelast);
 
-	LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
-		"HandleName", fname, "Buffer", InitialBufferLength, InitialBuffer, "Length", AccumulatedLength);
+	if (read_count <= 50) {
+		fname = calloc(32768, sizeof(wchar_t));
+		path_from_handle(FileHandle, fname, 32768);
 
-	free(fname);
+		if (read_count < 50)
+			LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
+				"HandleName", fname, "Buffer", InitialBufferLength, InitialBuffer, "Length", AccumulatedLength);
+		else if (read_count == 50)
+			LOQ_ntstatus("filesystem", "pFbls", "FileHandle", FileHandle,
+				"HandleName", fname, "Buffer", InitialBufferLength, InitialBuffer, "Length", AccumulatedLength, "Status", "Maximum logged reads reached for this file");
+
+		free(fname);
+	}
 
 	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
-    __in      HANDLE FileHandle,
-    __in_opt  HANDLE Event,
-    __in_opt  PIO_APC_ROUTINE ApcRoutine,
-    __in_opt  PVOID ApcContext,
-    __out     PIO_STATUS_BLOCK IoStatusBlock,
-    __in      PVOID Buffer,
-    __in      ULONG Length,
-    __in_opt  PLARGE_INTEGER ByteOffset,
-    __in_opt  PULONG Key
-) {
-    NTSTATUS ret = Old_NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext,
-        IoStatusBlock, Buffer, Length, ByteOffset, Key);
-	wchar_t *fname = calloc(32768, sizeof(wchar_t));
+	__in      HANDLE FileHandle,
+	__in_opt  HANDLE Event,
+	__in_opt  PIO_APC_ROUTINE ApcRoutine,
+	__in_opt  PVOID ApcContext,
+	__out     PIO_STATUS_BLOCK IoStatusBlock,
+	__in      PVOID Buffer,
+	__in      ULONG Length,
+	__in_opt  PLARGE_INTEGER ByteOffset,
+	__in_opt  PULONG Key
+	) {
+	NTSTATUS ret = Old_NtWriteFile(FileHandle, Event, ApcRoutine, ApcContext,
+		IoStatusBlock, Buffer, Length, ByteOffset, Key);
+	wchar_t *fname;
+	unsigned int write_count;
 
-	path_from_handle(FileHandle, fname, 32768);
+	write_count = increment_file_log_write_count(FileHandle);
+	if (write_count <= 50) {
+		fname = calloc(32768, sizeof(wchar_t));
+		path_from_handle(FileHandle, fname, 32768);
 
-	LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
-		"HandleName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
+		if (write_count < 50) {
+			LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
+				"HandleName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
+		}
+		else if (write_count == 50) {
+			LOQ_ntstatus("filesystem", "pFbls", "FileHandle", FileHandle,
+				"HandleName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information, "Status", "Maximum logged writes reached for this file");
 
-	free(fname);
-	
+		}
+
+		free(fname);
+	}
+
 	if(NT_SUCCESS(ret)) {
         file_write(FileHandle);
     }

@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct _entry_t {
     struct _entry_t *next;
-    unsigned int id;
+    ULONG_PTR id;
     unsigned int size;
     unsigned char data[0];
 } entry_t;
@@ -45,7 +45,7 @@ void lookup_free(lookup_t *d)
     // TODO
 }
 
-void *lookup_add(lookup_t *d, unsigned int id, unsigned int size)
+void *lookup_add(lookup_t *d, ULONG_PTR id, unsigned int size)
 {
     entry_t *t = (entry_t *) malloc(sizeof(entry_t) + size);
     ENTER();
@@ -58,7 +58,7 @@ void *lookup_add(lookup_t *d, unsigned int id, unsigned int size)
     return t->data;
 }
 
-void *lookup_get(lookup_t *d, unsigned int id, unsigned int *size)
+void *lookup_get(lookup_t *d, ULONG_PTR id, unsigned int *size)
 {
 	entry_t *p;
     ENTER();
@@ -77,7 +77,7 @@ void *lookup_get(lookup_t *d, unsigned int id, unsigned int *size)
     return NULL;
 }
 
-void lookup_del(lookup_t *d, unsigned int id)
+void lookup_del(lookup_t *d, ULONG_PTR id)
 {
 	entry_t *p;
 	entry_t *last;

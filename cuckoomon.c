@@ -67,6 +67,10 @@ static hook_t g_hooks[] = {
 	HOOK_SPECIAL(ntdll, LdrUnloadDll),
     HOOK_SPECIAL(kernel32, CreateProcessInternalW),
 
+	//HOOK_SPECIAL(ntdll, NtCreateThread),
+	//HOOK_SPECIAL(ntdll, NtCreateThreadEx),
+	//HOOK_SPECIAL(ntdll, NtTerminateThread),
+
 	// has special handling
 	HOOK_SPECIAL(jscript, COleScript_ParseScriptText),
 	HOOK_SPECIAL(jscript, JsEval),
@@ -275,15 +279,16 @@ static hook_t g_hooks[] = {
     //
     // Thread Hooks
     //
+	HOOK(ntdll, NtCreateThread),
+	HOOK(ntdll, NtCreateThreadEx),
+	HOOK(ntdll, NtTerminateThread),
 	HOOK(ntdll, NtQueueApcThread),
-    HOOK(ntdll, NtCreateThread),
-    HOOK(ntdll, NtCreateThreadEx),
-    HOOK(ntdll, NtOpenThread),
+	HOOK(ntdll, NtQueueApcThreadEx),
+	HOOK(ntdll, NtOpenThread),
     HOOK(ntdll, NtGetContextThread),
     HOOK(ntdll, NtSetContextThread),
     HOOK(ntdll, NtSuspendThread),
     HOOK(ntdll, NtResumeThread),
-    HOOK(ntdll, NtTerminateThread),
     HOOK(kernel32, CreateThread),
     HOOK(kernel32, CreateRemoteThread),
     HOOK(ntdll, RtlCreateUserThread),
@@ -750,6 +755,8 @@ BOOLEAN g_dll_main_complete;
 
 DWORD g_tls_hook_index;
 
+extern void ignored_threads_init(void);
+
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	char config_fname[MAX_PATH];
@@ -791,6 +798,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		// initialize file stuff, needs to be performed prior to any file normalization
 		file_init();
+		//ignored_threads_init();
 
 		get_our_process_path();
 

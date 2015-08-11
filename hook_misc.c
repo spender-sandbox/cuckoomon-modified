@@ -246,6 +246,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtClose,
 	ret = Old_NtClose(Handle);
     LOQ_ntstatus("system", "p", "Handle", Handle);
     if(NT_SUCCESS(ret)) {
+		remove_file_from_log_tracking(Handle);
         file_close(Handle);
     }
     return ret;

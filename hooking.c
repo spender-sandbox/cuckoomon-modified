@@ -72,6 +72,8 @@ int called_by_hook(void)
 	return operate_on_backtrace(hookinfo->return_address, hookinfo->frame_pointer, addr_in_our_dll_range);
 }
 
+extern BOOLEAN is_ignored_thread(DWORD tid);
+
 // returns 1 if we should call our hook, 0 if we should call the original function instead
 int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr)
 {
@@ -80,7 +82,7 @@ int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr
 	hookinfo->return_address = retaddr;
 	hookinfo->frame_pointer = _ebp;
 
-	if ((hookinfo->disable_count < 1) && (!called_by_hook() || is_special_hook)) {
+	if ((hookinfo->disable_count < 1) && ((!called_by_hook() /*&& !is_ignored_thread(GetCurrentThreadId())*/) || is_special_hook)) {
 		/* set caller information */
 		hookinfo->main_caller_retaddr = 0;
 		hookinfo->parent_caller_retaddr = 0;

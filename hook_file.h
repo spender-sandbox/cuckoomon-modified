@@ -18,3 +18,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 void file_init();
 void file_close(HANDLE file_handle);
+void remove_file_from_log_tracking(HANDLE fhandle);
