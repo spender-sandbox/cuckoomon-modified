@@ -608,9 +608,6 @@ void loq(int index, const char *category, const char *name,
         else if(key == 'I' || key == 'H') {
             int *ptr = va_arg(args, int *);
 			int theval = 0;
-			if ((ULONG_PTR)ptr < 0x1000) {
-				pipe("INFO: got bogus call from %z hook", name);
-			}
 			__try {
 				if (ptr != NULL)
 					theval = *ptr;
