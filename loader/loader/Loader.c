@@ -330,6 +330,12 @@ static void fixpe(ULONG_PTR base, char *buf, DWORD bufsize)
 			sechdr[i].PointerToRawData = sechdr[i].VirtualAddress;
 			sechdr[i].SizeOfRawData = sechdr[i].Misc.VirtualSize;
 		}
+		// zero out the relocation table since relocations have already been applied
+		if (nthdr32->OptionalHeader.NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_BASERELOC) {
+			nthdr32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress = 0;
+			nthdr32->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size = 0;
+			nthdr32->FileHeader.Characteristics |= IMAGE_FILE_RELOCS_STRIPPED;
+		}
 	}
 	else if (nthdr->FileHeader.Machine == IMAGE_FILE_MACHINE_AMD64) {
 		nthdr64 = (PIMAGE_NT_HEADERS64)nthdr;
@@ -341,6 +347,12 @@ static void fixpe(ULONG_PTR base, char *buf, DWORD bufsize)
 		for (i = 0; i < numsecs; i++) {
 			sechdr[i].PointerToRawData = sechdr[i].VirtualAddress;
 			sechdr[i].SizeOfRawData = sechdr[i].Misc.VirtualSize;
+		}
+		// zero out the relocation table since relocations have already been applied
+		if (nthdr64->OptionalHeader.NumberOfRvaAndSizes > IMAGE_DIRECTORY_ENTRY_BASERELOC) {
+			nthdr64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress = 0;
+			nthdr64->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size = 0;
+			nthdr64->FileHeader.Characteristics |= IMAGE_FILE_RELOCS_STRIPPED;
 		}
 	}
 
