@@ -25,9 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "misc.h"
 #include "config.h"
 
-void set_hooks_dll(const wchar_t *library);
-
-HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
+HOOKDEF(void, WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
     __in_opt    PULONG Flags,
     __in        PUNICODE_STRING ModuleFileName,
@@ -40,12 +38,9 @@ HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
     // overwritten, therefore we make a copy of it for our own use.
     //
 	lasterror_t lasterror;
-	NTSTATUS ret;
+	NTSTATUS ret = 0;
 
     COPY_UNICODE_STRING(library, ModuleFileName);
-
-    ret = Old_LdrLoadDll(PathToFile, Flags, ModuleFileName,
-        ModuleHandle);
 
 	get_lasterrors(&lasterror);
 
@@ -63,52 +58,22 @@ HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
 		}
 
 		if (!wcsncmp(library.Buffer, L"\\??\\", 4) || library.Buffer[1] == L':')
-	        LOQ_ntstatus("system", "HFP", "Flags", Flags, "FileName", library.Buffer,
-		       "BaseAddress", ModuleHandle);
+			LOQ_ntstatus("system", "HFP", "Flags", Flags, "FileName", library.Buffer,
+			"BaseAddress", ModuleHandle);
 		else
 			LOQ_ntstatus("system", "HoP", "Flags", Flags, "FileName", &library,
-				"BaseAddress", ModuleHandle);
+			"BaseAddress", ModuleHandle);
 	}
-
-    //
-    // Check this DLL against our table of hooks, because we might have to
-    // place some new hooks.
-    //
-
-    if(NT_SUCCESS(ret)) {
-		wchar_t *dllname;
-
-		// inform the call below not to add this DLL to the list of system DLLs if it's
-		// the DLL of interest
-		if (g_config.file_of_interest && !wcsicmp(library.Buffer, g_config.file_of_interest))
-			set_dll_of_interest((ULONG_PTR)*ModuleHandle);
-
-		// unoptimized, but easy
-		add_all_dlls_to_dll_ranges();
-
-		dllname = get_dll_basename(&library);
-		set_hooks_dll(dllname);
-    }
-
 	set_lasterrors(&lasterror);
 
-    return ret;
+	return;
 }
 
 extern void revalidate_all_hooks(void);
 
-HOOKDEF(NTSTATUS, WINAPI, LdrUnloadDll,
+HOOKDEF(void, WINAPI, LdrUnloadDll,
 	PVOID DllImageBase
 ) {
-	NTSTATUS ret = Old_LdrUnloadDll(DllImageBase);
-
-	if (!is_valid_address_range((ULONG_PTR)DllImageBase, 0x1000)) {
-		// if this unload actually caused removal of the DLL instead of a reference counter decrement,
-		// then we need to loop through our hooks and unmark the hooks eliminated by this removal
-		revalidate_all_hooks();
-	}
-
-	return ret;
 }
 
 

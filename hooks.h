@@ -2257,14 +2257,14 @@ extern HOOKDEF(BOOL, WINAPI, CryptImportPublicKeyInfo,
 // Special Hooks
 //
 
-extern HOOKDEF(NTSTATUS, WINAPI, LdrLoadDll,
+extern HOOKDEF(void, WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
     __in_opt    PULONG Flags,
     __in        PUNICODE_STRING ModuleFileName,
     __out       PHANDLE ModuleHandle
 );
 
-extern HOOKDEF(NTSTATUS, WINAPI, LdrUnloadDll,
+extern HOOKDEF(void, WINAPI, LdrUnloadDll,
 	PVOID DllImageBase
 );
 

@@ -75,14 +75,15 @@ int called_by_hook(void)
 extern BOOLEAN is_ignored_thread(DWORD tid);
 
 // returns 1 if we should call our hook, 0 if we should call the original function instead
-int WINAPI enter_hook(uint8_t is_special_hook, ULONG_PTR _ebp, ULONG_PTR retaddr)
+int WINAPI enter_hook(hook_t *h, ULONG_PTR _ebp, ULONG_PTR retaddr)
 {
 	hook_info_t *hookinfo = hook_info();
 
+	hookinfo->current_hook = h;
 	hookinfo->return_address = retaddr;
 	hookinfo->frame_pointer = _ebp;
 
-	if ((hookinfo->disable_count < 1) && ((!called_by_hook() /*&& !is_ignored_thread(GetCurrentThreadId())*/) || is_special_hook)) {
+	if ((hookinfo->disable_count < 1) && (h->allow_hook_recursion || (!called_by_hook() /*&& !is_ignored_thread(GetCurrentThreadId())*/))) {
 		/* set caller information */
 		hookinfo->main_caller_retaddr = 0;
 		hookinfo->parent_caller_retaddr = 0;

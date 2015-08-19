@@ -272,6 +272,83 @@ error:
 	return 0;
 }
 
+// needs to be updated whenever the assembly below changes
+void add_unwind_info(hook_t *h)
+{
+	RUNTIME_FUNCTION *functable;
+	UNWIND_INFO *unwindinfo;
+	BYTE regs1[] = { 11, 10, 9, 8 };
+	BYTE regs2[] = { 3, 2, 1, 0 };
+	int i, x;
+
+	/* would be really nice if MSDN had any mention whatsoever that the RUNTIME_FUNCTION needs to have
+	a global allocation -- it doesn't copy the contents of the tiny 12-byte RUNTIME_FUNCTION, it merely
+	stores the same pointer you provide to the API.  If you allocate it on the stack, or call the API multiple
+	times with the same pointer value, you'll end up with completely broken unwind information that fails
+	in spectacular ways.
+	*/
+	functable = malloc(sizeof(RUNTIME_FUNCTION));
+	unwindinfo = &h->hookdata->unwind_info;
+
+	functable->BeginAddress = offsetof(hook_data_t, pre_tramp);
+	functable->EndAddress = offsetof(hook_data_t, pre_tramp) + sizeof(h->hookdata->pre_tramp);
+	functable->UnwindData = offsetof(hook_data_t, unwind_info);
+
+	unwindinfo->Version = 1;
+	unwindinfo->Flags = UNW_FLAG_NHANDLER;
+	if (h->notail && h->numargs > 4) {
+		unwindinfo->SizeOfProlog = 160;
+	}
+	else if (h->notail) {
+		unwindinfo->SizeOfProlog = 113;
+	}
+	else {
+		unwindinfo->SizeOfProlog = 43;
+	}
+	unwindinfo->FrameRegister = 0;
+	unwindinfo->FrameOffset = 0;
+
+	i = 0;
+	if (h->notail && h->numargs > 4) {
+		unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
+		unwindinfo->UnwindCode[i].CodeOffset = 159;
+		unwindinfo->UnwindCode[i].OpInfo = 3; // (3 + 1) * 8 = 0x20
+		i++;
+
+		if (h->numargs & 1) {
+			unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
+			unwindinfo->UnwindCode[i].CodeOffset = 155;
+			unwindinfo->UnwindCode[i].OpInfo = 0; // (0 + 1) * 8 = 8
+			i++;
+		}
+		unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
+		unwindinfo->UnwindCode[i].CodeOffset = 138;
+		unwindinfo->UnwindCode[i].OpInfo = h->numargs - 5;
+		i++;
+	}
+
+	unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
+	unwindinfo->UnwindCode[i].CodeOffset = 42;
+	unwindinfo->UnwindCode[i].OpInfo = 4; // (4 + 1) * 8 = 0x28
+	i++;
+
+	for (x = 0; x < ARRAYSIZE(regs1); x++) {
+		unwindinfo->UnwindCode[x + i].UnwindOp = UWOP_PUSH_NONVOL;
+		unwindinfo->UnwindCode[x + i].CodeOffset = 12 - (2 * x);
+		unwindinfo->UnwindCode[x + i].OpInfo = regs1[x];
+	}
+	i += x;
+
+	for (x = 0; x < ARRAYSIZE(regs2); x++) {
+		unwindinfo->UnwindCode[x + i].UnwindOp = UWOP_PUSH_NONVOL;
+		unwindinfo->UnwindCode[x + i].CodeOffset = 4 - x;
+		unwindinfo->UnwindCode[x + i].OpInfo = regs2[x];
+	}
+	i += x;
+	unwindinfo->CountOfCodes = i;
+
+	RtlAddFunctionTable(functable, 1, (DWORD64)h->hookdata);
+}
 
 // this function constructs the so-called pre-trampoline, this pre-trampoline
 // determines if a hook should really be executed. An example will be the
@@ -289,11 +366,6 @@ static void hook_create_pre_tramp(hook_t *h)
 {
 	unsigned char *p;
 	unsigned int off;
-	RUNTIME_FUNCTION *functable;
-	UNWIND_INFO *unwindinfo;
-	BYTE regs1[] = { 11, 10, 9, 8 };
-	BYTE regs2[] = { 3, 2, 1, 0 };
-	int i;
 
 	unsigned char pre_tramp1[] = {
 #if DISABLE_HOOK_CONTENT
@@ -314,8 +386,10 @@ static void hook_create_pre_tramp(hook_t *h)
 		// 0x4c, 0x8b, 0x44, 0x24, 0x40,
 		// lea rdx, [rsp+0x40]
 		0x48, 0x8d, 0x54, 0x24, 0x40,
-		// mov ecx, h->allow_hook_recursion
-		0xb9, h->allow_hook_recursion, 0x00, 0x00, 0x00,
+		// mov rcx, h
+		0x48, 0xb9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp12[] = {
 		// sub rsp, 0x28
 		0x48, 0x83, 0xec, 0x28,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
@@ -358,9 +432,14 @@ static void hook_create_pre_tramp(hook_t *h)
 
 	p = h->hookdata->pre_tramp;
 	off = sizeof(pre_tramp1) - sizeof(ULONG_PTR);
-	*(ULONG_PTR *)(pre_tramp1 + off) = (ULONG_PTR)&enter_hook;
+	*(ULONG_PTR *)(pre_tramp1 + off) = (ULONG_PTR)h;
 	memcpy(p, pre_tramp1, sizeof(pre_tramp1));
 	p += sizeof(pre_tramp1);
+
+	off = sizeof(pre_tramp12) - sizeof(ULONG_PTR);
+	*(ULONG_PTR *)(pre_tramp12 + off) = (ULONG_PTR)&enter_hook;
+	memcpy(p, pre_tramp12, sizeof(pre_tramp12));
+	p += sizeof(pre_tramp12);
 
 	off = sizeof(pre_tramp2) - sizeof(ULONG_PTR);
 	*(ULONG_PTR *)(pre_tramp2 + off) = (ULONG_PTR)h->hookdata->tramp;
@@ -370,48 +449,14 @@ static void hook_create_pre_tramp(hook_t *h)
 	off = sizeof(pre_tramp3) - sizeof(ULONG_PTR);
 	*(ULONG_PTR *)(pre_tramp3 + off) = (ULONG_PTR)h->new_func;
 	memcpy(p, pre_tramp3, sizeof(pre_tramp3));
+	p += sizeof(pre_tramp3);
 
-	/* now add the necessary unwind information so that stack traces work
+	assert((ULONG_PTR)(p - h->hookdata->pre_tramp) < MAX_PRETRAMP_SIZE);
+
+	/* now add the necessary unwind information so that stack traces at enter_hook work
 	 * properly.  must be modified whenever the assembly above changes
 	 */
-
-	/* would be really nice if MSDN had any mention whatsoever that the RUNTIME_FUNCTION needs to have
-	   a global allocation -- it doesn't copy the contents of the tiny 12-byte RUNTIME_FUNCTION, it merely
-	   stores the same pointer you provide to the API.  If you allocate it on the stack, or call the API multiple
-	   times with the same pointer value, you'll end up with completely broken unwind information that fails
-	   in spectacular ways.
-	 */
-	functable = malloc(sizeof(RUNTIME_FUNCTION));
-	unwindinfo = &h->hookdata->unwind_info;
-
-	functable->BeginAddress = offsetof(hook_data_t, pre_tramp);
-	functable->EndAddress = offsetof(hook_data_t, pre_tramp) + sizeof(h->hookdata->pre_tramp);
-	functable->UnwindData = offsetof(hook_data_t, unwind_info);
-
-	unwindinfo->Version = 1;
-	unwindinfo->Flags = UNW_FLAG_NHANDLER;
-	unwindinfo->SizeOfProlog = 38;
-	unwindinfo->CountOfCodes = 9;
-	unwindinfo->FrameRegister = 0;
-	unwindinfo->FrameOffset = 0;
-
-	unwindinfo->UnwindCode[0].UnwindOp = UWOP_ALLOC_SMALL;
-	unwindinfo->UnwindCode[0].CodeOffset = 38;
-	unwindinfo->UnwindCode[0].OpInfo = 4; // (4 + 1) * 8 = 0x28
-
-	for (i = 0; i < ARRAYSIZE(regs1); i++) {
-		unwindinfo->UnwindCode[1 + i].UnwindOp = UWOP_PUSH_NONVOL;
-		unwindinfo->UnwindCode[1 + i].CodeOffset = 12 - (2 * i);
-		unwindinfo->UnwindCode[1 + i].OpInfo = regs1[i];
-	}
-
-	for (i = 0; i < ARRAYSIZE(regs2); i++) {
-		unwindinfo->UnwindCode[5 + i].UnwindOp = UWOP_PUSH_NONVOL;
-		unwindinfo->UnwindCode[5 + i].CodeOffset = 4 - i;
-		unwindinfo->UnwindCode[5 + i].OpInfo = regs2[i];
-	}
-
-	RtlAddFunctionTable(functable, 1, (DWORD64)h->hookdata);
+	add_unwind_info(h);
 }
 
 static void hook_create_pre_tramp_notail(hook_t *h)
@@ -438,8 +483,11 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		// 0x4c, 0x8b, 0x44, 0x24, 0x40,
 		// lea rdx, [rsp+0x40]
 		0x48, 0x8d, 0x54, 0x24, 0x40,
-		// mov ecx, h->allow_hook_recursion
-		0xb9, h->allow_hook_recursion, 0x00, 0x00, 0x00,
+		// mov rcx, h
+		0x48, 0xb9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	};
+	// 38
+	unsigned char pre_tramp12[] = {
 		// sub rsp, 0x28
 		0x48, 0x83, 0xec, 0x28,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
@@ -449,6 +497,7 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		// address of enter_hook
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
+	// 58
 	unsigned char pre_tramp2[] = {
 		// test eax, eax
 		0x85, 0xc0,
@@ -462,8 +511,10 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x5b, 0x5a, 0x59, 0x58,
 		// jmp h->tramp (original function)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+		// address of original function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
+	// 92
 	unsigned char pre_tramp3_nostack[] = {
 		// mov rcx, [rsp+0x58]
 		0x48, 0x8b, 0x4c, 0x24, 0x58,
@@ -473,10 +524,15 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x4c, 0x8b, 0x44, 0x24, 0x40,
 		// mov r9, [rsp+0x38]
 		0x4c, 0x8b, 0x4c, 0x24, 0x38,
+		// 112
 		// call h->new_func (New_ func)
-		0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+		0xff, 0x15, 0x02, 0x00, 0x00, 0x00,
+		// jmp $+8
+		0xeb, 0x08,
+		// address of new function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
+	// 92
 	unsigned char pre_tramp3_stack[] = {
 		// mov ecx, numargs
 		0xb9, h->numargs, 0x00, 0x00, 0x00,
@@ -488,30 +544,41 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x48, 0x8d, 0xb4, 0x24, 0x90, 0x00, 0x00, 0x00,
 		// shl eax, 3
 		0xc1, 0xe0, 0x03,
-		// mov rcx, [rsp+0x58]
-		0x48, 0x8b, 0x4c, 0x24, 0x58,
-		// mov rdx, [rsp+0x50]
-		0x48, 0x8b, 0x54, 0x24, 0x50,
-		// mov r8, [rsp+0x40]
-		0x4c, 0x8b, 0x44, 0x24, 0x40,
-		// mov r9, [rsp+0x38]
-		0x4c, 0x8b, 0x4c, 0x24, 0x38,
+		// push rcx
+		0x51,
+		// offset by 8 due to the push rcx above
+		// mov rcx, [rsp+0x60]
+		0x48, 0x8b, 0x4c, 0x24, 0x60,
+		// mov rdx, [rsp+0x58]
+		0x48, 0x8b, 0x54, 0x24, 0x58,
+		// mov r8, [rsp+0x48]
+		0x4c, 0x8b, 0x44, 0x24, 0x48,
+		// mov r9, [rsp+0x40]
+		0x4c, 0x8b, 0x4c, 0x24, 0x40,
+		// pop rcx
+		0x59,
 		// sub rsp, rax
 		0x48, 0x29, 0xc4,
+		// 138
 		// mov rdi, rsp
 		0x48, 0x89, 0xe7,
-		// movsq
-		0x48, 0xa5,
+		// repne movsq
+		0xf2, 0x48, 0xa5,
 		// test eax, 8
 		0xa9, 0x08, 0x00, 0x00, 0x00,
 		// jz $+0x4
 		0x74, 0x04,
 		// sub rsp, 8
 		0x48, 0x83, 0xec, 0x08,
+		// 155
 		// sub rsp, 0x20
 		0x48, 0x83, 0xec, 0x20,
+		// 159
 		// call h->new_func (New_ func)
-		0xff, 0x15, 0x00, 0x00, 0x00, 0x00,
+		0xff, 0x15, 0x02, 0x00, 0x00, 0x00,
+		// jmp $+8
+		0xeb, 0x08,
+		// address of new function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 	unsigned char pre_tramp4_nostack[] = {
@@ -523,6 +590,7 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x5b, 0x5a, 0x59, 0x58,
 		// jmp h->tramp (original function)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+		// address of original function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 	unsigned char pre_tramp4_stack[] = {
@@ -550,6 +618,7 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x5b, 0x5a, 0x59, 0x58,
 		// jmp h->tramp (original function)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
+		// address of original function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 
@@ -559,9 +628,14 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 
 	p = h->hookdata->pre_tramp;
 	off = sizeof(pre_tramp1) - sizeof(ULONG_PTR);
-	*(ULONG_PTR *)(pre_tramp1 + off) = (ULONG_PTR)&enter_hook;
+	*(ULONG_PTR *)(pre_tramp1 + off) = (ULONG_PTR)h;
 	memcpy(p, pre_tramp1, sizeof(pre_tramp1));
 	p += sizeof(pre_tramp1);
+
+	off = sizeof(pre_tramp12) - sizeof(ULONG_PTR);
+	*(ULONG_PTR *)(pre_tramp12 + off) = (ULONG_PTR)&enter_hook;
+	memcpy(p, pre_tramp12, sizeof(pre_tramp12));
+	p += sizeof(pre_tramp12);
 
 	off = sizeof(pre_tramp2) - sizeof(ULONG_PTR);
 	*(ULONG_PTR *)(pre_tramp2 + off) = (ULONG_PTR)h->hookdata->tramp;
@@ -577,6 +651,7 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		off = sizeof(pre_tramp4_stack) - sizeof(ULONG_PTR);
 		*(ULONG_PTR *)(pre_tramp4_stack + off) = (ULONG_PTR)h->hookdata->tramp;
 		memcpy(p, pre_tramp4_stack, sizeof(pre_tramp4_stack));
+		p += sizeof(pre_tramp4_stack);
 	}
 	else {
 		off = sizeof(pre_tramp3_nostack) - sizeof(ULONG_PTR);
@@ -587,8 +662,15 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		off = sizeof(pre_tramp4_nostack) - sizeof(ULONG_PTR);
 		*(ULONG_PTR *)(pre_tramp4_nostack + off) = (ULONG_PTR)h->hookdata->tramp;
 		memcpy(p, pre_tramp4_nostack, sizeof(pre_tramp4_nostack));
+		p += sizeof(pre_tramp4_nostack);
 	}
-	// don't need unwind info for this variant since we won't appear in the stack trace
+
+	assert((ULONG_PTR)(p - h->hookdata->pre_tramp) < MAX_PRETRAMP_SIZE);
+
+	/* now add the necessary unwind information so that stack traces at enter_hook work
+	* properly.  must be modified whenever the assembly above changes
+	*/
+	add_unwind_info(h);
 }
 
 

@@ -63,8 +63,8 @@ static hook_t g_hooks[] = {
     // In other words, do *NOT* place "special" hooks behind "normal" hooks.
     //
 
-	HOOK_SPECIAL(ntdll, LdrLoadDll),
-	HOOK_SPECIAL(ntdll, LdrUnloadDll),
+	HOOK_NOTAIL(ntdll, LdrLoadDll, 4),
+	//HOOK_NOTAIL(ntdll, LdrUnloadDll, 1),
     HOOK_SPECIAL(kernel32, CreateProcessInternalW),
 
 	//HOOK_SPECIAL(ntdll, NtCreateThread),
@@ -544,8 +544,23 @@ VOID CALLBACK DllLoadNotification(
 	if (NotificationReason == 1) {
 		PWCHAR dllname;
 		COPY_UNICODE_STRING(library, NotificationData->Loaded.BaseDllName);
+
+		if (g_config.file_of_interest && !wcsicmp(library.Buffer, g_config.file_of_interest))
+			set_dll_of_interest((ULONG_PTR)NotificationData->Loaded.DllBase);
+
+		// unoptimized, but easy
+		add_all_dlls_to_dll_ranges();
+
 		dllname = get_dll_basename(&library);
 		set_hooks_dll(dllname);
+	}
+	else {
+		// unload
+		if (!is_valid_address_range((ULONG_PTR)NotificationData->Unloaded.DllBase, 0x1000)) {
+			// if this unload actually caused removal of the DLL instead of a reference counter decrement,
+			// then we need to loop through our hooks and unmark the hooks eliminated by this removal
+			revalidate_all_hooks();
+		}
 	}
 }
 

@@ -206,8 +206,8 @@ static void hook_create_pre_tramp(hook_t *h)
 		0xff, 0x74, 0x24, 0x24,
 		// push ebp
 		0x55,
-		// push h->allow_hook_recursion
-		0x6a, h->allow_hook_recursion,
+		// push h
+		0x68, 0x00, 0x00, 0x00, 0x00,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
 		0xe8, 0x00, 0x00, 0x00, 0x00
 	};
@@ -237,6 +237,8 @@ static void hook_create_pre_tramp(hook_t *h)
 	p = h->hookdata->pre_tramp;
 	off = sizeof(pre_tramp1) - sizeof(unsigned int);
 	emit_rel(pre_tramp1 + off, p + off, (unsigned char *)&enter_hook);
+	off = sizeof(pre_tramp1) - 1 - (2 * sizeof(unsigned int));
+	*(DWORD *)(pre_tramp1 + off) = (DWORD)h;
 	memcpy(p, pre_tramp1, sizeof(pre_tramp1));
 	p += sizeof(pre_tramp1);
 
@@ -248,6 +250,9 @@ static void hook_create_pre_tramp(hook_t *h)
 	off = sizeof(pre_tramp3) - sizeof(unsigned int);
 	emit_rel(pre_tramp3 + off, p + off, h->new_func);
 	memcpy(p, pre_tramp3, sizeof(pre_tramp3));
+	p += sizeof(pre_tramp3);
+
+	assert ((ULONG_PTR)(p - h->hookdata->pre_tramp) < MAX_PRETRAMP_SIZE);
 }
 
 static void hook_create_pre_tramp_notail(hook_t *h)
@@ -269,8 +274,8 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0xff, 0x74, 0x24, 0x24,
 		// push ebp
 		0x55,
-		// push h->allow_hook_recursion
-		0x6a, h->allow_hook_recursion,
+		// push h
+		0x68, 0x00, 0x00, 0x00, 0x00,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
 		0xe8, 0x00, 0x00, 0x00, 0x00
 	};
@@ -299,8 +304,8 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x29, 0xc4,
 		// mov edi, esp
 		0x89, 0xe7,
-		// movsd
-		0xa5,
+		// repne movsd
+		0xf2, 0xa5,
 		// call h->new_func
 		0xe8, 0x00, 0x00, 0x00, 0x00
 	};
@@ -320,6 +325,8 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 	p = h->hookdata->pre_tramp;
 	off = sizeof(pre_tramp1) - sizeof(unsigned int);
 	emit_rel(pre_tramp1 + off, p + off, (unsigned char *)&enter_hook);
+	off = sizeof(pre_tramp1) - 1 - (2 * sizeof(unsigned int));
+	*(DWORD *)(pre_tramp1 + off) = (DWORD)h;
 	memcpy(p, pre_tramp1, sizeof(pre_tramp1));
 	p += sizeof(pre_tramp1);
 
@@ -336,6 +343,9 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 	off = sizeof(pre_tramp4) - sizeof(unsigned int);
 	emit_rel(pre_tramp4 + off, p + off, h->hookdata->tramp);
 	memcpy(p, pre_tramp4, sizeof(pre_tramp4));
+	p += sizeof(pre_tramp4);
+
+	assert ((ULONG_PTR)(p - h->hookdata->pre_tramp) < MAX_PRETRAMP_SIZE);
 }
 
 

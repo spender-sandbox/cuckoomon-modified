@@ -869,7 +869,7 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceExA,
 	LOQ_bool("filesystem", "s", "DirectoryName", lpDirectoryName);
 	
 	/* Fake harddrive size to 256GB */
-	if (!g_config.no_stealth && ret) {
+	if (!g_config.no_stealth && ret && lpTotalNumberOfBytes) {
 		lpTotalNumberOfBytes->QuadPart = 256060514304L;
 	}
 
@@ -886,7 +886,7 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceExW,
 	LOQ_bool("filesystem", "u", "DirectoryName", lpDirectoryName);
 
 	/* Fake harddrive size to 256GB */
-	if (!g_config.no_stealth && ret) {
+	if (!g_config.no_stealth && ret && lpTotalNumberOfBytes) {
 		lpTotalNumberOfBytes->QuadPart = 256060514304L;
 	}
 
