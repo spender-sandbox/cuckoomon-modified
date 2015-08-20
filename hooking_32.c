@@ -231,7 +231,7 @@ static void hook_create_pre_tramp(hook_t *h)
 	};
 
 #if DISABLE_HOOK_CONTENT
-	emit_rel(pre_tramp1 + 1, h->pre_tramp + 1, h->tramp);
+	emit_rel(pre_tramp1 + 1, h->hookdata->pre_tramp + 1, h->hookdata->tramp);
 #endif
 
 	p = h->hookdata->pre_tramp;
@@ -319,7 +319,7 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 	};
 
 #if DISABLE_HOOK_CONTENT
-	emit_rel(pre_tramp1 + 1, h->pre_tramp + 1, h->tramp);
+	emit_rel(pre_tramp1 + 1, h->hookdata->pre_tramp + 1, h->hookdata->tramp);
 #endif
 
 	p = h->hookdata->pre_tramp;

@@ -427,7 +427,7 @@ static void hook_create_pre_tramp(hook_t *h)
 	};
 
 #if DISABLE_HOOK_CONTENT
-	*(ULONG_PTR *)(pre_tramp1 + 6) = (ULONG_PTR)h->tramp;
+	*(ULONG_PTR *)(pre_tramp1 + 6) = (ULONG_PTR)h->hookdata->tramp;
 #endif
 
 	p = h->hookdata->pre_tramp;
@@ -623,7 +623,7 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 	};
 
 #if DISABLE_HOOK_CONTENT
-	*(ULONG_PTR *)(pre_tramp1 + 6) = (ULONG_PTR)h->tramp;
+	*(ULONG_PTR *)(pre_tramp1 + 6) = (ULONG_PTR)h->hookdata->tramp;
 #endif
 
 	p = h->hookdata->pre_tramp;

@@ -66,7 +66,6 @@ static hook_t g_hooks[] = {
 	HOOK_NOTAIL(ntdll, LdrLoadDll, 4),
 	//HOOK_NOTAIL(ntdll, LdrUnloadDll, 1),
     HOOK_SPECIAL(kernel32, CreateProcessInternalW),
-
 	//HOOK_SPECIAL(ntdll, NtCreateThread),
 	//HOOK_SPECIAL(ntdll, NtCreateThreadEx),
 	//HOOK_SPECIAL(ntdll, NtTerminateThread),
@@ -212,8 +211,8 @@ static hook_t g_hooks[] = {
 	// can't use these until we come up with a fool-proof method of logging them,
 	// as they might not return as in the upatre downloader
 
-	//HOOK(user32, CreateWindowExA, TRUE),
-	//HOOK(user32, CreateWindowExW, TRUE),
+	HOOK_NOTAIL(user32, CreateWindowExA, 12),
+	HOOK_NOTAIL(user32, CreateWindowExW, 12),
     HOOK(user32, FindWindowA),
     HOOK(user32, FindWindowW),
     HOOK(user32, FindWindowExA),
@@ -418,11 +417,11 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtQuerySystemTime),
 	HOOK(user32, GetLastInputInfo),
 	HOOK(winmm, timeGetTime),
-
 	//
     // Socket Hooks
     //
-    HOOK(ws2_32, WSAStartup),
+
+	HOOK(ws2_32, WSAStartup),
     HOOK(ws2_32, gethostbyname),
     HOOK(ws2_32, socket),
     HOOK(ws2_32, connect),
@@ -439,7 +438,7 @@ static hook_t g_hooks[] = {
     HOOK(ws2_32, closesocket),
     HOOK(ws2_32, shutdown),
 
-    HOOK(ws2_32, WSAAccept),
+	HOOK(ws2_32, WSAAccept),
 	HOOK(ws2_32, WSAConnect),
 	HOOK(ws2_32, WSARecv),
     HOOK(ws2_32, WSARecvFrom),
@@ -499,7 +498,6 @@ static hook_t g_hooks[] = {
 	HOOK(cryptsp, CryptExportKey),
 	HOOK(cryptsp, CryptGenKey),
 	HOOK(cryptsp, CryptCreateHash),
-
 };
 
 // get a random hooking method, except for hook_jmp_direct
@@ -628,7 +626,7 @@ void set_hooks()
 LONG WINAPI cuckoomon_exception_handler(
 	__in struct _EXCEPTION_POINTERS *ExceptionInfo
 	) {
-	char msg[8192];
+	char msg[16384];
 	char *dllname;
 	unsigned int offset;
 	ULONG_PTR eip;
@@ -671,11 +669,11 @@ LONG WINAPI cuckoomon_exception_handler(
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
 	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %.08x, Fault Address: %.08x, Esp: %.08x, Exception Code: %08x, ",
 		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (ULONG_PTR)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
-	if (is_valid_address_range((ULONG_PTR)stack, 100 * sizeof(ULONG_PTR))) 
+	if (is_valid_address_range((ULONG_PTR)stack, 500 * sizeof(ULONG_PTR))) 
 	{
 		DWORD i;
 		// overflows ahoy
-		for (i = 0; i < 100; i++) {
+		for (i = 0; i < (get_stack_top() - (ULONG_PTR)stack)/sizeof(ULONG_PTR); i++) {
 			char *buf = convert_address_to_dll_name_and_offset(stack[i], &offset);
 			if (buf) {
 				snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", buf, offset);
@@ -910,7 +908,7 @@ out:
 	return TRUE;
 early_abort:
 	sprintf(config_fname, "C:\\%u.ini", GetCurrentProcessId());
-	DeleteFile(config_fname);
+	DeleteFileA(config_fname);
 	set_lasterrors(&lasterror);
 	return TRUE;
 }

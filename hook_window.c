@@ -34,10 +34,16 @@ DWORD WINAPI our_GetWindowThreadProcessId(
 	__in HWND hWnd,
 	__out_opt LPDWORD lpdwProcessId
 ) {
+	lasterror_t lasterror;
+	DWORD ret;
+
+	get_lasterrors(&lasterror);
 	if (!_GetWindowThreadProcessId) {
 		_GetWindowThreadProcessId = (__GetWindowThreadProcessId)GetProcAddress(LoadLibraryA("user32"), "GetWindowThreadProcessId");
 	}
-	return _GetWindowThreadProcessId(hWnd, lpdwProcessId);
+	ret = _GetWindowThreadProcessId(hWnd, lpdwProcessId);
+	set_lasterrors(&lasterror);
+	return ret;
 }
 
 typedef DWORD(WINAPI * __GetClassNameA)(
@@ -53,10 +59,16 @@ DWORD WINAPI our_GetClassNameA(
 	_Out_ LPSTR lpClassName,
 	_In_  int    nMaxCount
 ) {
+	lasterror_t lasterror;
+	DWORD ret;
+
+	get_lasterrors(&lasterror);
 	if (!_GetClassNameA) {
 		_GetClassNameA = (__GetClassNameA)GetProcAddress(LoadLibraryA("user32"), "GetClassNameA");
 	}
-	return _GetClassNameA(hWnd, lpClassName, nMaxCount);
+	ret = _GetClassNameA(hWnd, lpClassName, nMaxCount);
+	set_lasterrors(&lasterror);
+	return ret;
 }
 
 HOOKDEF(HWND, WINAPI, FindWindowA,
@@ -308,7 +320,7 @@ HOOKDEF(BOOL, WINAPI, EnumWindows,
     return ret;
 }
 
-HOOKDEF(HWND, WINAPI, CreateWindowExA,
+HOOKDEF(void, WINAPI, CreateWindowExA,
 	__in DWORD dwExStyle,
 	__in_opt LPCSTR lpClassName,
 	__in_opt LPCSTR lpWindowName,
@@ -323,26 +335,20 @@ HOOKDEF(HWND, WINAPI, CreateWindowExA,
 	__in_opt LPVOID lpParam
 ) {
 	HWND ret = (HWND)1;
-	// We have to log first as this function may not return, this unfortunately means
-	// faking the return value as well
 
 	// lpClassName can be one of the predefined window controls.. which lay in
 	// the 0..ffff range
 	if (((DWORD_PTR)lpClassName & 0xffff) == (DWORD_PTR)lpClassName) {
-		LOQ_nonnull("windows", "is", "ClassName", lpClassName, "WindowName", lpWindowName);
+		LOQ_nonnull("windows", "isiiiih", "ClassName", lpClassName, "WindowName", lpWindowName, "x", x, "y", y, "Width", nWidth, "Height", nHeight, "Style", dwStyle);
 	}
 	else {
-		LOQ_nonnull("windows", "ss", "ClassName", lpClassName, "WindowName", lpWindowName);
+		LOQ_nonnull("windows", "ssiiiih", "ClassName", lpClassName, "WindowName", lpWindowName, "x", x, "y", y, "Width", nWidth, "Height", nHeight, "Style", dwStyle);
 	}
 
-	ret = Old_CreateWindowExA(dwExStyle, lpClassName,
-		lpWindowName, dwStyle, x, y, nWidth, nHeight,
-		hWndParent, hMenu, hInstance, lpParam);
-
-	return ret;
+	return;
 }
 
-HOOKDEF(HWND, WINAPI, CreateWindowExW,
+HOOKDEF(void, WINAPI, CreateWindowExW,
 	__in DWORD dwExStyle,
 	__in_opt LPWSTR lpClassName,
 	__in_opt LPWSTR lpWindowName,
@@ -357,21 +363,13 @@ HOOKDEF(HWND, WINAPI, CreateWindowExW,
 	__in_opt LPVOID lpParam
 ) {
 	HWND ret = (HWND)1;
-	// We have to log first as this function may not return, this unfortunately means
-	// faking the return value as well
-
 	// lpClassName can be one of the predefined window controls.. which lay in
 	// the 0..ffff range
 	if (((DWORD_PTR)lpClassName & 0xffff) == (DWORD_PTR)lpClassName) {
-		LOQ_nonnull("windows", "iu", "ClassName", lpClassName, "WindowName", lpWindowName);
+		LOQ_nonnull("windows", "iuiiiih", "ClassName", lpClassName, "WindowName", lpWindowName, "x", x, "y", y, "Width", nWidth, "Height", nHeight, "Style", dwStyle);
 	}
 	else {
-		LOQ_nonnull("windows", "uu", "ClassName", lpClassName, "WindowName", lpWindowName);
+		LOQ_nonnull("windows", "uuiiiih", "ClassName", lpClassName, "WindowName", lpWindowName, "x", x, "y", y, "Width", nWidth, "Height", nHeight, "Style", dwStyle);
 	}
-
-	ret = Old_CreateWindowExW(dwExStyle, lpClassName,
-		lpWindowName, dwStyle, x, y, nWidth, nHeight,
-		hWndParent, hMenu, hInstance, lpParam);
-
-	return ret;
+	return;
 }

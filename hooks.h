@@ -625,7 +625,7 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtSaveKeyEx,
 // Window Hooks
 //
 
-extern HOOKDEF(HWND, WINAPI, CreateWindowExA,
+extern HOOKDEF(void, WINAPI, CreateWindowExA,
 	__in DWORD dwExStyle,
 	__in_opt LPCSTR lpClassName,
 	__in_opt LPCSTR lpWindowName,
@@ -640,7 +640,7 @@ extern HOOKDEF(HWND, WINAPI, CreateWindowExA,
 	__in_opt LPVOID lpParam
 );
 
-extern HOOKDEF(HWND, WINAPI, CreateWindowExW,
+extern HOOKDEF(void, WINAPI, CreateWindowExW,
 	__in DWORD dwExStyle,
 	__in_opt LPWSTR lpClassName,
 	__in_opt LPWSTR lpWindowName,

@@ -67,11 +67,15 @@ void *cm_alloc(size_t size)
 	struct cm_alloc_header *hdr;
 	DWORD oldprot;
 	LONG status;
-	
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
 	status = pNtAllocateVirtualMemory(GetCurrentProcess(), &BaseAddress, 0, &RegionSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
-	if (status < 0)
+	if (status < 0) {
+		set_lasterrors(&lasterror);
 		return NULL;
+	}
 	hdr = (struct cm_alloc_header *)BaseAddress;
 	hdr->Magic = CM_ALLOC_MAGIC;
 	hdr->Used = size + CM_ALLOC_METASIZE;
@@ -79,7 +83,7 @@ void *cm_alloc(size_t size)
 
 	// add a guard page to the end of every allocation
 	assert(VirtualProtect((PCHAR)BaseAddress + RegionSize - 0x1000, 0x1000, PAGE_NOACCESS, &oldprot));
-
+	set_lasterrors(&lasterror);
 	return (PCHAR)BaseAddress + CM_ALLOC_METASIZE;
 }
 
@@ -89,7 +93,9 @@ void cm_free(void *ptr)
 	SIZE_T RegionSize;
 	LONG status;
 	struct cm_alloc_header *hdr;
+	lasterror_t lasterror:
 
+	get_lasterrors(&lasterror);
 	hdr = GET_CM_ALLOC_HEADER(ptr);
 
 	assert(hdr->Magic == CM_ALLOC_MAGIC);
@@ -97,6 +103,7 @@ void cm_free(void *ptr)
 	RegionSize = 0;
 	status = pNtFreeVirtualMemory(GetCurrentProcess(), &BaseAddress, &RegionSize, MEM_RELEASE);
 	assert(status >= 0);
+	set_lasterrors(&lasterror);
 }
 
 void *cm_realloc(void *ptr, size_t size)

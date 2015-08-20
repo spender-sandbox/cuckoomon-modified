@@ -156,6 +156,6 @@ int read_config(void)
 		g_config.suspend_logging = FALSE;
 
 	fclose(fp);
-    DeleteFile(config_fname);
+    DeleteFileA(config_fname);
 	return 1;
 }
