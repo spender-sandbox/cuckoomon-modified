@@ -71,7 +71,7 @@ HOOKDEF_NOTAIL(WINAPI, LdrLoadDll,
 		}
 		else if (library.Buffer[1] != L':') {
 			WCHAR newlib[MAX_PATH] = { 0 };
-			DWORD concatlen = MIN(wcslen(library.Buffer), MAX_PATH - 21);
+			DWORD concatlen = MIN((DWORD)wcslen(library.Buffer), MAX_PATH - 21);
 			wcscpy(newlib, L"c:\\windows\\system32\\");
 			wcsncat(newlib, library.Buffer, concatlen);
 			if (GetFileAttributesW(newlib) != INVALID_FILE_ATTRIBUTES)

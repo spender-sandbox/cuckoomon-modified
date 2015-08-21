@@ -685,6 +685,6 @@ HOOKDEF(NTSTATUS, WINAPI, NtRaiseException,
 #endif
 
 	ret = Old_NtRaiseException(ExceptionRecord, Context, SearchFrames);
-
+	disable_tail_call_optimization();
 	return ret;
 }
