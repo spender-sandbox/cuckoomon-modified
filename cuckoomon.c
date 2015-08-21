@@ -31,6 +31,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "unhook.h"
 #include "bson.h"
 
+volatile int dummy_val;
+
+void disable_tail_call_optimization(void)
+{
+	dummy_val++;
+}
+
 // Allow debug mode to be turned on at compilation time.
 #ifdef CUCKOODBG
 #undef CUCKOODBG
@@ -40,14 +47,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 #define HOOK(library, funcname) {L###library, #funcname, NULL, \
-    &New_##funcname, (void **) &Old_##funcname, FALSE, 0, FALSE}
+    &New_##funcname, (void **) &Old_##funcname, NULL, FALSE, 0, FALSE}
 
 #define HOOK_SPECIAL(library, funcname) {L###library, #funcname, NULL, \
-    &New_##funcname, (void **) &Old_##funcname, TRUE, 0, FALSE}
+    &New_##funcname, (void **) &Old_##funcname, NULL, TRUE, 0, FALSE}
+
+#define HOOK_NOTAIL_ALT(library, funcname, numargs) {L###library, #funcname, NULL, \
+    &New_##funcname, (void **) &Old_##funcname, &Alt_##funcname, TRUE, numargs, TRUE}
 
 #define HOOK_NOTAIL(library, funcname, numargs) {L###library, #funcname, NULL, \
-    &New_##funcname, (void **) &Old_##funcname, TRUE, numargs, TRUE}
-
+    &New_##funcname, NULL, NULL, TRUE, numargs, TRUE}
 
 static hook_t g_hooks[] = {
 
@@ -63,7 +72,7 @@ static hook_t g_hooks[] = {
     // In other words, do *NOT* place "special" hooks behind "normal" hooks.
     //
 
-	HOOK_NOTAIL(ntdll, LdrLoadDll, 4),
+	HOOK_NOTAIL_ALT(ntdll, LdrLoadDll, 4),
 	//HOOK_NOTAIL(ntdll, LdrUnloadDll, 1),
     HOOK_SPECIAL(kernel32, CreateProcessInternalW),
 	//HOOK_SPECIAL(ntdll, NtCreateThread),
@@ -207,9 +216,6 @@ static hook_t g_hooks[] = {
     //
     // Window Hooks
     //
-
-	// can't use these until we come up with a fool-proof method of logging them,
-	// as they might not return as in the upatre downloader
 
 	HOOK_NOTAIL(user32, CreateWindowExA, 12),
 	HOOK_NOTAIL(user32, CreateWindowExW, 12),
@@ -669,7 +675,7 @@ LONG WINAPI cuckoomon_exception_handler(
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
 	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %.08x, Fault Address: %.08x, Esp: %.08x, Exception Code: %08x, ",
 		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (ULONG_PTR)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
-	if (is_valid_address_range((ULONG_PTR)stack, 500 * sizeof(ULONG_PTR))) 
+	if (is_valid_address_range((ULONG_PTR)stack, 100 * sizeof(ULONG_PTR))) 
 	{
 		DWORD i;
 		// overflows ahoy

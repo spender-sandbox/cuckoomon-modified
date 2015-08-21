@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "misc.h"
 #include "config.h"
 
-HOOKDEF(void, WINAPI, LdrLoadDll,
+HOOKDEF_NOTAIL(WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
     __in_opt    PULONG Flags,
     __in        PUNICODE_STRING ModuleFileName,
@@ -40,7 +40,7 @@ HOOKDEF(void, WINAPI, LdrLoadDll,
 	lasterror_t lasterror;
 	NTSTATUS ret = 0;
 
-    COPY_UNICODE_STRING(library, ModuleFileName);
+	COPY_UNICODE_STRING(library, ModuleFileName);
 
 	get_lasterrors(&lasterror);
 
@@ -63,17 +63,50 @@ HOOKDEF(void, WINAPI, LdrLoadDll,
 		else
 			LOQ_ntstatus("system", "HoP", "Flags", Flags, "FileName", &library,
 			"BaseAddress", ModuleHandle);
+
+		if (library.Buffer[1] == L':' && (!wcsnicmp(library.Buffer, L"c:\\windows\\system32\\", 20) ||
+										  !wcsnicmp(library.Buffer, L"c:\\windows\\syswow64\\", 20) ||
+										  !wcsnicmp(library.Buffer, L"c:\\windows\\sysnative\\", 21))) {
+			ret = 1;
+		}
+		else if (library.Buffer[1] != L':') {
+			WCHAR newlib[MAX_PATH] = { 0 };
+			DWORD concatlen = MIN(wcslen(library.Buffer), MAX_PATH - 21);
+			wcscpy(newlib, L"c:\\windows\\system32\\");
+			wcsncat(newlib, library.Buffer, concatlen);
+			if (GetFileAttributesW(newlib) != INVALID_FILE_ATTRIBUTES)
+				ret = 1;
+		}
+
 	}
+	else {
+		ret = 1;
+	}
+
 	set_lasterrors(&lasterror);
 
-	return;
+	return ret;
 }
+
+HOOKDEF_ALT(NTSTATUS, WINAPI, LdrLoadDll,
+	__in_opt    PWCHAR PathToFile,
+	__in_opt    PULONG Flags,
+	__in        PUNICODE_STRING ModuleFileName,
+	__out       PHANDLE ModuleHandle
+) {
+	NTSTATUS ret;
+	ret = Old_LdrLoadDll(PathToFile, Flags, ModuleFileName, ModuleHandle);
+	disable_tail_call_optimization();
+	return ret;
+}
+
 
 extern void revalidate_all_hooks(void);
 
-HOOKDEF(void, WINAPI, LdrUnloadDll,
+HOOKDEF_NOTAIL(WINAPI, LdrUnloadDll,
 	PVOID DllImageBase
 ) {
+	return 0;
 }
 
 

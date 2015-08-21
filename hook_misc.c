@@ -140,16 +140,17 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
 	return ret;
 }
 
-HOOKDEF(void, WINAPI, ExitWindowsEx,
+HOOKDEF_NOTAIL(WINAPI, ExitWindowsEx,
     __in  UINT uFlags,
     __in  DWORD dwReason
 ) {
-    BOOL ret = 0;
-    LOQ_bool("system", "hi", "Flags", uFlags, "Reason", dwReason);
+    DWORD ret = 0;
+    LOQ_zero("system", "hi", "Flags", uFlags, "Reason", dwReason);
 	pipe("SHUTDOWN:");
+	return ret;
 }
 
-HOOKDEF(void, WINAPI, InitiateShutdownW,
+HOOKDEF_NOTAIL(WINAPI, InitiateShutdownW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwGracePeriod,
@@ -159,9 +160,10 @@ HOOKDEF(void, WINAPI, InitiateShutdownW,
 	DWORD ret = 0;
 	LOQ_zero("system", "uuihh", "MachineName", lpMachineName, "Message", lpMessage, "GracePeriod", dwGracePeriod, "ShutdownFlags", dwShutdownFlags, "Reason", dwReason);
 	pipe("SHUTDOWN:");
+	return ret;
 }
 
-HOOKDEF(void, WINAPI, InitiateSystemShutdownW,
+HOOKDEF_NOTAIL(WINAPI, InitiateSystemShutdownW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwTimeout,
@@ -171,9 +173,10 @@ HOOKDEF(void, WINAPI, InitiateSystemShutdownW,
 	DWORD ret = 0;
 	LOQ_zero("system", "uuiii", "MachineName", lpMachineName, "Message", lpMessage, "Timeout", dwTimeout, "ForceAppsClosed", bForceAppsClosed, "RebootAfterShutdown", bRebootAfterShutdown);
 	pipe("SHUTDOWN:");
+	return ret;
 }
 
-HOOKDEF(void, WINAPI, InitiateSystemShutdownExW,
+HOOKDEF_NOTAIL(WINAPI, InitiateSystemShutdownExW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwTimeout,
@@ -184,13 +187,14 @@ HOOKDEF(void, WINAPI, InitiateSystemShutdownExW,
 	DWORD ret = 0;
 	LOQ_zero("system", "uuiiih", "MachineName", lpMachineName, "Message", lpMessage, "Timeout", dwTimeout, "ForceAppsClosed", bForceAppsClosed, "RebootAfterShutdown", bRebootAfterShutdown, "Reason", dwReason);
 	pipe("SHUTDOWN:");
+	return ret;
 }
 
 static int num_isdebuggerpresent;
 
 HOOKDEF(BOOL, WINAPI, IsDebuggerPresent,
 	void
-	) {
+) {
 
 	BOOL ret = Old_IsDebuggerPresent();
 	num_isdebuggerpresent++;

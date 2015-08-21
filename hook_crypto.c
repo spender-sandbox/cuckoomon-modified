@@ -94,7 +94,9 @@ HOOKDEF(BOOL, WINAPI, CryptProtectMemory,
 ) {
     BOOL ret = 1;
 	LOQ_bool("crypto", "bi", "Buffer", cbData, pData, "Flags", dwFlags);
-    return Old_CryptProtectMemory(pData, cbData, dwFlags);
+    ret = Old_CryptProtectMemory(pData, cbData, dwFlags);
+	disable_tail_call_optimization();
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, CryptUnprotectMemory,
@@ -134,8 +136,9 @@ HOOKDEF(BOOL, WINAPI, CryptEncrypt,
     BOOL ret = 1;
 	LOQ_bool("crypto", "ppbi", "CryptKey", hKey, "CryptHash", hHash,
         "Buffer", dwBufLen, pbData, "Final", Final);
-    return Old_CryptEncrypt(hKey, hHash, Final, dwFlags, pbData, pdwDataLen,
-        dwBufLen);
+    ret = Old_CryptEncrypt(hKey, hHash, Final, dwFlags, pbData, pdwDataLen, dwBufLen);
+	disable_tail_call_optimization();
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, CryptHashData,
@@ -197,9 +200,11 @@ HOOKDEF(BOOL, WINAPI, CryptEncryptMessage,
 ) {
     BOOL ret = 1;
 	LOQ_bool("crypto", "b", "Buffer", cbToBeEncrypted, pbToBeEncrypted);
-    return Old_CryptEncryptMessage(pEncryptPara, cRecipientCert,
+    ret = Old_CryptEncryptMessage(pEncryptPara, cRecipientCert,
         rgpRecipientCert, pbToBeEncrypted, cbToBeEncrypted, pbEncryptedBlob,
         pcbEncryptedBlob);
+	disable_tail_call_optimization();
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, CryptHashMessage,

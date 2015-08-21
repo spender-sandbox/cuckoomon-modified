@@ -647,7 +647,7 @@ HOOKDEF(NTSTATUS, WINAPI, DbgUiWaitStateChange,
 	return ret;
 }
 
-HOOKDEF(void, WINAPI, RtlDispatchException,
+HOOKDEF_NOTAIL(WINAPI, RtlDispatchException,
 	__in PEXCEPTION_RECORD ExceptionRecord,
 	__in PCONTEXT Context)
 {
@@ -659,6 +659,8 @@ HOOKDEF(void, WINAPI, RtlDispatchException,
 
 	// flush logs prior to handling of an exception without having to register a vectored exception handler
 	log_flush();
+
+	return 0;
 }
 
 #if REPORT_EXCEPTIONS

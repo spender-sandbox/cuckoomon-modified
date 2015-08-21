@@ -56,7 +56,7 @@ typedef struct _UNWIND_INFO {
 	UNWIND_CODE UnwindCode[20];
 } UNWIND_INFO;
 
-#define MAX_PRETRAMP_SIZE 256
+#define MAX_PRETRAMP_SIZE 320
 #define MAX_TRAMP_SIZE 128
 
 typedef struct _hook_data_t {
@@ -87,7 +87,10 @@ typedef struct _hook_t {
     // function call
     void **old_func;
 
-    // allow hook recursion on this hook?
+	// pointer to alternate new function used in notail hooks
+	void *alt_func;
+
+	// allow hook recursion on this hook?
     // (see comments @ hook_create_pre_trampoline)
     int allow_hook_recursion;
 
@@ -196,6 +199,14 @@ static __inline ULONG_PTR get_stack_bottom(void)
 #define HOOKDEF(return_value, calling_convention, apiname, ...) \
     return_value (calling_convention *Old_##apiname)(__VA_ARGS__); \
     return_value calling_convention New_##apiname(__VA_ARGS__)
+
+#define HOOKDEF_NOTAIL(calling_convention, apiname, ...) \
+    DWORD calling_convention New_##apiname(__VA_ARGS__)
+
+#define HOOKDEF_ALT(return_value, calling_convention, apiname, ...) \
+    return_value (calling_convention *Old_##apiname)(__VA_ARGS__); \
+    return_value calling_convention Alt_##apiname(__VA_ARGS__)
+
 
 // each thread has a special 260-wchar counting unicode_string buffer in its
 // thread information block, this is likely to be overwritten in certain

@@ -625,7 +625,7 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtSaveKeyEx,
 // Window Hooks
 //
 
-extern HOOKDEF(void, WINAPI, CreateWindowExA,
+extern HOOKDEF_NOTAIL(WINAPI, CreateWindowExA,
 	__in DWORD dwExStyle,
 	__in_opt LPCSTR lpClassName,
 	__in_opt LPCSTR lpWindowName,
@@ -640,7 +640,7 @@ extern HOOKDEF(void, WINAPI, CreateWindowExA,
 	__in_opt LPVOID lpParam
 );
 
-extern HOOKDEF(void, WINAPI, CreateWindowExW,
+extern HOOKDEF_NOTAIL(WINAPI, CreateWindowExW,
 	__in DWORD dwExStyle,
 	__in_opt LPWSTR lpClassName,
 	__in_opt LPWSTR lpWindowName,
@@ -915,7 +915,7 @@ extern HOOKDEF(NTSTATUS, WINAPI, DbgUiWaitStateChange,
 	__in_opt PLARGE_INTEGER Timeout
 );
 
-extern HOOKDEF(void, WINAPI, RtlDispatchException,
+extern HOOKDEF_NOTAIL(WINAPI, RtlDispatchException,
 	__in PEXCEPTION_RECORD ExceptionRecord,
 	__in PCONTEXT Context
 );
@@ -1222,12 +1222,12 @@ extern HOOKDEF(DWORD, WINAPI, timeGetTime,
 	void
 );
 
-extern HOOKDEF(void, WINAPI, ExitWindowsEx,
+extern HOOKDEF_NOTAIL(WINAPI, ExitWindowsEx,
     __in  UINT uFlags,
     __in  DWORD dwReason
 );
 
-extern HOOKDEF(void, WINAPI, InitiateShutdownW,
+extern HOOKDEF_NOTAIL(WINAPI, InitiateShutdownW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwGracePeriod,
@@ -1235,7 +1235,7 @@ extern HOOKDEF(void, WINAPI, InitiateShutdownW,
 	_In_     DWORD  dwReason
 );
 
-extern HOOKDEF(void, WINAPI, InitiateSystemShutdownW,
+extern HOOKDEF_NOTAIL(WINAPI, InitiateSystemShutdownW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwTimeout,
@@ -1243,7 +1243,7 @@ extern HOOKDEF(void, WINAPI, InitiateSystemShutdownW,
 	_In_     BOOL	bRebootAfterShutdown
 );
 
-extern HOOKDEF(void, WINAPI, InitiateSystemShutdownExW,
+extern HOOKDEF_NOTAIL(WINAPI, InitiateSystemShutdownExW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,
 	_In_     DWORD  dwTimeout,
@@ -2257,14 +2257,21 @@ extern HOOKDEF(BOOL, WINAPI, CryptImportPublicKeyInfo,
 // Special Hooks
 //
 
-extern HOOKDEF(void, WINAPI, LdrLoadDll,
+extern HOOKDEF_NOTAIL(WINAPI, LdrLoadDll,
     __in_opt    PWCHAR PathToFile,
     __in_opt    PULONG Flags,
     __in        PUNICODE_STRING ModuleFileName,
     __out       PHANDLE ModuleHandle
 );
 
-extern HOOKDEF(void, WINAPI, LdrUnloadDll,
+extern HOOKDEF_ALT(NTSTATUS, WINAPI, LdrLoadDll,
+	__in_opt    PWCHAR PathToFile,
+	__in_opt    PULONG Flags,
+	__in        PUNICODE_STRING ModuleFileName,
+	__out       PHANDLE ModuleHandle
+);
+
+extern HOOKDEF_NOTAIL(WINAPI, LdrUnloadDll,
 	PVOID DllImageBase
 );
 

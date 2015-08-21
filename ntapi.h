@@ -755,6 +755,8 @@ static __inline HANDLE handle_from_objattr(OBJECT_ATTRIBUTES *obj)
 	return obj != NULL ? obj->RootDirectory : (HANDLE)NULL;
 }
 
+extern void disable_tail_call_optimization(void);
+
 #include "alloc.h"
 
 extern BOOL is_64bit_os;

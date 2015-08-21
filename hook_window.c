@@ -320,7 +320,7 @@ HOOKDEF(BOOL, WINAPI, EnumWindows,
     return ret;
 }
 
-HOOKDEF(void, WINAPI, CreateWindowExA,
+HOOKDEF_NOTAIL(WINAPI, CreateWindowExA,
 	__in DWORD dwExStyle,
 	__in_opt LPCSTR lpClassName,
 	__in_opt LPCSTR lpWindowName,
@@ -345,10 +345,10 @@ HOOKDEF(void, WINAPI, CreateWindowExA,
 		LOQ_nonnull("windows", "ssiiiih", "ClassName", lpClassName, "WindowName", lpWindowName, "x", x, "y", y, "Width", nWidth, "Height", nHeight, "Style", dwStyle);
 	}
 
-	return;
+	return 0;
 }
 
-HOOKDEF(void, WINAPI, CreateWindowExW,
+HOOKDEF_NOTAIL(WINAPI, CreateWindowExW,
 	__in DWORD dwExStyle,
 	__in_opt LPWSTR lpClassName,
 	__in_opt LPWSTR lpWindowName,
@@ -371,5 +371,5 @@ HOOKDEF(void, WINAPI, CreateWindowExW,
 	else {
 		LOQ_nonnull("windows", "uuiiiih", "ClassName", lpClassName, "WindowName", lpWindowName, "x", x, "y", y, "Width", nWidth, "Height", nHeight, "Style", dwStyle);
 	}
-	return;
+	return 0;
 }

@@ -310,11 +310,23 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0xe8, 0x00, 0x00, 0x00, 0x00
 	};
 	unsigned char pre_tramp4[] = {
+		// test eax, eax
+		0x85, 0xc0,
+		// jnz 0x7
+		0x75, 0x07,
 		// popad
 		0x61,
 		// popf
 		0x9d,
 		// jmp h->tramp (original function)
+		0xe9, 0x00, 0x00, 0x00, 0x00
+	};
+	unsigned char pre_tramp5[] = {
+		// popad
+		0x61,
+		// popf
+		0x9d,
+		// jmp h->alt_func
 		0xe9, 0x00, 0x00, 0x00, 0x00
 	};
 
@@ -344,6 +356,11 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 	emit_rel(pre_tramp4 + off, p + off, h->hookdata->tramp);
 	memcpy(p, pre_tramp4, sizeof(pre_tramp4));
 	p += sizeof(pre_tramp4);
+
+	off = sizeof(pre_tramp5) - sizeof(unsigned int);
+	emit_rel(pre_tramp5 + off, p + off, h->alt_func);
+	memcpy(p, pre_tramp5, sizeof(pre_tramp5));
+	p += sizeof(pre_tramp5);
 
 	assert ((ULONG_PTR)(p - h->hookdata->pre_tramp) < MAX_PRETRAMP_SIZE);
 }
@@ -713,7 +730,9 @@ int hook_api(hook_t *h, int type)
 
 			// if successful, assign the trampoline address to *old_func
 			if (ret == 0) {
-				*h->old_func = h->hookdata->tramp;
+				// This will be NULL in cases where we don't care to call the original function from our hook (NOTAIL)
+				if (h->old_func)
+					*h->old_func = h->hookdata->tramp;
 
 				// successful hook is successful
 				h->is_hooked = 1;
