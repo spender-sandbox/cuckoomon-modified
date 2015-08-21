@@ -779,7 +779,7 @@ int hook_api(hook_t *h, int type)
 	if (GetVersionEx(&os_info) && os_info.dwMajorVersion >= 6) {
 		if (addr[0] == 0xeb) {
 			PUCHAR target = (PUCHAR)get_short_rel_target(addr);
-			unhook_detect_add_region(h->funcname, addr, addr, addr, 2);
+			unhook_detect_add_region(h, addr, addr, addr, 2);
 			if (target[0] == 0xff && target[1] == 0x25) {
 				PUCHAR origaddr = addr;
 				addr = (PUCHAR)get_indirect_target(target);
@@ -791,12 +791,12 @@ int hook_api(hook_t *h, int type)
 					// if the final function has already been hooked
 					return 0;
 				}
-				unhook_detect_add_region(h->funcname, target, target, target, 6);
+				unhook_detect_add_region(h, target, target, target, 6);
 			}
 		}
 		else if (addr[0] == 0xe9) {
 			PUCHAR target = (PUCHAR)get_near_rel_target(addr);
-			unhook_detect_add_region(h->funcname, addr, addr, addr, 5);
+			unhook_detect_add_region(h, addr, addr, addr, 5);
 			if (target[0] == 0xff && target[1] == 0x25) {
 				addr = (PUCHAR)get_indirect_target(target);
 				// handle delay-loaded DLL stubs
@@ -807,7 +807,7 @@ int hook_api(hook_t *h, int type)
 					// if the final function has already been hooked
 					return 0;
 				}
-				unhook_detect_add_region(h->funcname, target, target, target, 6);
+				unhook_detect_add_region(h, target, target, target, 6);
 			}
 			else {
 				addr = target;
@@ -857,7 +857,7 @@ int hook_api(hook_t *h, int type)
 			ret = hook_types[type].hook(h, addr, h->hookdata->pre_tramp);
 
 			// Add unhook detection for our newly created hook.
-			unhook_detect_add_region(h->funcname, addr, orig, addr, hook_types[type].len);
+			unhook_detect_add_region(h, addr, orig, addr, hook_types[type].len);
 
 			// if successful, assign the trampoline address to *old_func
 			if (ret == 0) {

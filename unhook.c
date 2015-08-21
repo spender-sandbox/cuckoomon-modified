@@ -40,7 +40,7 @@ static uint32_t g_length[UNHOOK_MAXCOUNT];
 static uint8_t *g_addr[UNHOOK_MAXCOUNT];
 
 // Function name of the region.
-static char g_funcname[UNHOOK_MAXCOUNT][64];
+static const hook_t *g_unhook_hooks[UNHOOK_MAXCOUNT];
 
 // The original contents of this region, before we modified it.
 static uint8_t g_orig[UNHOOK_MAXCOUNT][UNHOOK_BUFSIZE];
@@ -62,7 +62,7 @@ int address_already_hooked(uint8_t *addr)
 	return 0;
 }
 
-void unhook_detect_add_region(const char *funcname, uint8_t *addr,
+void unhook_detect_add_region(const hook_t *hook, uint8_t *addr,
     const uint8_t *orig, const uint8_t *our, uint32_t length)
 {
     if(g_index == UNHOOK_MAXCOUNT) {
@@ -73,15 +73,12 @@ void unhook_detect_add_region(const char *funcname, uint8_t *addr,
 	if (address_already_hooked(addr))
 		return;
 
-    g_length[g_index] = length;
+	g_length[g_index] = MIN(length, UNHOOK_BUFSIZE);
     g_addr[g_index] = addr;
+	g_unhook_hooks[g_index] = hook;
 
-    if(funcname != NULL) {
-        strncpy(g_funcname[g_index], funcname, sizeof(g_funcname[g_index]) - 1);
-    }
-
-    memcpy(g_orig[g_index], orig, MIN(length, UNHOOK_BUFSIZE));
-    memcpy(g_our[g_index], our, MIN(length, UNHOOK_BUFSIZE));
+	memcpy(g_orig[g_index], orig, g_length[g_index]);
+	memcpy(g_our[g_index], our, g_length[g_index]);
     g_index++;
 }
 
@@ -98,7 +95,7 @@ void restore_hooks_on_range(ULONG_PTR start, ULONG_PTR end)
 				continue;
 			if (!memcmp(g_orig[idx], g_addr[idx], g_length[idx])) {
 				memcpy(g_addr[idx], g_our[idx], g_length[idx]);
-				log_hook_restoration(g_funcname[idx]);
+				log_hook_restoration(g_unhook_hooks[idx]->funcname);
 			}
 		}
 	}
@@ -152,12 +149,12 @@ static DWORD WINAPI _unhook_detect_thread(LPVOID param)
 							char *tmpbuf2;
 							tmpbuf2 = tmpbuf = malloc(g_length[idx]);
 							memcpy(tmpbuf, g_addr[idx], g_length[idx]);
-							log_hook_modification(g_funcname[idx], g_our[idx], tmpbuf, g_length[idx]);
+							log_hook_modification(g_unhook_hooks[idx]->funcname, g_our[idx], tmpbuf, g_length[idx]);
 							tmpbuf = NULL;
 							free(tmpbuf2);
 						} 
 						else
-							log_hook_removal(g_funcname[idx]);
+							log_hook_removal(g_unhook_hooks[idx]->funcname);
 					}
 					g_hook_reported[idx] = 1;
 				}
