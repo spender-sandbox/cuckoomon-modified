@@ -84,7 +84,7 @@ HOOKDEF(UINT, WINAPI, SetErrorMode,
 #ifndef REPORT_EXCEPTIONS
 	ret = Old_SetErrorMode(uMode);
 #endif
-	LOQ_void("system", "h", "Mode", uMode);
+	//LOQ_void("system", "h", "Mode", uMode);
 	return ret;
 }
 
