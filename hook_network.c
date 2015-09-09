@@ -25,6 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "pipe.h"
 #include "config.h"
 
+static int did_initial_request;
+
 HOOKDEF(HINTERNET, WINAPI, WinHttpOpen,
 	_In_opt_ LPCWSTR pwszUserAgent,
 	_In_ DWORD dwAccessType,
@@ -87,8 +89,19 @@ HOOKDEF(HINTERNET, WINAPI, WinHttpOpenRequest,
 	_In_  LPCWSTR *ppwszAcceptTypes,
 	_In_  DWORD dwFlags
 ) {
-	HINTERNET ret = Old_WinHttpOpenRequest(hConnect, pwszVerb, pwszObjectName, pwszVersion, pwszReferrer, ppwszAcceptTypes, dwFlags);
-	LOQ_nonnull("network", "puuuuh", "InternetHandle", hConnect, "Verb", pwszVerb, "ObjectName", pwszObjectName, "Version", pwszVersion, "Referrer", pwszReferrer, "Flags", dwFlags);
+	HINTERNET ret;
+	LPCWSTR referer;
+
+	if ((pwszReferrer == NULL || !wcscmp(pwszReferrer, "")) && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer) && !did_initial_request)
+		referer = g_config.w_referrer;
+	else
+		referer = pwszReferrer;
+
+	ret = Old_WinHttpOpenRequest(hConnect, pwszVerb, pwszObjectName, pwszVersion, referer, ppwszAcceptTypes, dwFlags);
+	LOQ_nonnull("network", "puuuuh", "InternetHandle", hConnect, "Verb", pwszVerb, "ObjectName", pwszObjectName, "Version", pwszVersion, "Referrer", referer, "Flags", dwFlags);
+
+	did_initial_request = TRUE;
+
 	return ret;
 }
 
@@ -299,8 +312,6 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlW,
     return ret;
 }
 
-static did_initial_request;
-
 HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
     __in  HINTERNET hConnect,
     __in  LPCSTR lpszVerb,
@@ -314,7 +325,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
 	HINTERNET ret;
 	LPCSTR referer;
 
-	if (lpszReferer == NULL && g_config.url_of_interest && g_config.referrer && strlen(g_config.referrer) && !did_initial_request)
+	if ((lpszReferer == NULL || !strcmp(lpszReferer, "")) && g_config.url_of_interest && g_config.referrer && strlen(g_config.referrer) && !did_initial_request)
 		referer = g_config.referrer;
 	else
 		referer = lpszReferer;
@@ -342,7 +353,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
 	HINTERNET ret;
 	LPCWSTR referer;
 
-	if (lpszReferer == NULL && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer) && !did_initial_request)
+	if ((lpszReferer == NULL || !wcscmp(lpszReferer, "")) && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer) && !did_initial_request)
 		referer = g_config.w_referrer;
 	else
 		referer = lpszReferer; 
