@@ -321,8 +321,8 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
 
 	ret = Old_HttpOpenRequestA(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, referer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ_nonnull("network", "psh", "InternetHandle", hConnect, "Path", lpszObjectName,
-        "Flags", dwFlags);
+    LOQ_nonnull("network", "pshss", "InternetHandle", hConnect, "Path", lpszObjectName,
+        "Flags", dwFlags, "Referrer", referer, "Verb", lpszVerb);
 
 	did_initial_request = TRUE;
 
@@ -349,8 +349,8 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
 	
 	ret = Old_HttpOpenRequestW(hConnect, lpszVerb, lpszObjectName,
         lpszVersion, referer, lplpszAcceptTypes, dwFlags, dwContext);
-    LOQ_nonnull("network", "puh", "InternetHandle", hConnect, "Path", lpszObjectName,
-        "Flags", dwFlags);
+    LOQ_nonnull("network", "puhuu", "InternetHandle", hConnect, "Path", lpszObjectName,
+		"Flags", dwFlags, "Referrer", referer, "Verb", lpszVerb);
 
 	did_initial_request = TRUE;
 
