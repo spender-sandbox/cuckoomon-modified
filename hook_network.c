@@ -92,7 +92,7 @@ HOOKDEF(HINTERNET, WINAPI, WinHttpOpenRequest,
 	HINTERNET ret;
 	LPCWSTR referer;
 
-	if ((pwszReferrer == NULL || !wcscmp(pwszReferrer, "")) && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer) && !did_initial_request)
+	if ((pwszReferrer == NULL || !wcscmp(pwszReferrer, L"")) && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer) && !did_initial_request)
 		referer = g_config.w_referrer;
 	else
 		referer = pwszReferrer;
@@ -353,7 +353,7 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
 	HINTERNET ret;
 	LPCWSTR referer;
 
-	if ((lpszReferer == NULL || !wcscmp(lpszReferer, "")) && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer) && !did_initial_request)
+	if ((lpszReferer == NULL || !wcscmp(lpszReferer, L"")) && g_config.url_of_interest && g_config.w_referrer && wcslen(g_config.w_referrer) && !did_initial_request)
 		referer = g_config.w_referrer;
 	else
 		referer = lpszReferer; 
