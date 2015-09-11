@@ -60,7 +60,7 @@ static char logtbl_explained[256] = {0};
 // must be one larger than the largeest log ID
 #define LOG_ID_PREDEFINED_MAX 5
 
-int g_log_index = 10;  // index must start after the special IDs (see defines)
+volatile LONG g_log_index = 10;  // index must start after the special IDs (see defines)
 
 //
 // Log API
