@@ -90,6 +90,7 @@ static hook_t g_hooks[] = {
 	HOOK_SPECIAL(ole32, CoCreateInstance),
 
 	HOOK_NOTAIL(ntdll, RtlDispatchException, 2),
+	HOOK_NOTAIL(ntdll, NtRaiseException, 3),
 
 	//
     // File Hooks
@@ -265,7 +266,6 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtMapViewOfSection),
 	HOOK(kernel32, WaitForDebugEvent),
 	HOOK(ntdll, DbgUiWaitStateChange),
-	HOOK(ntdll, NtRaiseException),
 
     // all variants of ShellExecute end up in ShellExecuteExW
     HOOK(shell32, ShellExecuteExW),
@@ -634,8 +634,10 @@ LONG WINAPI cuckoomon_exception_handler(
 	) {
 	char msg[16384];
 	char *dllname;
+	char *sehname;
 	unsigned int offset;
 	ULONG_PTR eip;
+	ULONG_PTR seh = 0;
 	PUCHAR eipptr;
 #ifdef _WIN64
 	ULONG_PTR *stack;
@@ -654,6 +656,11 @@ LONG WINAPI cuckoomon_exception_handler(
 	stack = (ULONG_PTR *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Rsp);
 #else
 	stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
+	{
+		DWORD *tebtmp = (DWORD *)NtCurrentTeb();
+		if (tebtmp[0] != 0xffffffff)
+			seh = ((DWORD *)tebtmp[0])[1];
+	}
 #endif
 
 
@@ -672,7 +679,12 @@ LONG WINAPI cuckoomon_exception_handler(
 
 	sprintf(msg, "Exception Caught! PID: %u EIP:", GetCurrentProcessId());
 	if (dllname)
-		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", dllname, offset);
+		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, " %s+%x", dllname, offset);
+
+	sehname = convert_address_to_dll_name_and_offset(eip, &offset);
+	if (sehname)
+		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, " SEH: %s+%x", sehname, offset);
+
 	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %.08x, Fault Address: %.08x, Esp: %.08x, Exception Code: %08x, ",
 		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (ULONG_PTR)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
 	if (is_valid_address_range((ULONG_PTR)stack, 100 * sizeof(ULONG_PTR))) 
@@ -682,17 +694,20 @@ LONG WINAPI cuckoomon_exception_handler(
 		for (i = 0; i < (get_stack_top() - (ULONG_PTR)stack)/sizeof(ULONG_PTR); i++) {
 			char *buf = convert_address_to_dll_name_and_offset(stack[i], &offset);
 			if (buf) {
-				snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %s+%x", buf, offset);
+				snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, " %s+%x", buf, offset);
 				free(buf);
 			}
+			if (sizeof(msg) - strlen(msg) < 100)
+				goto next;
 		}
 		strcat(msg, ", ");
 	}
 	else {
 		strcat(msg, "invalid stack, ");
 	}
+next:
 	if (is_valid_address_range(eip, 16)) {
-		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), "Bytes at EIP: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, "Bytes at EIP: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
 			eipptr[0], eipptr[1], eipptr[2], eipptr[3], eipptr[4], eipptr[5], eipptr[6], eipptr[7], eipptr[8], eipptr[9], eipptr[10], eipptr[11], eipptr[12], eipptr[13], eipptr[14], eipptr[15]);
 	}
 	debug_message(msg);

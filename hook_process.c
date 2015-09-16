@@ -669,13 +669,12 @@ extern LONG WINAPI cuckoomon_exception_handler(
 	);
 #endif
 
-HOOKDEF(NTSTATUS, WINAPI, NtRaiseException,
+HOOKDEF_NOTAIL(WINAPI, NtRaiseException,
 	__in PEXCEPTION_RECORD ExceptionRecord,
 	__in PCONTEXT Context,
 	__in BOOLEAN SearchFrames
 ) {
 	EXCEPTION_POINTERS exc;
-	NTSTATUS ret;
 
 	exc.ContextRecord = Context;
 	exc.ExceptionRecord = ExceptionRecord;
@@ -684,7 +683,5 @@ HOOKDEF(NTSTATUS, WINAPI, NtRaiseException,
 	cuckoomon_exception_handler(&exc);
 #endif
 
-	ret = Old_NtRaiseException(ExceptionRecord, Context, SearchFrames);
-	disable_tail_call_optimization();
-	return ret;
+	return 0;
 }
