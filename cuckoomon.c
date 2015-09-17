@@ -681,7 +681,7 @@ LONG WINAPI cuckoomon_exception_handler(
 	if (dllname)
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, " %s+%x", dllname, offset);
 
-	sehname = convert_address_to_dll_name_and_offset(eip, &offset);
+	sehname = convert_address_to_dll_name_and_offset(seh, &offset);
 	if (sehname)
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, " SEH: %s+%x", sehname, offset);
 
