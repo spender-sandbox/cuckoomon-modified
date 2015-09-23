@@ -149,7 +149,7 @@ void file_write(HANDLE file_handle)
         new_file(&str);
 
         // delete the file record from the list
-        lookup_del(&g_files, (unsigned int) file_handle);
+        lookup_del(&g_files, (ULONG_PTR)file_handle);
     }
 
 	set_lasterrors(&lasterror);

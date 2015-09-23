@@ -144,7 +144,7 @@ HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
 	
     if (!called_by_hook()) {
 		if (dwCreationFlags & EXTENDED_STARTUPINFO_PRESENT && lpStartupInfo->cb == sizeof(STARTUPINFOEXW)) {
-			HANDLE ParentHandle = (HANDLE)0xffffffff;
+			HANDLE ParentHandle = (HANDLE)-1;
 			unsigned int i;
 			LPSTARTUPINFOEXW lpExtStartupInfo = (LPSTARTUPINFOEXW)lpStartupInfo;
 			if (lpExtStartupInfo->lpAttributeList) {
@@ -237,6 +237,11 @@ HOOKDEF(int, WINAPI, JsEval,
 	PUCHAR p;
 	int ret = Old_JsEval(Arg1, Arg2, Arg3, Index, scriptobj);
 
+	/* TODO: 64-bit support*/
+#ifdef _WIN64
+	return ret;
+#endif
+
 	p = (PUCHAR)scriptobj[4 * Index - 2];
 	jsbuf = *(PWCHAR *)(p + 8);
 	if (jsbuf)
@@ -270,7 +275,7 @@ HOOKDEF(PVOID, WINAPI, JsParseScript,
 ) {
 	PVOID ret = Old_JsParseScript(script, SourceContext, sourceUrl, result);
 
-	LOQ_ntstatus("browser", "uu", "Script", script, "Source", sourceUrl);
+	LOQ_zero("browser", "uu", "Script", script, "Source", sourceUrl);
 
 	return ret;
 }
@@ -280,10 +285,10 @@ HOOKDEF(PVOID, WINAPI, JsRunScript,
 	PVOID SourceContext,
 	const wchar_t *sourceUrl,
 	PVOID *result
-	) {
+) {
 	PVOID ret = Old_JsRunScript(script, SourceContext, sourceUrl, result);
 
-	LOQ_ntstatus("browser", "uu", "Script", script, "Source", sourceUrl);
+	LOQ_zero("browser", "uu", "Script", script, "Source", sourceUrl);
 
 	return ret;
 }

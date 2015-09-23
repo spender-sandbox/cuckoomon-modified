@@ -524,7 +524,7 @@ normal_call:
 		char *their_p = (char *)SystemInformation;
 		ULONG lastlen = 0;
 		while (1) {
-			if (!is_protected_pid((DWORD)our_p->UniqueProcessId)) {
+			if (!is_protected_pid((DWORD)(ULONG_PTR)our_p->UniqueProcessId)) {
 				PSYSTEM_PROCESS_INFORMATION tmp;
 				if (our_p->NextEntryOffset)
 					lastlen = our_p->NextEntryOffset;

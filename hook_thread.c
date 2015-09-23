@@ -134,7 +134,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThread,
 	if (NT_SUCCESS(ret)) {
 		//if (called_by_hook() && pid == GetCurrentProcessId())
 		//	add_ignored_thread((DWORD)ClientId->UniqueThread);
-		pipe("PROCESS:%d:%d,%d", is_suspended(pid, (DWORD)ClientId->UniqueThread), pid, (DWORD)ClientId->UniqueThread);
+		pipe("PROCESS:%d:%d,%d", is_suspended(pid, (DWORD)(ULONG_PTR)ClientId->UniqueThread), pid, (DWORD)(ULONG_PTR)ClientId->UniqueThread);
 		if (CreateSuspended == FALSE) {
 			lasterror_t lasterror;
 			get_lasterrors(&lasterror);
