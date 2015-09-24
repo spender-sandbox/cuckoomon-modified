@@ -312,6 +312,27 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlW,
     return ret;
 }
 
+typedef BOOL(WINAPI *__HttpAddRequestHeadersA)(HINTERNET hRequest, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwModifiers);
+__HttpAddRequestHeadersA _HttpAddRequestHeadersA;
+
+void workaround_httpopenrequest_referrer_bug(HINTERNET hRequest)
+{
+	char *buf;
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+	buf = malloc(strlen("Referer: ") + strlen(g_config.referrer) + 3);
+
+	if (!_HttpAddRequestHeadersA)
+		_HttpAddRequestHeadersA = (__HttpAddRequestHeadersA)GetProcAddress(LoadLibraryA("wininet"), "HttpAddRequestHeadersA");
+	strcpy(buf, "Referer: ");
+	strcat(buf, g_config.referrer);
+	strcat(buf, "\r\n");
+	_HttpAddRequestHeadersA(hRequest, buf, -1, HTTP_ADDREQ_FLAG_ADD_IF_NEW);
+	free(buf);
+	set_lasterrors(&lasterror);
+}
+
 HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
     __in  HINTERNET hConnect,
     __in  LPCSTR lpszVerb,
@@ -331,9 +352,12 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestA,
 		referer = lpszReferer;
 
 	ret = Old_HttpOpenRequestA(hConnect, lpszVerb, lpszObjectName,
-        lpszVersion, referer, lplpszAcceptTypes, dwFlags, dwContext);
+		lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
     LOQ_nonnull("network", "pshss", "InternetHandle", hConnect, "Path", lpszObjectName,
         "Flags", dwFlags, "Referrer", referer, "Verb", lpszVerb);
+
+	if (ret && referer != lpszReferer)
+		workaround_httpopenrequest_referrer_bug(ret);
 
 	did_initial_request = TRUE;
 
@@ -359,9 +383,12 @@ HOOKDEF(HINTERNET, WINAPI, HttpOpenRequestW,
 		referer = lpszReferer; 
 	
 	ret = Old_HttpOpenRequestW(hConnect, lpszVerb, lpszObjectName,
-        lpszVersion, referer, lplpszAcceptTypes, dwFlags, dwContext);
+		lpszVersion, lpszReferer, lplpszAcceptTypes, dwFlags, dwContext);
     LOQ_nonnull("network", "puhuu", "InternetHandle", hConnect, "Path", lpszObjectName,
 		"Flags", dwFlags, "Referrer", referer, "Verb", lpszVerb);
+
+	if (ret && referer != lpszReferer)
+		workaround_httpopenrequest_referrer_bug(ret);
 
 	did_initial_request = TRUE;
 

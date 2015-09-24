@@ -337,7 +337,7 @@ __GetSystemMetrics _GetSystemMetrics;
 
 DWORD WINAPI our_GetSystemMetrics(
 	__in int nIndex
-	) {
+) {
 	if (!_GetSystemMetrics) {
 		_GetSystemMetrics = (__GetSystemMetrics)GetProcAddress(LoadLibraryA("user32"), "GetSystemMetrics");
 	}
