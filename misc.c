@@ -1315,11 +1315,11 @@ BOOLEAN is_suspended(DWORD pid, DWORD tid)
 	// now we have a valid list of process information
 	for (proc = pspi; proc->NextEntryOffset; proc = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)proc + proc->NextEntryOffset)) {
 		ULONG i;
-		if (proc->UniqueProcessId != (HANDLE)pid)
+		if ((DWORD)(ULONG_PTR)proc->UniqueProcessId != pid)
 			continue;
 		for (i = 0; i < proc->NumberOfThreads; i++) {
 			PSYSTEM_THREAD thread = &proc->Threads[i];
-			if (tid && thread->ClientId.UniqueThread != (HANDLE)tid)
+			if (tid && (DWORD)(ULONG_PTR)thread->ClientId.UniqueThread != tid)
 				continue;
 			if (thread->WaitReason != Suspended)
 				goto out;

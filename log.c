@@ -233,7 +233,7 @@ static void log_ptr(void *value)
 	if (sizeof(ULONG_PTR) == 8)
 		log_int64((int64_t)value);
 	else
-		log_int32((int)value);
+		log_int32((int)(ULONG_PTR)value);
 }
 
 static void log_string(const char *str, int length)

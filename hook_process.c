@@ -204,7 +204,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,
 	NTSTATUS ret;
 
     if(ClientId != NULL) {
-        pid = (int) ClientId->UniqueProcess;
+        pid = (int)(ULONG_PTR)ClientId->UniqueProcess;
     }
 
     if(is_protected_pid(pid)) {

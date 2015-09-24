@@ -240,7 +240,7 @@ HOOKDEF(int, WINAPI, JsEval,
 	/* TODO: 64-bit support*/
 #ifdef _WIN64
 	return ret;
-#endif
+#else
 
 	p = (PUCHAR)scriptobj[4 * Index - 2];
 	jsbuf = *(PWCHAR *)(p + 8);
@@ -248,6 +248,7 @@ HOOKDEF(int, WINAPI, JsEval,
 		LOQ_ntstatus("browser", "u", "Javascript", jsbuf);
 
 	return ret;
+#endif
 }
 
 HOOKDEF(int, WINAPI, COleScript_ParseScriptText,
