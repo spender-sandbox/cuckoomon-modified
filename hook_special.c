@@ -233,8 +233,10 @@ HOOKDEF(int, WINAPI, JsEval,
 	int Index,
 	DWORD *scriptobj
 ) {
+#ifndef _WIN64
 	PWCHAR jsbuf;
 	PUCHAR p;
+#endif
 	int ret = Old_JsEval(Arg1, Arg2, Arg3, Index, scriptobj);
 
 	/* TODO: 64-bit support*/
