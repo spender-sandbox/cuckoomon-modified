@@ -142,6 +142,16 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtCreateDirectoryObject,
     __in   POBJECT_ATTRIBUTES ObjectAttributes
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryObject,
+  __in       HANDLE DirectoryHandle,
+  __out_opt  PVOID Buffer,
+  __in       ULONG Length,
+  __in       BOOLEAN ReturnSingleEntry,
+  __in       BOOLEAN RestartScan,
+  __inout    PULONG Context,
+  __out_opt  PULONG ReturnLength
+);
+
 extern HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
     __in      LPWSTR lpExistingFileName,
     __in_opt  LPWSTR lpNewFileName,

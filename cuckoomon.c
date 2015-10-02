@@ -108,6 +108,7 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtSetInformationFile),
     HOOK(ntdll, NtOpenDirectoryObject),
     HOOK(ntdll, NtCreateDirectoryObject),
+    HOOK(ntdll, NtQueryDirectoryObject),
 
     // CreateDirectoryExA calls CreateDirectoryExW
     // CreateDirectoryW does not call CreateDirectoryExW
