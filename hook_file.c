@@ -605,6 +605,24 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateDirectoryObject,
     return ret;
 }
 
+HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryObject,
+  __in       HANDLE DirectoryHandle,
+  __out_opt  PVOID Buffer,
+  __in       ULONG Length,
+  __in       BOOLEAN ReturnSingleEntry,
+  __in       BOOLEAN RestartScan,
+  __inout    PULONG Context,
+  __out_opt  PULONG ReturnLength
+) {
+    NTSTATUS ret = Old_NtQueryDirectoryObject(DirectoryHandle, Buffer, Length,
+        ReturnSingleEntry, RestartScan, Context, ReturnLength);
+    // Don't log STATUS_BUFFER_TOO_SMALL
+    if (ret != 0xC0000023)
+        LOQ_ntstatus("filesystem", "p", "DirectoryHandle", DirectoryHandle);
+
+    return ret;
+}
+
 HOOKDEF(BOOL, WINAPI, CreateDirectoryW,
     __in      LPWSTR lpPathName,
     __in_opt  LPSECURITY_ATTRIBUTES lpSecurityAttributes
