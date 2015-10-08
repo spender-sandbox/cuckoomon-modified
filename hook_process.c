@@ -400,7 +400,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
         ZeroBits, RegionSize, AllocationType, Protect);
 
 	get_lasterrors(&lasterror);
-	if (Protect != PAGE_READWRITE || GetCurrentProcessId() != GetProcessId(ProcessHandle)) {
+	if (ret != STATUS_CONFLICTING_ADDRESSES && (Protect != PAGE_READWRITE || GetCurrentProcessId() != GetProcessId(ProcessHandle))) {
 		LOQ_ntstatus("process", "pPPh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 			"RegionSize", RegionSize, "Protection", Protect);
 	}
