@@ -467,6 +467,18 @@ DWORD tid_from_thread_handle(HANDLE thread_handle)
 	return (DWORD)(ULONG_PTR)cid.UniqueThread;
 }
 
+DWORD our_getprocessid(HANDLE Process)
+{
+	DWORD ret;
+	lasterror_t lasterror;
+	get_lasterrors(&lasterror);
+	if (Process == NtCurrentProcess())
+		ret = GetCurrentProcessId();
+	else
+		ret = GetProcessId(Process);
+	set_lasterrors(&lasterror);
+	return ret;
+}
 
 DWORD random()
 {

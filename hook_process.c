@@ -254,7 +254,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateProcess,
 		process_shutting_down = 1;
 		LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
 	}
-	else if (GetCurrentProcessId() == GetProcessId(ProcessHandle)) {
+	else if (GetCurrentProcessId() == our_getprocessid(ProcessHandle)) {
 		process_shutting_down = 1;
 		LOQ_ntstatus("process", "ph", "ProcessHandle", ProcessHandle, "ExitCode", ExitStatus);
 		pipe("KILL:%d", GetCurrentProcessId());
@@ -395,16 +395,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
     __in     ULONG AllocationType,
     __in     ULONG Protect
 ) {
-	lasterror_t lasterror;
     NTSTATUS ret = Old_NtAllocateVirtualMemory(ProcessHandle, BaseAddress,
         ZeroBits, RegionSize, AllocationType, Protect);
 
-	get_lasterrors(&lasterror);
-	if (ret != STATUS_CONFLICTING_ADDRESSES && (Protect != PAGE_READWRITE || GetCurrentProcessId() != GetProcessId(ProcessHandle))) {
+	if (ret != STATUS_CONFLICTING_ADDRESSES && (Protect != PAGE_READWRITE || GetCurrentProcessId() != our_getprocessid(ProcessHandle))) {
 		LOQ_ntstatus("process", "pPPh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 			"RegionSize", RegionSize, "Protection", Protect);
 	}
-	set_lasterrors(&lasterror);
+
 	return ret;
 }
 
@@ -509,6 +507,10 @@ HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
 	return ret;
 }
 
+/* need to keep in mind we might end up being called in either of the two below functions while some
+   critical DLL code is protected RW by some poorly-written malware that doesn't care about reliability with
+   concurrent thread execution
+ */
 HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
     IN      HANDLE ProcessHandle,
     IN OUT  PVOID *BaseAddress,
@@ -519,7 +521,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
 	NTSTATUS ret;
 
 	if (NewAccessProtection == PAGE_EXECUTE_READ && BaseAddress && NumberOfBytesToProtect &&
-		GetCurrentProcessId() == GetProcessId(ProcessHandle) && is_in_dll_range((ULONG_PTR)*BaseAddress))
+		GetCurrentProcessId() == our_getprocessid(ProcessHandle) && is_in_dll_range((ULONG_PTR)*BaseAddress))
 		restore_hooks_on_range((ULONG_PTR)*BaseAddress, (ULONG_PTR)*BaseAddress + *NumberOfBytesToProtect);
 	
 	ret = Old_NtProtectVirtualMemory(ProcessHandle, BaseAddress,
@@ -540,7 +542,7 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
 ) {
 	BOOL ret;
 
-	if (flNewProtect == PAGE_EXECUTE_READ && GetCurrentProcessId() == GetProcessId(hProcess) &&
+	if (flNewProtect == PAGE_EXECUTE_READ && GetCurrentProcessId() == our_getprocessid(hProcess) &&
 		is_in_dll_range((ULONG_PTR)lpAddress))
 		restore_hooks_on_range((ULONG_PTR)lpAddress, (ULONG_PTR)lpAddress + dwSize);
 
@@ -558,17 +560,15 @@ HOOKDEF(NTSTATUS, WINAPI, NtFreeVirtualMemory,
     IN OUT  PSIZE_T RegionSize,
     IN      ULONG FreeType
 ) {
-	lasterror_t lasterror;
     NTSTATUS ret = Old_NtFreeVirtualMemory(ProcessHandle, BaseAddress,
         RegionSize, FreeType);
 
-	get_lasterrors(&lasterror);
-	if (GetCurrentProcessId() != GetProcessId(ProcessHandle)) {
+	if (GetCurrentProcessId() != our_getprocessid(ProcessHandle)) {
 		LOQ_ntstatus("process", "pPPh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 			"RegionSize", RegionSize, "FreeType", FreeType);
 	}
-	set_lasterrors(&lasterror);
-    return ret;
+
+	return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, VirtualFreeEx,

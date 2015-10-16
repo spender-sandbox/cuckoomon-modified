@@ -758,6 +758,7 @@ static __inline HANDLE handle_from_objattr(OBJECT_ATTRIBUTES *obj)
 
 extern void disable_tail_call_optimization(void);
 
+#define NtCurrentProcess() ((HANDLE)-1)
 #include "alloc.h"
 
 extern BOOL is_64bit_os;
