@@ -673,6 +673,13 @@ int hook_api(hook_t *h, int type)
 		!memcmp(addr + 13, "\xff\x25", 2)) {
 		addr = **(unsigned char ***)(addr + 15);
 	}
+	// others have full-dword relative jumps at the end of the stub instead
+	// of short jumps
+	else if (!memcmp(addr, "\x8b\xff\x55\x8b\xec\x5d\xe9", 7)) {
+		PUCHAR target = (PUCHAR)get_near_rel_target(&addr[6]);
+		if (!memcmp(target, "\xff\x25", 2))
+			addr = **(unsigned char ***)(target + 2);
+	}
 
 	// the following applies for "inlined" functions on windows 7,
 	// some functions are inlined into kernelbase.dll, rather than
@@ -696,6 +703,12 @@ int hook_api(hook_t *h, int type)
 		// at all
 		type = HOOK_NATIVE_JMP_INDIRECT;
 	}
+
+	/* works around some poorly-written malware doing emulation of assumed bytes
+	   instead of proper code-stealing
+	 */
+	if (!strcmp(h->funcname, "GetSystemTime"))
+		type = HOOK_JMP_DIRECT;
 
 	// check if this is a valid hook type
 	if (type < 0 && type >= ARRAYSIZE(hook_types)) {
