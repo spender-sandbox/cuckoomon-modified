@@ -309,6 +309,18 @@ extern HOOKDEF(HANDLE, WINAPI, FindFirstChangeNotificationW,
 	_In_	DWORD dwNotifyFilter
 );
 
+extern HOOKDEF(BOOL, WINAPI, GetVolumeInformationByHandleW,
+	_In_      HANDLE  hFile,
+	_Out_opt_ LPWSTR  lpVolumeNameBuffer,
+	_In_      DWORD   nVolumeNameSize,
+	_Out_opt_ LPDWORD lpVolumeSerialNumber,
+	_Out_opt_ LPDWORD
+	lpMaximumComponentLength,
+	_Out_opt_ LPDWORD lpFileSystemFlags,
+	_Out_opt_ LPWSTR  lpFileSystemNameBuffer,
+	_In_      DWORD   nFileSystemNameSize
+);
+
 //
 // Registry Hooks
 //

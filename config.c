@@ -138,6 +138,9 @@ int read_config(void)
             else if(!strcmp(key, "force-sleepskip")) {
                 g_config.force_sleepskip = value[0] == '1';
             }
+			else if (!strcmp(key, "serial")) {
+				g_config.serial_number = (unsigned int)strtoul(value, NULL, 16);
+			}
 			else if (!strcmp(key, "full-logs")) {
 				g_config.full_logs = value[0] == '1';
 			}

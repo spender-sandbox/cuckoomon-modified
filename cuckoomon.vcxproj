@@ -382,7 +382,6 @@
     <ClInclude Include="config.h" />
     <ClInclude Include="distorm3.2-package\include\distorm.h" />
     <ClInclude Include="distorm3.2-package\include\mnemonics.h" />
-    <ClInclude Include="distorm3.2-package\src\config.h" />
     <ClInclude Include="distorm3.2-package\src\decoder.h" />
     <ClInclude Include="distorm3.2-package\src\instructions.h" />
     <ClInclude Include="distorm3.2-package\src\insts.h" />

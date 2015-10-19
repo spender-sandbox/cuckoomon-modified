@@ -963,6 +963,28 @@ HOOKDEF(BOOL, WINAPI, GetVolumeNameForVolumeMountPointW,
 	return ret;
 }
 
+HOOKDEF(BOOL, WINAPI, GetVolumeInformationByHandleW,
+	_In_      HANDLE  hFile,
+	_Out_opt_ LPWSTR  lpVolumeNameBuffer,
+	_In_      DWORD   nVolumeNameSize,
+	_Out_opt_ LPDWORD lpVolumeSerialNumber,
+	_Out_opt_ LPDWORD
+	lpMaximumComponentLength,
+	_Out_opt_ LPDWORD lpFileSystemFlags,
+	_Out_opt_ LPWSTR  lpFileSystemNameBuffer,
+	_In_      DWORD   nFileSystemNameSize
+) {
+	BOOL ret = Old_GetVolumeInformationByHandleW(hFile, lpVolumeNameBuffer, nVolumeNameSize, lpVolumeSerialNumber,
+		lpMaximumComponentLength, lpFileSystemFlags, lpFileSystemNameBuffer, nFileSystemNameSize);
+
+	if (ret && lpVolumeSerialNumber && g_config.serial_number)
+		*lpVolumeSerialNumber = g_config.serial_number;
+
+	LOQ_bool("filesystem", "uH", "VolumeName", lpVolumeNameBuffer, "VolumeSerial", lpVolumeSerialNumber);
+
+	return ret;
+}
+
 HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
 	_In_ HWND hwndOwner,
 	_In_ int nFolder,

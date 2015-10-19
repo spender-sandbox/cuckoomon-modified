@@ -257,9 +257,6 @@
     <ClInclude Include="distorm3.2-package\include\mnemonics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="distorm3.2-package\src\config.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="distorm3.2-package\src\decoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
