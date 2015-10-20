@@ -290,9 +290,16 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryKey,
 ) {
     NTSTATUS ret = Old_NtQueryKey(KeyHandle, KeyInformationClass,
         KeyInformation, Length, ResultLength);
-    LOQ_ntstatus("registry", "pSl", "KeyHandle", KeyHandle,
-        "KeyInformation", Length, KeyInformation,
-        "KeyInformationClass", KeyInformationClass);
+	if (KeyInformationClass == KeyNameInformation && KeyInformation) {
+		PKEY_NAME_INFORMATION info = (PKEY_NAME_INFORMATION)KeyInformation;
+		LOQ_ntstatus("registry", "pUl", "KeyHandle", KeyHandle,
+			"KeyInformation", info->KeyNameLength/sizeof(WCHAR), info->KeyName,
+			"KeyInformationClass", KeyInformationClass);
+	} else {
+		LOQ_ntstatus("registry", "pSl", "KeyHandle", KeyHandle,
+			"KeyInformation", Length, KeyInformation,
+			"KeyInformationClass", KeyInformationClass);
+	}
     return ret;
 }
 
