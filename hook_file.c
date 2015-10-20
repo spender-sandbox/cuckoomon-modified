@@ -726,6 +726,9 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
 		ret = INVALID_HANDLE_VALUE;
 	}
 
+	if (g_config.serial_number && ret != INVALID_HANDLE_VALUE && !stricmp(lpFileName, "c:\\System Volume Information"))
+		((PWIN32_FIND_DATAA)lpFindFileData)->ftCreationTime = g_config.sysvol_ctime;
+
 	LOQ_handle("filesystem", "f", "FileName", lpFileName);
 
 	return ret;
@@ -752,6 +755,9 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
 		set_lasterrors(&lasterror);
 		ret = INVALID_HANDLE_VALUE;
 	}
+
+	if (g_config.serial_number && ret != INVALID_HANDLE_VALUE && !wcsicmp(lpFileName, L"c:\\System Volume Information"))
+		((PWIN32_FIND_DATAW)lpFindFileData)->ftCreationTime = g_config.sysvol_ctime;
 
 	LOQ_handle("filesystem", "F", "FileName", lpFileName);
     return ret;

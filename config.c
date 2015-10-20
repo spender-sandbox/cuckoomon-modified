@@ -141,6 +141,18 @@ int read_config(void)
 			else if (!strcmp(key, "serial")) {
 				g_config.serial_number = (unsigned int)strtoul(value, NULL, 16);
 			}
+			else if (!strcmp(key, "sysvol_ctimelow")) {
+				g_config.sysvol_ctime.dwLowDateTime = (unsigned int)strtoul(value, NULL, 16);
+			}
+			else if (!strcmp(key, "sysvol_ctimehigh")) {
+				g_config.sysvol_ctime.dwHighDateTime = (unsigned int)strtoul(value, NULL, 16);
+			}
+			else if (!strcmp(key, "sys32_ctimelow")) {
+				g_config.sys32_ctime.dwLowDateTime = (unsigned int)strtoul(value, NULL, 16);
+			}
+			else if (!strcmp(key, "sys32_ctimehigh")) {
+				g_config.sys32_ctime.dwHighDateTime = (unsigned int)strtoul(value, NULL, 16);
+			}
 			else if (!strcmp(key, "full-logs")) {
 				g_config.full_logs = value[0] == '1';
 			}

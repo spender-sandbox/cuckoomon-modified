@@ -914,6 +914,13 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 				peb->NumberOfProcessors = 2;
 		}
 #endif
+		if (g_config.serial_number) {
+			HANDLE hFile = CreateFileA("c:\\windows\\system32", FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+			if (hFile != INVALID_HANDLE_VALUE) {
+				SetFileTime(hFile, &g_config.sys32_ctime, NULL, NULL);
+				CloseHandle(hFile);
+			}
+		}
 
 		notify_successful_load();
     }
