@@ -110,7 +110,12 @@ HOOKDEF(NTSTATUS, WINAPI, LdrGetProcedureAddress,
 ) {
     NTSTATUS ret = Old_LdrGetProcedureAddress(ModuleHandle, FunctionName,
         Ordinal, FunctionAddress);
-    LOQ_ntstatus("system", "opSiP", "ModuleName", get_basename_of_module(ModuleHandle), "ModuleHandle", ModuleHandle,
+
+	if (FunctionName != NULL && FunctionName->Length == 13 && FunctionName->Buffer != NULL &&
+		(!strncmp(FunctionName->Buffer, "EncodePointer", 13) || !strncmp(FunctionName->Buffer, "DecodePointer", 13)))
+		return ret;
+
+	LOQ_ntstatus("system", "opSiP", "ModuleName", get_basename_of_module(ModuleHandle), "ModuleHandle", ModuleHandle,
         "FunctionName", FunctionName != NULL ? FunctionName->Length : 0,
             FunctionName != NULL ? FunctionName->Buffer : NULL,
         "Ordinal", Ordinal, "FunctionAddress", FunctionAddress);
