@@ -578,6 +578,15 @@ static ULONG_PTR get_near_rel_target(unsigned char *buf)
 	return 0;
 }
 
+static ULONG_PTR get_short_rel_target(unsigned char *buf)
+{
+	if (buf[0] == 0xeb || buf[0] == 0xe3 || (buf[0] >= 0x70 && buf[0] < 0x80))
+		return (ULONG_PTR)buf + 2 + *(char *)&buf[1];
+
+	assert(0);
+	return 0;
+}
+
 int hook_api(hook_t *h, int type)
 {
 	unsigned char *addr;
@@ -677,6 +686,14 @@ int hook_api(hook_t *h, int type)
 	// of short jumps
 	else if (!memcmp(addr, "\x8b\xff\x55\x8b\xec\x5d\xe9", 7)) {
 		PUCHAR target = (PUCHAR)get_near_rel_target(&addr[6]);
+		if (!memcmp(target, "\xff\x25", 2))
+			addr = **(unsigned char ***)(target + 2);
+	}
+	// Others still (observed by KillerInstinct and others on IsDebuggerPresent on some
+	// windows 7 systems) will have a short jump back to an indirect jmp out to one
+	// of the core DLLs, hook that instead
+	else if (addr[0] == 0xeb && addr[1] >= 0x80) {
+		PUCHAR target = (PUCHAR)get_short_rel_target(addr);
 		if (!memcmp(target, "\xff\x25", 2))
 			addr = **(unsigned char ***)(target + 2);
 	}
