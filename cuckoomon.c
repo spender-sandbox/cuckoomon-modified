@@ -813,13 +813,13 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #if HOOKTYPE != HOOK_JMP_INDIRECT
 #error Update hook check
 #endif
-		if (((PUCHAR)ReadProcessMemory)[0] == 0xff && ((PUCHAR)ReadProcessMemory)[1] == 0x25)
+		if (((PUCHAR)WaitForDebugEvent)[0] == 0xff && ((PUCHAR)WaitForDebugEvent)[1] == 0x25)
 			goto early_abort;
 #else
 #if HOOKTYPE != HOOK_HOTPATCH_JMP_INDIRECT
 #error Update hook check
 #endif
-		if (((PUCHAR)ReadProcessMemory)[0] == 0x8b && ((PUCHAR)ReadProcessMemory)[1] == 0xff && ((PUCHAR)ReadProcessMemory)[2] == 0xff && ((PUCHAR)ReadProcessMemory)[3] == 0x25)
+		if (((PUCHAR)WaitForDebugEvent)[0] == 0x8b && ((PUCHAR)WaitForDebugEvent)[1] == 0xff && ((PUCHAR)WaitForDebugEvent)[2] == 0xff && ((PUCHAR)WaitForDebugEvent)[3] == 0x25)
 			goto early_abort;
 #endif
 
