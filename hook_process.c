@@ -465,8 +465,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteVirtualMemory,
 	pid = pid_from_process_handle(ProcessHandle);
 
 	if (pid != GetCurrentProcessId()) {
-		LOQ_ntstatus("process", "ppB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-			"Buffer", NumberOfBytesWritten, Buffer);
+		LOQ_ntstatus("process", "ppBh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+			"Buffer", NumberOfBytesWritten, Buffer, "BufferLength", *NumberOfBytesWritten);
 
 		if (NT_SUCCESS(ret)) {
 			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
@@ -495,8 +495,8 @@ HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
 	pid = pid_from_process_handle(hProcess);
 
 	if (pid != GetCurrentProcessId()) {
-		LOQ_bool("process", "ppB", "ProcessHandle", hProcess, "BaseAddress", lpBaseAddress,
-			"Buffer", lpNumberOfBytesWritten, lpBuffer);
+		LOQ_bool("process", "ppBh", "ProcessHandle", hProcess, "BaseAddress", lpBaseAddress,
+			"Buffer", lpNumberOfBytesWritten, lpBuffer, "BufferLength", *lpNumberOfBytesWritten);
 
 		if (ret) {
 			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
