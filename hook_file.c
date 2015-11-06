@@ -726,12 +726,20 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
 		ret = INVALID_HANDLE_VALUE;
 	}
 
+	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && (!stricmp(lpFileName, "c:\\windows") || !stricmp(lpFileName, "c:\\pagefile.sys")))
+		perform_create_time_fakery(&((PWIN32_FIND_DATAA)lpFindFileData)->ftCreationTime);
+
 	if (g_config.serial_number && ret != INVALID_HANDLE_VALUE && !stricmp(lpFileName, "c:\\System Volume Information"))
 		((PWIN32_FIND_DATAA)lpFindFileData)->ftCreationTime = g_config.sysvol_ctime;
 	if (g_config.serial_number && ret != INVALID_HANDLE_VALUE && !stricmp(lpFileName, "c:\\windows\\system32"))
 		((PWIN32_FIND_DATAA)lpFindFileData)->ftCreationTime = g_config.sys32_ctime;
 
-	LOQ_handle("filesystem", "f", "FileName", lpFileName);
+	if (ret != INVALID_HANDLE_VALUE)
+		LOQ_handle("filesystem", "fhh", "FileName", lpFileName,
+			"FirstCreateTimeLow", ((PWIN32_FIND_DATAA)lpFindFileData)->ftCreationTime.dwLowDateTime,
+			"FirstCreateTimeHigh", ((PWIN32_FIND_DATAA)lpFindFileData)->ftCreationTime.dwHighDateTime);
+	else
+		LOQ_handle("filesystem", "f", "FileName", lpFileName);
 
 	return ret;
 }
@@ -758,12 +766,20 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
 		ret = INVALID_HANDLE_VALUE;
 	}
 
+	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && (!wcsicmp(lpFileName, "c:\\windows") || !wcsicmp(lpFileName, "c:\\pagefile.sys")))
+		perform_create_time_fakery(&((PWIN32_FIND_DATAW)lpFindFileData)->ftCreationTime);
+
 	if (g_config.serial_number && ret != INVALID_HANDLE_VALUE && !wcsicmp(lpFileName, L"c:\\System Volume Information"))
 		((PWIN32_FIND_DATAW)lpFindFileData)->ftCreationTime = g_config.sysvol_ctime;
 	if (g_config.serial_number && ret != INVALID_HANDLE_VALUE && !wcsicmp(lpFileName, L"c:\\windows\\system32"))
 		((PWIN32_FIND_DATAW)lpFindFileData)->ftCreationTime = g_config.sys32_ctime;
 
-	LOQ_handle("filesystem", "F", "FileName", lpFileName);
+	if (ret != INVALID_HANDLE_VALUE)
+		LOQ_handle("filesystem", "Fhh", "FileName", lpFileName,
+			"FirstCreateTimeLow", ((PWIN32_FIND_DATAW)lpFindFileData)->ftCreationTime.dwLowDateTime,
+			"FirstCreateTimeHigh", ((PWIN32_FIND_DATAW)lpFindFileData)->ftCreationTime.dwHighDateTime);
+	else
+		LOQ_handle("filesystem", "F", "FileName", lpFileName);
     return ret;
 }
 

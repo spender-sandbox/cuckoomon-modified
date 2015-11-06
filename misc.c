@@ -217,6 +217,13 @@ void perform_device_fakery(PVOID OutputBuffer, ULONG OutputBufferLength, ULONG I
 	}
 }
 
+void perform_create_time_fakery(FILETIME *createtime)
+{
+	createtime->dwHighDateTime = 0x1CA0431;
+	if (createtime->dwLowDateTime == 0xFDB0C77C)
+		createtime->dwLowDateTime++;
+}
+
 void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength)
 {
 	if (keypath == NULL || Data == NULL)
