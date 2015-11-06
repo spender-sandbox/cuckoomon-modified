@@ -766,7 +766,7 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
 		ret = INVALID_HANDLE_VALUE;
 	}
 
-	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && (!wcsicmp(lpFileName, "c:\\windows") || !wcsicmp(lpFileName, "c:\\pagefile.sys")))
+	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && (!wcsicmp(lpFileName, L"c:\\windows") || !wcsicmp(lpFileName, L"c:\\pagefile.sys")))
 		perform_create_time_fakery(&((PWIN32_FIND_DATAW)lpFindFileData)->ftCreationTime);
 
 	if (g_config.serial_number && ret != INVALID_HANDLE_VALUE && !wcsicmp(lpFileName, L"c:\\System Volume Information"))
