@@ -93,7 +93,7 @@ void cm_free(void *ptr)
 	SIZE_T RegionSize;
 	LONG status;
 	struct cm_alloc_header *hdr;
-	lasterror_t lasterror:
+	lasterror_t lasterror;
 
 	get_lasterrors(&lasterror);
 	hdr = GET_CM_ALLOC_HEADER(ptr);
