@@ -300,6 +300,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtResumeThread,
     return ret;
 }
 
+extern DWORD tmphookinfo_threadid;
+extern CRITICAL_SECTION g_tmp_hookinfo_lock;
+
 HOOKDEF(NTSTATUS, WINAPI, NtTerminateThread,
     __in  HANDLE ThreadHandle,
     __in  NTSTATUS ExitStatus
@@ -308,6 +311,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateThread,
 	DWORD pid = pid_from_thread_handle(ThreadHandle);
 	DWORD tid = tid_from_thread_handle(ThreadHandle);
 	NTSTATUS ret = 0;
+
+	if (tmphookinfo_threadid && tid == tmphookinfo_threadid) {
+		tmphookinfo_threadid = 0;
+		LeaveCriticalSection(&g_tmp_hookinfo_lock);
+	}
 
 	//remove_ignored_thread(tid);
 
@@ -320,8 +328,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtTerminateThread,
 	}
 
 	LOQ_ntstatus("threading", "ph", "ThreadHandle", ThreadHandle, "ExitStatus", ExitStatus);
-    ret = Old_NtTerminateThread(ThreadHandle, ExitStatus);    
-    return ret;
+    ret = Old_NtTerminateThread(ThreadHandle, ExitStatus);
+
+	disable_tail_call_optimization();
+
+	return ret;
 }
 
 HOOKDEF(HANDLE, WINAPI, CreateThread,

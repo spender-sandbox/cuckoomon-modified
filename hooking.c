@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stddef.h>
 #include "ntapi.h"
 #include "hooking.h"
+#include "hooks.h"
 #include "ignore.h"
 #include "unhook.h"
 #include "misc.h"
@@ -73,11 +74,32 @@ int called_by_hook(void)
 }
 
 extern BOOLEAN is_ignored_thread(DWORD tid);
+extern CRITICAL_SECTION g_tmp_hookinfo_lock;
+
+static hook_info_t tmphookinfo;
+DWORD tmphookinfo_threadid;
 
 // returns 1 if we should call our hook, 0 if we should call the original function instead
 int WINAPI enter_hook(hook_t *h, ULONG_PTR _ebp, ULONG_PTR retaddr)
 {
-	hook_info_t *hookinfo = hook_info();
+	hook_info_t *hookinfo;
+	
+	if (g_tls_hook_index >= 0x40 && h->new_func == &New_NtAllocateVirtualMemory) {
+		lasterror_t lasterrors;
+		get_lasterrors(&lasterrors);
+		if (TlsGetValue(g_tls_hook_index) == NULL && (!tmphookinfo_threadid || tmphookinfo_threadid != GetCurrentThreadId())) {
+			EnterCriticalSection(&g_tmp_hookinfo_lock);
+			memset(&tmphookinfo, 0, sizeof(tmphookinfo));
+			tmphookinfo_threadid = GetCurrentThreadId();
+		}
+		set_lasterrors(&lasterrors);
+	}
+	else if (tmphookinfo_threadid) {
+		tmphookinfo_threadid = 0;
+		LeaveCriticalSection(&g_tmp_hookinfo_lock);
+	}
+
+	hookinfo = hook_info();
 
 	hookinfo->current_hook = h;
 	hookinfo->return_address = retaddr;
@@ -89,6 +111,7 @@ int WINAPI enter_hook(hook_t *h, ULONG_PTR _ebp, ULONG_PTR retaddr)
 		hookinfo->parent_caller_retaddr = 0;
 
 		operate_on_backtrace(retaddr, _ebp, set_caller_info);
+
 		return 1;
 	}
 
@@ -101,27 +124,15 @@ hook_info_t *hook_info()
 
 	lasterror_t lasterror;
 	
+	if (tmphookinfo_threadid && tmphookinfo_threadid == GetCurrentThreadId())
+		return &tmphookinfo;
+
 	get_lasterrors(&lasterror);
 
 	ptr = (hook_info_t *)TlsGetValue(g_tls_hook_index);
 	if (ptr == NULL) {
-		// this wizardry allows us to hook NtAllocateVirtualMemory -- otherwise we'd crash from infinite
-		// recursion if NtAllocateVirtualMemory was the first API we saw on a new thread
-		char dummybuf[sizeof(hook_info_t)] = { 0 };
-		hook_info_t *newinfo;
-
-		hook_info_t *info = (hook_info_t *)&dummybuf;
-		TlsSetValue(g_tls_hook_index, info);
-
-		// now allocate the memory we need for the hook info struct without calling our hooks
-		// shouldn't need to do the disable_count thanks to the new call stack inspection, but
-		// it doesn't hurt
-		info->disable_count++;
-		newinfo = (hook_info_t *)calloc(1, sizeof(hook_info_t));
-		info->disable_count--;
-
-		TlsSetValue(g_tls_hook_index, newinfo);
-		ptr = newinfo;
+		ptr = (hook_info_t *)calloc(1, sizeof(hook_info_t));
+		TlsSetValue(g_tls_hook_index, ptr);
 	}
 
 	set_lasterrors(&lasterror);

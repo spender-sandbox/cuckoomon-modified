@@ -80,6 +80,7 @@ static hook_t g_hooks[] = {
 	//HOOK_SPECIAL(ntdll, NtTerminateThread),
 
 	// has special handling
+
 	HOOK_SPECIAL(jscript, COleScript_ParseScriptText),
 	HOOK_SPECIAL(jscript, JsEval),
 	HOOK_SPECIAL(jscript9, JsParseScript),
@@ -121,8 +122,9 @@ static hook_t g_hooks[] = {
     // lowest variant of MoveFile()
     HOOK(kernel32, MoveFileWithProgressW),
 
-    HOOK(kernel32, FindFirstFileExA),
+	HOOK(kernel32, FindFirstFileExA),
     HOOK(kernel32, FindFirstFileExW),
+
 	HOOK(kernel32, FindNextFileW),
 
     // Covered by NtCreateFile() but still grab this information
@@ -462,6 +464,7 @@ static hook_t g_hooks[] = {
     HOOK(mswsock, ConnectEx),
     HOOK(mswsock, TransmitFile),
 	HOOK(mswsock, NSPStartup),
+
     //
     // Crypto Functions
     //
@@ -572,6 +575,8 @@ VOID CALLBACK DllLoadNotification(
 
 extern _LdrRegisterDllNotification pLdrRegisterDllNotification;
 
+CRITICAL_SECTION g_tmp_hookinfo_lock;
+
 void set_hooks()
 {
 	// before modifying any DLLs, let's first freeze all other threads in our process
@@ -587,6 +592,8 @@ void set_hooks()
 	DWORD our_pid = GetCurrentProcessId();
 	// the hooks contain executable code as well, so they have to be RWX
 	DWORD old_protect;
+
+	InitializeCriticalSection(&g_tmp_hookinfo_lock);
 
 	VirtualProtect(g_hooks, sizeof(g_hooks), PAGE_EXECUTE_READWRITE,
 		&old_protect);
