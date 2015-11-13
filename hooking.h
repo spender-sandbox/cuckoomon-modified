@@ -108,6 +108,7 @@ typedef struct _hook_info_t {
 	int disable_count;
 	hook_t *current_hook;
 	ULONG_PTR return_address;
+	ULONG_PTR stack_pointer;
 	ULONG_PTR frame_pointer;
 	ULONG_PTR main_caller_retaddr;
 	ULONG_PTR parent_caller_retaddr;

@@ -736,6 +736,11 @@ typedef enum  {
     FileFsSectorSizeInformation   = 11
 } FS_INFORMATION_CLASS;
 
+typedef enum {
+	ProcessBreakOnTermination	= 29,
+	ProcessDEPPolicy = 34
+} PROCESSINFOCLASS;
+
 typedef struct _FILE_FS_VOLUME_INFORMATION {
     LARGE_INTEGER VolumeCreationTime;
     ULONG         VolumeSerialNumber;

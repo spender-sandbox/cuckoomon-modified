@@ -188,7 +188,7 @@ HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
 ) {
     HRESULT ret = Old_URLDownloadToFileW(pCaller, szURL, szFileName,
         dwReserved, lpfnCB);
-    LOQ_hresult("network", "uF", "URL", szURL, "FileName", szFileName);
+	LOQ_hresult("network", "uFs", "URL", szURL, "FileName", szFileName, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
     if(ret == S_OK) {
         pipe("FILE_NEW:%S", -1, szFileName);
     }

@@ -471,7 +471,8 @@ HOOKDEF(NTSTATUS, WINAPI, RtlDecompressBuffer,
 	NTSTATUS ret = Old_RtlDecompressBuffer(CompressionFormat, UncompressedBuffer, UncompressedBufferSize,
 		CompressedBuffer, CompressedBufferSize, FinalUncompressedSize);
 
-	LOQ_ntstatus("misc", "pbh", "UncompressedBufferAddress", UncompressedBuffer, "UncompressedBuffer", ret ? 0 : *FinalUncompressedSize, UncompressedBuffer, "UncompressedBufferLength", ret ? 0 : *FinalUncompressedSize);
+	LOQ_ntstatus("misc", "pbh", "UncompressedBufferAddress", UncompressedBuffer, "UncompressedBuffer",
+		ret ? 0 : *FinalUncompressedSize, UncompressedBuffer, "UncompressedBufferLength", ret ? 0 : *FinalUncompressedSize);
 
 	return ret;
 }
@@ -489,6 +490,18 @@ HOOKDEF(void, WINAPI, GetSystemInfo,
 	LOQ_void("misc", "");
 
 	return;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtSetInformationProcess,
+	__in HANDLE ProcessHandle,
+	__in PROCESSINFOCLASS ProcessInformationClass,
+	__in PVOID ProcessInformation,
+	__in ULONG ProcessInformationLength
+) {
+	NTSTATUS ret = Old_NtSetInformationProcess(ProcessHandle, ProcessInformationClass, ProcessInformation, ProcessInformationLength);
+	if (NT_SUCCESS(ret) && (ProcessInformationClass == ProcessDEPPolicy || ProcessInformationClass == ProcessBreakOnTermination) && ProcessInformationLength == 4)
+		LOQ_ntstatus("misc", "ii", "ProcessInformationClass", ProcessInformationClass, "Value", *(int *)ProcessInformation);
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemInformation,

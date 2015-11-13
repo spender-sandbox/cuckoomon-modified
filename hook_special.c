@@ -152,21 +152,21 @@ HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
 					if (lpExtStartupInfo->lpAttributeList->Entries[i].Attribute == PROC_THREAD_ATTRIBUTE_PARENT_PROCESS)
 						ParentHandle = *(HANDLE *)lpExtStartupInfo->lpAttributeList->Entries[i].lpValue;
 			}
-			LOQ_bool("process", "uuhiippp", "ApplicationName", lpApplicationName,
+			LOQ_bool("process", "uuhiippps", "ApplicationName", lpApplicationName,
 				"CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
 				"ProcessId", lpProcessInformation->dwProcessId,
 				"ThreadId", lpProcessInformation->dwThreadId,
 				"ParentHandle", ParentHandle,
 				"ProcessHandle", lpProcessInformation->hProcess,
-				"ThreadHandle", lpProcessInformation->hThread);
+				"ThreadHandle", lpProcessInformation->hThread, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
 		}
 		else {
-			LOQ_bool("process", "uuhiipp", "ApplicationName", lpApplicationName,
+			LOQ_bool("process", "uuhiipps", "ApplicationName", lpApplicationName,
 				"CommandLine", lpCommandLine, "CreationFlags", dwCreationFlags,
 				"ProcessId", lpProcessInformation->dwProcessId,
 				"ThreadId", lpProcessInformation->dwThreadId,
 				"ProcessHandle", lpProcessInformation->hProcess,
-				"ThreadHandle", lpProcessInformation->hThread);
+				"ThreadHandle", lpProcessInformation->hThread, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
 		}
     }
 

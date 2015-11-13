@@ -943,7 +943,7 @@ int hook_api(hook_t *h, int type)
 	return ret;
 }
 
-static unsigned int our_stackwalk(ULONG_PTR retaddr, ULONG_PTR sp, PVOID *backtrace, unsigned int count)
+static unsigned int our_stackwalk(ULONG_PTR _rip, ULONG_PTR sp, PVOID *backtrace, unsigned int count)
 {
 	/* derived from http://www.nynaeve.net/Code/StackWalk64.cpp */
 	CONTEXT ctx;
@@ -975,7 +975,7 @@ static unsigned int our_stackwalk(ULONG_PTR retaddr, ULONG_PTR sp, PVOID *backtr
 	return frame + 1;
 }
 
-int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR sp, int(*func)(ULONG_PTR))
+int operate_on_backtrace(ULONG_PTR sp, ULONG_PTR _rip, int(*func)(ULONG_PTR))
 {
 	int ret;
 	PVOID backtrace[HOOK_BACKTRACE_DEPTH];
@@ -987,7 +987,7 @@ int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR sp, int(*func)(ULONG_PTR))
 
 	hook_disable();
 
-	frames = our_stackwalk(retaddr, sp, backtrace, HOOK_BACKTRACE_DEPTH);
+	frames = our_stackwalk(_rip, sp, backtrace, HOOK_BACKTRACE_DEPTH);
 
 	for (i = 0; i < frames; i++) {
 		if (!addr_in_our_dll_range((ULONG_PTR)backtrace[i]))

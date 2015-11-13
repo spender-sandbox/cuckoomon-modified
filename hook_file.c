@@ -266,9 +266,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
 	ret = Old_NtCreateFile(FileHandle, DesiredAccess,
         ObjectAttributes, IoStatusBlock, AllocationSize, FileAttributes,
         ShareAccess | FILE_SHARE_READ, CreateDisposition, CreateOptions, EaBuffer, EaLength);
-    LOQ_ntstatus("filesystem", "PhOiihs", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
+    LOQ_ntstatus("filesystem", "PhOiihss", "FileHandle", FileHandle, "DesiredAccess", DesiredAccess,
         "FileName", ObjectAttributes, "CreateDisposition", CreateDisposition,
-        "ShareAccess", ShareAccess, "FileAttributes", FileAttributes, "ExistedBefore", file_existed ? "yes" : "no");
+        "ShareAccess", ShareAccess, "FileAttributes", FileAttributes, "ExistedBefore", file_existed ? "yes" : "no", "StackPivoted", is_stack_pivoted() ? "yes" : "no");
     if(NT_SUCCESS(ret)) {
 		add_file_to_log_tracking(*FileHandle);
 		if (DesiredAccess & DUMP_FILE_MASK)

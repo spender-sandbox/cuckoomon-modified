@@ -114,6 +114,17 @@ void addr_to_string(const IN_ADDR addr, char *string)
 	num_to_string(string+strlen(string), 4, chunk[3]);
 }
 
+int stack_is_pivoted(void)
+{
+	hook_info_t *hookinfo = hook_info();
+	ULONG_PTR bottom, top;
+	bottom = get_stack_bottom();
+	top = get_stack_top();
+	if (hookinfo->stack_pointer >= bottom && hookinfo->stack_pointer < top)
+		return 0;
+	return 1;
+}
+
 void replace_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr)
 {
 	unsigned int findlen = (unsigned int)strlen(findstr);

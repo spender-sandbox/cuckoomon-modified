@@ -270,10 +270,12 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x60,
 		// cld
 		0xfc,
-		// push dword ptr [esp+36]
-		0xff, 0x74, 0x24, 0x24,
 		// push ebp
 		0x55,
+		// lea eax, dword ptr [esp+40]
+		0x8d, 0x44, 0x24, 0x28,
+		// push eax
+		0x50,
 		// push h
 		0x68, 0x00, 0x00, 0x00, 0x00,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
@@ -799,7 +801,7 @@ int hook_api(hook_t *h, int type)
     return ret;
 }
 
-int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(ULONG_PTR))
+int operate_on_backtrace(ULONG_PTR _esp, ULONG_PTR _ebp, int(*func)(ULONG_PTR))
 {
 	int ret;
 
@@ -808,7 +810,7 @@ int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(ULONG_PTR
 
 	unsigned int count = HOOK_BACKTRACE_DEPTH;
 
-	ret = func(retaddr);
+	ret = func(*(ULONG_PTR *)_esp);
 	if (ret)
 		return ret;
 

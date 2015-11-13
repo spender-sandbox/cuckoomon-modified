@@ -183,3 +183,5 @@ void addr_to_string(const IN_ADDR addr, char *string);
 PUNICODE_STRING get_basename_of_module(HMODULE module_handle);
 
 void perform_create_time_fakery(FILETIME *createtime);
+
+int is_stack_pivoted(void);

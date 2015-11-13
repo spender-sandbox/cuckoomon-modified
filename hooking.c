@@ -80,7 +80,9 @@ static hook_info_t tmphookinfo;
 DWORD tmphookinfo_threadid;
 
 // returns 1 if we should call our hook, 0 if we should call the original function instead
-int WINAPI enter_hook(hook_t *h, ULONG_PTR _ebp, ULONG_PTR retaddr)
+// on x86 this is actually: hook, esp, ebp
+// on x64 this is actually: hook, rsp, rip of hook (for unwind-based stack walking)
+int WINAPI enter_hook(hook_t *h, ULONG_PTR sp, ULONG_PTR ebp_or_rip)
 {
 	hook_info_t *hookinfo;
 	
@@ -102,15 +104,16 @@ int WINAPI enter_hook(hook_t *h, ULONG_PTR _ebp, ULONG_PTR retaddr)
 	hookinfo = hook_info();
 
 	hookinfo->current_hook = h;
-	hookinfo->return_address = retaddr;
-	hookinfo->frame_pointer = _ebp;
+	hookinfo->stack_pointer = sp;
+	hookinfo->return_address = *(ULONG_PTR *)sp;
+	hookinfo->frame_pointer = ebp_or_rip;
 
 	if ((hookinfo->disable_count < 1) && (h->allow_hook_recursion || (!called_by_hook() /*&& !is_ignored_thread(GetCurrentThreadId())*/))) {
 		/* set caller information */
 		hookinfo->main_caller_retaddr = 0;
 		hookinfo->parent_caller_retaddr = 0;
 
-		operate_on_backtrace(retaddr, _ebp, set_caller_info);
+		operate_on_backtrace(sp, ebp_or_rip, set_caller_info);
 
 		return 1;
 	}

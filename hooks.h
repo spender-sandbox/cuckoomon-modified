@@ -969,6 +969,13 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtUnmapViewOfSection,
     _In_opt_  PVOID BaseAddress
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtSetInformationProcess,
+	__in HANDLE ProcessHandle,
+	__in PROCESSINFOCLASS ProcessInformationClass,
+	__in PVOID ProcessInformation,
+	__in ULONG ProcessInformationLength
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
     __in     HANDLE ProcessHandle,
     __inout  PVOID *BaseAddress,

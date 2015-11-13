@@ -373,9 +373,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
 	DWORD pid = pid_from_process_handle(ProcessHandle);
 
 	if ((pid != GetCurrentProcessId()) || Win32Protect != PAGE_READWRITE)
-		LOQ_ntstatus("process", "ppPpPh", "SectionHandle", SectionHandle,
+		LOQ_ntstatus("process", "ppPpPhs", "SectionHandle", SectionHandle,
 		"ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-		"SectionOffset", SectionOffset, "ViewSize", ViewSize, "Win32Protect", Win32Protect);
+		"SectionOffset", SectionOffset, "ViewSize", ViewSize, "Win32Protect", Win32Protect, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
 
 	if (NT_SUCCESS(ret)) {
 		if (pid != GetCurrentProcessId()) {
@@ -399,8 +399,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtAllocateVirtualMemory,
         ZeroBits, RegionSize, AllocationType, Protect);
 
 	if (ret != STATUS_CONFLICTING_ADDRESSES && (Protect != PAGE_READWRITE || GetCurrentProcessId() != our_getprocessid(ProcessHandle))) {
-		LOQ_ntstatus("process", "pPPh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-			"RegionSize", RegionSize, "Protection", Protect);
+		LOQ_ntstatus("process", "pPPhs", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+			"RegionSize", RegionSize, "Protection", Protect, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
 	}
 
 	return ret;
@@ -465,8 +465,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteVirtualMemory,
 	pid = pid_from_process_handle(ProcessHandle);
 
 	if (pid != GetCurrentProcessId()) {
-		LOQ_ntstatus("process", "ppBh", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-			"Buffer", NumberOfBytesWritten, Buffer, "BufferLength", *NumberOfBytesWritten);
+		LOQ_ntstatus("process", "ppBhs", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+			"Buffer", NumberOfBytesWritten, Buffer, "BufferLength", *NumberOfBytesWritten, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
 
 		if (NT_SUCCESS(ret)) {
 			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
@@ -495,8 +495,8 @@ HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
 	pid = pid_from_process_handle(hProcess);
 
 	if (pid != GetCurrentProcessId()) {
-		LOQ_bool("process", "ppBh", "ProcessHandle", hProcess, "BaseAddress", lpBaseAddress,
-			"Buffer", lpNumberOfBytesWritten, lpBuffer, "BufferLength", *lpNumberOfBytesWritten);
+		LOQ_bool("process", "ppBhs", "ProcessHandle", hProcess, "BaseAddress", lpBaseAddress,
+			"Buffer", lpNumberOfBytesWritten, lpBuffer, "BufferLength", *lpNumberOfBytesWritten, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
 
 		if (ret) {
 			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
@@ -519,6 +519,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
     OUT     PULONG OldAccessProtection
 ) {
 	NTSTATUS ret;
+	MEMORY_BASIC_INFORMATION meminfo;
 
 	if (NewAccessProtection == PAGE_EXECUTE_READ && BaseAddress && NumberOfBytesToProtect &&
 		GetCurrentProcessId() == our_getprocessid(ProcessHandle) && is_in_dll_range((ULONG_PTR)*BaseAddress))
@@ -526,10 +527,19 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
 	
 	ret = Old_NtProtectVirtualMemory(ProcessHandle, BaseAddress,
         NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
-    LOQ_ntstatus("process", "pPPhH", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+
+	memset(&meminfo, 0, sizeof(meminfo));
+	if (NT_SUCCESS(ret)) {
+		lasterror_t lasterrors;
+		get_lasterors(&lasterrors);
+		VirtualQueryEx(ProcessHandle, *BaseAddress, &meminfo, sizeof(meminfo));
+		set_lasterrors(&lasterrors);
+	}
+	LOQ_ntstatus("process", "pPPhhHs", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
         "NumberOfBytesProtected", NumberOfBytesToProtect,
+		"MemoryType", meminfo.Type,
         "NewAccessProtection", NewAccessProtection,
-        "OldAccessProtection", OldAccessProtection);
+		"OldAccessProtection", OldAccessProtection, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
     return ret;
 }
 
@@ -548,8 +558,8 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
 
 	ret = Old_VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect,
         lpflOldProtect);
-    LOQ_bool("process", "ppph", "ProcessHandle", hProcess, "Address", lpAddress,
-        "Size", dwSize, "Protection", flNewProtect);
+    LOQ_bool("process", "ppphs", "ProcessHandle", hProcess, "Address", lpAddress,
+		"Size", dwSize, "Protection", flNewProtect, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
     return ret;
 }
 
