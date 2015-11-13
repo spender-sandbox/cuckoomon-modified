@@ -24,6 +24,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "pipe.h"
 #include "config.h"
+#include "misc.h"
 
 static int did_initial_request;
 

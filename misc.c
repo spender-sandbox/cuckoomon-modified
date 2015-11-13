@@ -114,7 +114,7 @@ void addr_to_string(const IN_ADDR addr, char *string)
 	num_to_string(string+strlen(string), 4, chunk[3]);
 }
 
-int stack_is_pivoted(void)
+int is_stack_pivoted(void)
 {
 	hook_info_t *hookinfo = hook_info();
 	ULONG_PTR bottom, top;

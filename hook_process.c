@@ -531,7 +531,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
 	memset(&meminfo, 0, sizeof(meminfo));
 	if (NT_SUCCESS(ret)) {
 		lasterror_t lasterrors;
-		get_lasterors(&lasterrors);
+		get_lasterrors(&lasterrors);
 		VirtualQueryEx(ProcessHandle, *BaseAddress, &meminfo, sizeof(meminfo));
 		set_lasterrors(&lasterrors);
 	}
