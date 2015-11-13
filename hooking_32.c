@@ -202,10 +202,12 @@ static void hook_create_pre_tramp(hook_t *h)
 		0x60,
 		// cld
 		0xfc,
-		// push dword ptr [esp+36]
-		0xff, 0x74, 0x24, 0x24,
 		// push ebp
 		0x55,
+		// lea eax, dword ptr [esp+40]
+		0x8d, 0x44, 0x24, 0x28,
+		// push eax
+		0x50,
 		// push h
 		0x68, 0x00, 0x00, 0x00, 0x00,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
