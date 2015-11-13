@@ -551,6 +551,7 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
     __out  PDWORD lpflOldProtect
 ) {
 	BOOL ret;
+	MEMORY_BASIC_INFORMATION meminfo;
 
 	if (flNewProtect == PAGE_EXECUTE_READ && GetCurrentProcessId() == our_getprocessid(hProcess) &&
 		is_in_dll_range((ULONG_PTR)lpAddress))
@@ -558,8 +559,17 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
 
 	ret = Old_VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect,
         lpflOldProtect);
-    LOQ_bool("process", "ppphs", "ProcessHandle", hProcess, "Address", lpAddress,
-		"Size", dwSize, "Protection", flNewProtect, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
+
+	memset(&meminfo, 0, sizeof(meminfo));
+	if (ret) {
+		lasterror_t lasterrors;
+		get_lasterrors(&lasterrors);
+		VirtualQueryEx(hProcess, lpAddress, &meminfo, sizeof(meminfo));
+		set_lasterrors(&lasterrors);
+	}
+
+	LOQ_bool("process", "ppphhHs", "ProcessHandle", hProcess, "Address", lpAddress,
+		"Size", dwSize, "MemType", meminfo.Type, "Protection", flNewProtect, "OldProtection", lpflOldProtect, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
     return ret;
 }
 
