@@ -269,8 +269,8 @@ HOOKDEF(LONG, WINAPI, RegSetValueExA,
 	LONG ret = Old_RegSetValueExA(hKey, lpValueName, Reserved, dwType, lpData,
         cbData);
     if(ret == ERROR_SUCCESS) {
-        LOQ_zero("registry", "psirv", "Handle", hKey, "ValueName", lpValueName, "Type", dwType,
-            "Buffer", dwType, cbData, lpData,
+        LOQ_zero("registry", "psiriv", "Handle", hKey, "ValueName", lpValueName, "Type", dwType,
+			"Buffer", dwType, cbData, lpData, "BufferLength", cbData,
 			"FullName", hKey, lpValueName);
     }
     else {
@@ -291,8 +291,8 @@ HOOKDEF(LONG, WINAPI, RegSetValueExW,
 	LONG ret = Old_RegSetValueExW(hKey, lpValueName, Reserved, dwType, lpData,
         cbData);
     if(ret == ERROR_SUCCESS) {
-        LOQ_zero("registry", "puiRV", "Handle", hKey, "ValueName", lpValueName, "Type", dwType,
-            "Buffer", dwType, cbData, lpData,
+        LOQ_zero("registry", "puiRiV", "Handle", hKey, "ValueName", lpValueName, "Type", dwType,
+			"Buffer", dwType, cbData, lpData, "BufferLength", cbData,
 			"FullName", hKey, lpValueName);
 	}
     else {

@@ -135,8 +135,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetValueKey,
     NTSTATUS ret = Old_NtSetValueKey(KeyHandle, ValueName, TitleIndex,
         Type, Data, DataSize);
     if(NT_SUCCESS(ret)) {
-        LOQ_ntstatus("registry", "poiRk", "KeyHandle", KeyHandle, "ValueName", ValueName,
-            "Type", Type, "Buffer", Type, DataSize, Data,
+        LOQ_ntstatus("registry", "poiRik", "KeyHandle", KeyHandle, "ValueName", ValueName,
+			"Type", Type, "Buffer", Type, DataSize, Data, "BufferLength", DataSize,
 			"FullName", KeyHandle, ValueName);
     }
     else {
