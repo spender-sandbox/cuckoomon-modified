@@ -312,7 +312,7 @@ static void fixpe(ULONG_PTR base, char *buf, DWORD bufsize)
 	if (doshdr->e_magic != IMAGE_DOS_SIGNATURE)
 		return;
 
-	if (doshdr->e_lfanew > bufsize - (sizeof(IMAGE_NT_HEADERS64) + sizeof(IMAGE_DOS_HEADER)))
+	if ((DWORD)doshdr->e_lfanew > bufsize - (sizeof(IMAGE_NT_HEADERS64) + sizeof(IMAGE_DOS_HEADER)))
 		return;
 
 	nthdr = (PIMAGE_NT_HEADERS)(buf + doshdr->e_lfanew);
