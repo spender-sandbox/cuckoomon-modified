@@ -32,8 +32,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define BUFFERSIZE 16 * 1024 * 1024
 #define BUFFER_LOG_MAX 256
 #define LARGE_BUFFER_LOG_MAX 2048
-int buffer_log_max = BUFFER_LOG_MAX;
-int large_buffer_log_max = LARGE_BUFFER_LOG_MAX;
+size_t buffer_log_max = BUFFER_LOG_MAX;
+size_t large_buffer_log_max = LARGE_BUFFER_LOG_MAX;
 #define BUFFER_REGVAL_MAX 512
 
 static CRITICAL_SECTION g_mutex;

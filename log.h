@@ -97,8 +97,8 @@ enum {
 void set_special_api(DWORD API, BOOLEAN deletelast);
 DWORD get_last_api(void);
 
-extern int buffer_log_max;
-extern int large_buffer_log_max;
+extern size_t buffer_log_max;
+extern size_t large_buffer_log_max;
 
 #define _LOQ(eval, cat, fmt, ...) \
 do { \
