@@ -30,7 +30,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // the size of the logging buffer
 #define BUFFERSIZE 16 * 1024 * 1024
+#define BUFFER_LOG_MAX 256
 #define LARGE_BUFFER_LOG_MAX 2048
+int buffer_log_max = BUFFER_LOG_MAX;
+int large_buffer_log_max = LARGE_BUFFER_LOG_MAX;
 #define BUFFER_REGVAL_MAX 512
 
 static CRITICAL_SECTION g_mutex;
@@ -300,7 +303,7 @@ static void log_wargv(int argc, const wchar_t ** argv) {
 }
 
 static void log_buffer(const char *buf, size_t length) {
-    size_t trunclength = min(length, BUFFER_LOG_MAX);
+    size_t trunclength = min(length, buffer_log_max);
 
     if (buf == NULL) {
         trunclength = 0;
@@ -310,7 +313,7 @@ static void log_buffer(const char *buf, size_t length) {
 }
 
 static void log_large_buffer(const char *buf, size_t length) {
-	size_t trunclength = min(length, LARGE_BUFFER_LOG_MAX);
+	size_t trunclength = min(length, large_buffer_log_max);
 
 	if (buf == NULL) {
 		trunclength = 0;

@@ -341,7 +341,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 	}
 	else {
 		PVOID prev;
-		SIZE_T len = min(IoStatusBlock->Information, BUFFER_LOG_MAX);
+		SIZE_T len = min(IoStatusBlock->Information, buffer_log_max);
 		PVOID newbuf;
 
 		EnterCriticalSection(&readfile_critsec);
