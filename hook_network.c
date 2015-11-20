@@ -536,6 +536,37 @@ HOOKDEF(BOOL, WINAPI, HttpAddRequestHeadersW,
 	return ret;
 }
 
+HOOKDEF(BOOL, WINAPI, HttpQueryInfoA,
+	_In_    HINTERNET hRequest,
+	_In_    DWORD     dwInfoLevel,
+	_Inout_ LPVOID    lpvBuffer,
+	_Inout_ LPDWORD   lpdwBufferLength,
+	_Inout_ LPDWORD   lpdwIndex
+) {
+	BOOL ret = Old_HttpQueryInfoA(hRequest, dwInfoLevel, lpvBuffer, lpdwBufferLength, lpdwIndex);
+	if (dwInfoLevel == HTTP_QUERY_DATE)
+		LOQ_bool("network", "piS", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", ret ? *lpdwBufferLength : 0, lpvBuffer);
+	else
+		LOQ_bool("network", "piB", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", lpdwBufferLength, lpvBuffer);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, HttpQueryInfoW,
+	_In_    HINTERNET hRequest,
+	_In_    DWORD     dwInfoLevel,
+	_Inout_ LPVOID    lpvBuffer,
+	_Inout_ LPDWORD   lpdwBufferLength,
+	_Inout_ LPDWORD   lpdwIndex
+) {
+	BOOL ret = Old_HttpQueryInfoW(hRequest, dwInfoLevel, lpvBuffer, lpdwBufferLength, lpdwIndex);
+	if (dwInfoLevel == HTTP_QUERY_DATE)
+		LOQ_bool("network", "piU", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", ret ? (*lpdwBufferLength / sizeof(WCHAR)) : 0, lpvBuffer);
+	else
+		LOQ_bool("network", "piB", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", lpdwBufferLength, lpvBuffer);
+	return ret;
+}
+
+
 HOOKDEF(int, WINAPI, NSPStartup,
 	__in LPGUID lpProviderId,
 	__out PVOID lpnspRoutines

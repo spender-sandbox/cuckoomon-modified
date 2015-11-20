@@ -587,9 +587,9 @@ void loq(int index, const char *category, const char *name,
             log_buffer(s, len);
         }
         else if(key == 'B') {
-            size_t *len = va_arg(args, size_t *);
+            DWORD *len = va_arg(args, DWORD *);
             const char *s = va_arg(args, const char *);
-            log_buffer(s, len == NULL ? 0 : *len);
+			log_buffer(s, len == NULL ? 0 : *len);
         }
 		else if (key == 'c') {
 			size_t len = va_arg(args, size_t);
@@ -597,7 +597,7 @@ void loq(int index, const char *category, const char *name,
 			log_large_buffer(s, len);
 		}
 		else if (key == 'C') {
-			size_t *len = va_arg(args, size_t *);
+			DWORD *len = va_arg(args, DWORD *);
 			const char *s = va_arg(args, const char *);
 			log_large_buffer(s, len == NULL ? 0 : *len);
 		}

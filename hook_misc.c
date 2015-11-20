@@ -477,6 +477,26 @@ HOOKDEF(NTSTATUS, WINAPI, RtlDecompressBuffer,
 	return ret;
 }
 
+HOOKDEF(NTSTATUS, WINAPI, RtlCompressBuffer,
+	_In_  USHORT CompressionFormatAndEngine,
+	_In_  PUCHAR UncompressedBuffer,
+	_In_  ULONG  UncompressedBufferSize,
+	_Out_ PUCHAR CompressedBuffer,
+	_In_  ULONG  CompressedBufferSize,
+	_In_  ULONG  UncompressedChunkSize,
+	_Out_ PULONG FinalCompressedSize,
+	_In_  PVOID  WorkSpace
+) {
+	NTSTATUS ret = Old_RtlCompressBuffer(CompressionFormatAndEngine, UncompressedBuffer, UncompressedBufferSize,
+		CompressedBuffer, CompressedBufferSize, UncompressedChunkSize, FinalCompressedSize, WorkSpace);
+
+	LOQ_ntstatus("misc", "pbh", "UncompressedBufferAddress", UncompressedBuffer, "UncompressedBuffer",
+		ret ? 0 : UncompressedBufferSize, UncompressedBuffer, "UncompressedBufferLength", ret ? 0 : UncompressedBufferSize);
+
+	return ret;
+
+}
+
 HOOKDEF(void, WINAPI, GetSystemInfo,
 	__out LPSYSTEM_INFO lpSystemInfo
 ) {

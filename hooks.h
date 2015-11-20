@@ -1183,6 +1183,17 @@ extern HOOKDEF(NTSTATUS, WINAPI, RtlDecompressBuffer,
 	__out PULONG FinalUncompressedSize
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, RtlCompressBuffer,
+	_In_  USHORT CompressionFormatAndEngine,
+	_In_  PUCHAR UncompressedBuffer,
+	_In_  ULONG  UncompressedBufferSize,
+	_Out_ PUCHAR CompressedBuffer,
+	_In_  ULONG  CompressedBufferSize,
+	_In_  ULONG  UncompressedChunkSize,
+	_Out_ PULONG FinalCompressedSize,
+	_In_  PVOID  WorkSpace
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtLoadDriver,
 	PUNICODE_STRING DriverServiceNAme
 );
@@ -1640,6 +1651,22 @@ extern HOOKDEF(BOOL, WINAPI, HttpAddRequestHeadersW,
 	__in LPCWSTR lpszHeaders,
 	__in DWORD dwHeadersLength,
 	__in DWORD dwModifiers
+);
+
+extern HOOKDEF(BOOL, WINAPI, HttpQueryInfoA,
+	_In_    HINTERNET hRequest,
+	_In_    DWORD     dwInfoLevel,
+	_Inout_ LPVOID    lpvBuffer,
+	_Inout_ LPDWORD   lpdwBufferLength,
+	_Inout_ LPDWORD   lpdwIndex
+);
+
+extern HOOKDEF(BOOL, WINAPI, HttpQueryInfoW,
+	_In_    HINTERNET hRequest,
+	_In_    DWORD     dwInfoLevel,
+	_Inout_ LPVOID    lpvBuffer,
+	_Inout_ LPDWORD   lpdwBufferLength,
+	_Inout_ LPDWORD   lpdwIndex
 );
 
 extern HOOKDEF(BOOL, WINAPI, InternetReadFile,
