@@ -330,18 +330,24 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 	wchar_t *fname;
 	BOOLEAN deletelast;
 	unsigned int read_count = 0;
+	ULONG_PTR length;
+
+	if (NT_SUCCESS(ret))
+		length = IoStatusBlock->Information;
+	else
+		length = 0;
 
 	if (!InterlockedExchange(&init_readfile_critsec, 1))
 		InitializeCriticalSection(&readfile_critsec);
 
 	if (get_last_api() == API_NTREADFILE && FileHandle == LastFileHandle) {
 		// can overflow, but we don't care much
-		AccumulatedLength += (ULONG)IoStatusBlock->Information;
+		AccumulatedLength += (ULONG)length;
 		deletelast = TRUE;
 	}
 	else {
 		PVOID prev;
-		SIZE_T len = min(IoStatusBlock->Information, buffer_log_max);
+		SIZE_T len = min(length, buffer_log_max);
 		PVOID newbuf;
 
 		EnterCriticalSection(&readfile_critsec);
@@ -352,7 +358,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 		if (prev)
 			free(prev);
 		LastFileHandle = FileHandle;
-		AccumulatedLength = (ULONG)IoStatusBlock->Information;
+		AccumulatedLength = (ULONG)length;
 		InitialBufferLength = len;
 		LeaveCriticalSection(&readfile_critsec);
 
@@ -395,6 +401,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
 		IoStatusBlock, Buffer, Length, ByteOffset, Key);
 	wchar_t *fname;
 	unsigned int write_count;
+	ULONG_PTR length;
+
+	if (NT_SUCCESS(ret))
+		length = IoStatusBlock->Information;
+	else
+		length = 0;
 
 	write_count = increment_file_log_write_count(FileHandle);
 	if (write_count <= 50) {
@@ -403,11 +415,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
 
 		if (write_count < 50) {
 			LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
-				"HandleName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information);
+				"HandleName", fname, "Buffer", length, Buffer, "Length", length);
 		}
 		else if (write_count == 50) {
 			LOQ_ntstatus("filesystem", "pFbls", "FileHandle", FileHandle,
-				"HandleName", fname, "Buffer", IoStatusBlock->Information, Buffer, "Length", IoStatusBlock->Information, "Status", "Maximum logged writes reached for this file");
+				"HandleName", fname, "Buffer", length, Buffer, "Length", length, "Status", "Maximum logged writes reached for this file");
 
 		}
 
@@ -452,14 +464,21 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
     __out  PVOID OutputBuffer,
     __in   ULONG OutputBufferLength
 ) {
+	ULONG_PTR length;
     NTSTATUS ret = Old_NtDeviceIoControlFile(FileHandle, Event,
         ApcRoutine, ApcContext, IoStatusBlock, IoControlCode,
         InputBuffer, InputBufferLength, OutputBuffer,
         OutputBufferLength);
+
+	if (NT_SUCCESS(ret))
+		length = IoStatusBlock->Information;
+	else
+		length = 0;
+
 	LOQ_ntstatus("device", "phbb", "FileHandle", FileHandle,
 		"IoControlCode", IoControlCode,
         "InputBuffer", InputBufferLength, InputBuffer,
-        "OutputBuffer", IoStatusBlock->Information, OutputBuffer);
+        "OutputBuffer", length, OutputBuffer);
 
 	if (!g_config.no_stealth && NT_SUCCESS(ret) && OutputBuffer)
 		perform_device_fakery(OutputBuffer, OutputBufferLength, IoControlCode);
@@ -482,6 +501,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryFile,
 ) {
 	OBJECT_ATTRIBUTES objattr;
 	NTSTATUS ret;
+	ULONG_PTR length;
 
 	memset(&objattr, 0, sizeof(objattr));
 	objattr.ObjectName = FileName;
@@ -491,6 +511,12 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryFile,
         ApcRoutine, ApcContext, IoStatusBlock, FileInformation,
         Length, FileInformationClass, ReturnSingleEntry,
         FileName, RestartScan);
+
+	if (NT_SUCCESS(ret))
+		length = IoStatusBlock->Information;
+	else
+		length = 0;
+
 	/* don't log the resulting buffer, otherwise we can't turn these calls into simple duplicates */
 	if (FileInformationClass == FileNamesInformation) {
 		LOQ_ntstatus("filesystem", "pOi", "FileHandle", FileHandle,
@@ -498,7 +524,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryFile,
 	}
 	else {
 		LOQ_ntstatus("filesystem", "pbOi", "FileHandle", FileHandle,
-			"FileInformation", IoStatusBlock->Information, FileInformation,
+			"FileInformation", length, FileInformation,
 			"FileName", &objattr, "FileInformationClass", FileInformationClass);
 	}
     return ret;
@@ -514,15 +540,21 @@ HOOKDEF(NTSTATUS, WINAPI, NtQueryInformationFile,
 	wchar_t *fname = calloc(32768, sizeof(wchar_t));
 	wchar_t *absolutepath = calloc(32768, sizeof(wchar_t));
 	NTSTATUS ret;
-
+	ULONG_PTR length;
 
 	path_from_handle(FileHandle, fname, 32768);
 	ensure_absolute_unicode_path(absolutepath, fname);
 
 	ret = Old_NtQueryInformationFile(FileHandle, IoStatusBlock,
         FileInformation, Length, FileInformationClass);
+
+	if (NT_SUCCESS(ret))
+		length = IoStatusBlock->Information;
+	else
+		length = 0;
+
 	LOQ_ntstatus("filesystem", "puib", "FileHandle", FileHandle, "HandleName", absolutepath, "FileInformationClass", FileInformationClass,
-        "FileInformation", IoStatusBlock->Information, FileInformation);
+        "FileInformation", length, FileInformation);
 
 	free(fname);
 	free(absolutepath);
