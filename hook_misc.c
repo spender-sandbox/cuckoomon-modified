@@ -549,7 +549,7 @@ normal_call:
 		are reading this code */
 		if (!g_config.no_stealth && SystemInformationClass == SystemProcessorPerformanceInformation &&
 			NT_SUCCESS(ret) && SystemInformationLength >= (sizeof(LARGE_INTEGER) * 3)) {
-			PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION perf_info = (PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION)buf;
+			PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION perf_info = (PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION)SystemInformation;
 			perf_info->IdleTime.HighPart |= 2;
 		}
 
