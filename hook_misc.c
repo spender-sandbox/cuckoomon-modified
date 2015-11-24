@@ -544,6 +544,16 @@ normal_call:
 			PSYSTEM_BASIC_INFORMATION p = (PSYSTEM_BASIC_INFORMATION)SystemInformation;
 			p->NumberOfProcessors = 2;
 		}
+
+		/* This is nearly arbitrary and simply designed to test whether the Upatre author(s) or others
+		are reading this code */
+		if (!g_config.no_stealth && SystemInformationClass == SystemProcessorPerformanceInformation &&
+			NT_SUCCESS(ret) && SystemInformationLength >= (sizeof(LARGE_INTEGER) * 3)) {
+			PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION perf_info = (PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION)buf;
+			perf_info->IdleTime.HighPart |= 2;
+		}
+
+
 		return ret;
 	}
 
