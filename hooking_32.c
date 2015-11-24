@@ -665,47 +665,6 @@ int hook_api(hook_t *h, int type)
 		return 0;
     }
 
-	// windows 7 has a DLL called kernelbase.dll which basically acts
-	// as a layer between the program and kernel32 (and related?) it
-	// allows easy hotpatching of a set of functions which is why
-	// there's a short relative jump and an indirect jump. we want to
-	// resolve the address of the real function, so we follow these
-	// two jumps.
-	if (!memcmp(addr, "\xeb\x05", 2) &&
-		!memcmp(addr + 7, "\xff\x25", 2)) {
-		addr = **(unsigned char ***)(addr + 9);
-		delay_loaded = TRUE;
-	}
-
-	// Some functions don't just have the short jump and indirect
-	// jump, but also an empty function prolog
-	// ("mov edi, edi ; push ebp ; mov ebp, esp ; pop ebp"). Other
-	// than that, this edge case is equivalent to the case above.
-	else if (!memcmp(addr, "\x8b\xff\x55\x8b\xec\x5d\xeb\x05", 8) &&
-		!memcmp(addr + 13, "\xff\x25", 2)) {
-		addr = **(unsigned char ***)(addr + 15);
-		delay_loaded = TRUE;
-	}
-	// others have full-dword relative jumps at the end of the stub instead
-	// of short jumps
-	else if (!memcmp(addr, "\x8b\xff\x55\x8b\xec\x5d\xe9", 7)) {
-		PUCHAR target = (PUCHAR)get_near_rel_target(&addr[6]);
-		if (!memcmp(target, "\xff\x25", 2)) {
-			addr = **(unsigned char ***)(target + 2);
-			delay_loaded = TRUE;
-		}
-	}
-	// Others still (observed by KillerInstinct and others on IsDebuggerPresent on some
-	// windows 7 systems) will have a short jump back to an indirect jmp out to one
-	// of the core DLLs, hook that instead
-	else if (addr[0] == 0xeb && addr[1] >= 0x80) {
-		PUCHAR target = (PUCHAR)get_short_rel_target(addr);
-		if (!memcmp(target, "\xff\x25", 2)) {
-			addr = **(unsigned char ***)(target + 2);
-			delay_loaded = TRUE;
-		}
-	}
-
 	// the following applies for "inlined" functions on windows 7,
 	// some functions are inlined into kernelbase.dll, rather than
 	// kernelbase.dll jumping to e.g. kernel32.dll. for these
@@ -713,9 +672,43 @@ int hook_api(hook_t *h, int type)
 	// inlined function.
 	if (!memcmp(addr, "\xeb\x02", 2) &&
 		!memcmp(addr - 5, "\xcc\xcc\xcc\xcc\xcc", 5)) {
-
 		// step over the short jump and the relative offset
 		addr += 4;
+	}
+
+	// windows 7 has a DLL called kernelbase.dll which basically acts
+	// as a layer between the program and kernel32 (and related?) it
+	// allows easy hotpatching of a set of functions which is why
+	// there's a short relative jump and an indirect jump. we want to
+	// resolve the address of the real function, so we follow these
+	// two jumps.
+	if (addr[0] == 0xeb) {
+		PUCHAR target = (PUCHAR)get_short_rel_target(addr);
+		if (!memcmp(target, "\xff\x25", 2)) {
+			addr = **(unsigned char ***)(target + 2);
+			delay_loaded = TRUE;
+		}
+	}
+
+	// Some functions don't just have the short jump and indirect
+	// jump, but also an empty function prolog
+	// ("mov edi, edi ; push ebp ; mov ebp, esp ; pop ebp"). Other
+	// than that, this edge case is equivalent to the case above.
+	else if (!memcmp(addr, "\x8b\xff\x55\x8b\xec\x5d", 6)) {
+		if (addr[6] == 0xeb) {
+			PUCHAR target = (PUCHAR)get_short_rel_target(addr + 6);
+			if (!memcmp(target, "\xff\x25", 2)) {
+				addr = **(unsigned char ***)(target + 2);
+				delay_loaded = TRUE;
+			}
+		}
+		else if (addr[6] == 0xe9) {
+			PUCHAR target = (PUCHAR)get_near_rel_target(&addr[6]);
+			if (!memcmp(target, "\xff\x25", 2)) {
+				addr = **(unsigned char ***)(target + 2);
+				delay_loaded = TRUE;
+			}
+		}
 	}
 
 	if (!wcscmp(h->library, L"ntdll") && addr[0] == 0xb8) {
