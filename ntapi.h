@@ -263,10 +263,10 @@ typedef struct _INITIAL_TEB {
 
 typedef enum _SYSTEM_INFORMATION_CLASS {
 	SystemBasicInformation = 0,
-	SystemExceptionInformation,
-	SystemInterruptInformation,
-	SystemLookasideInformation,
+	SystemProcessorInformation,
 	SystemPerformanceInformation,
+	SystemTimeOfDayInformation,
+	SystemPathInformation,
 	SystemProcessInformation,
 	SystemCallCountInformation,
 	SystemDeviceInformation,
@@ -283,7 +283,9 @@ typedef enum _SYSTEM_INFORMATION_CLASS {
 	SystemPageFileInformation,
 	SystemVdmInstemulInformation,
 	SystemVdmBopInformation,
-	SystemFileCacheInformation
+	SystemFileCacheInformation,
+	SystemInterruptInformation = 23,
+	SystemExceptionInformation = 33
 } SYSTEM_INFORMATION_CLASS, *PSYSTEM_INFORMATION_CLASS;
 
 typedef struct _SYSTEM_BASIC_INFORMATION {

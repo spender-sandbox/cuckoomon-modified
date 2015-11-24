@@ -552,7 +552,11 @@ normal_call:
 			PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION perf_info = (PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION)SystemInformation;
 			perf_info->IdleTime.HighPart |= 2;
 		}
-
+		else if (!g_config.no_stealth && SystemInformationClass == SystemPerformanceInformation &&
+			NT_SUCCESS(ret) && SystemInformationLength >= sizeof(LARGE_INTEGER)) {
+			PLARGE_INTEGER perf_info = (PLARGE_INTEGER)SystemInformation;
+			perf_info->HighPart |= 2;
+		}
 
 		return ret;
 	}
