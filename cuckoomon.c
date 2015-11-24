@@ -195,6 +195,31 @@ static hook_t g_hooks[] = {
 
 	HOOK(advapi32, RegNotifyChangeKeyValue),
 
+	// On newer versions of Windows, the above registry APIs are also accessible via kernel32 without
+	// the need for advapi32 (and advapi32 will actually simply end up pointing into the kernel32 version).
+	// Add these below to make sure we still end up hooking the APIs even if advapi32 isn't loaded
+	HOOK(kernel32, RegOpenKeyExA),
+	HOOK(kernel32, RegOpenKeyExW),
+	HOOK(kernel32, RegCreateKeyExA),
+	HOOK(kernel32, RegCreateKeyExW),
+	HOOK(kernel32, RegDeleteKeyA),
+	HOOK(kernel32, RegDeleteKeyW),
+	HOOK(kernel32, RegEnumKeyW),
+	HOOK(kernel32, RegEnumKeyExA),
+	HOOK(kernel32, RegEnumKeyExW),
+	HOOK(kernel32, RegEnumValueA),
+	HOOK(kernel32, RegEnumValueW),
+	HOOK(kernel32, RegSetValueExA),
+	HOOK(kernel32, RegSetValueExW),
+	HOOK(kernel32, RegQueryValueExA),
+	HOOK(kernel32, RegQueryValueExW),
+	HOOK(kernel32, RegDeleteValueA),
+	HOOK(kernel32, RegDeleteValueW),
+	HOOK(kernel32, RegQueryInfoKeyA),
+	HOOK(kernel32, RegQueryInfoKeyW),
+	HOOK(kernel32, RegCloseKey),
+	HOOK(kernel32, RegNotifyChangeKeyValue),
+
     //
     // Native Registry Hooks
     //
