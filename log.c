@@ -891,7 +891,8 @@ buffer_log:
 				free(lastlog.buf);
 				lastlog.buf = NULL;
 				// flush logs once we're done seeing duplicates of a particular API
-				//log_flush();
+				if (g_config.force_flush)
+					log_flush();
 			}
 		}
 		if (lastlog.buf == NULL) {

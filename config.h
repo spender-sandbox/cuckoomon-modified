@@ -76,6 +76,9 @@ struct _g_config {
     // do we force sleep-skipping despite threads?
     int force_sleepskip;
 
+	// do we force flushing of each log?
+	int force_flush;
+
     // server ip and port
     //unsigned int host_ip;
     //unsigned short host_port;
