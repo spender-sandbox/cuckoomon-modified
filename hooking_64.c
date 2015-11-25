@@ -800,33 +800,28 @@ int hook_api(hook_t *h, int type)
 	addr = h->addr;
 
 	if (addr == NULL && h->library != NULL && h->funcname != NULL) {
+		HMODULE hmod = GetModuleHandleW(h->library);
+		/* if the DLL isn't loaded, don't bother attempting anything else */
+		if (hmod == NULL)
+			return 0;
+
 		if (!strcmp(h->funcname, "RtlDispatchException")) {
 			// RtlDispatchException is the first relative call in KiUserExceptionDispatcher
-			unsigned char *baseaddr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library), "KiUserExceptionDispatcher");
+			unsigned char *baseaddr = (unsigned char *)GetProcAddress(hmod, "KiUserExceptionDispatcher");
 			int instroff = 0;
 			while (baseaddr[instroff] != 0xe8) {
 				instroff += lde(&baseaddr[instroff]);
 			}
 			addr = (unsigned char *)get_near_rel_target(&baseaddr[instroff]);
 		}
-		else if (!strcmp(h->funcname, "JsEval")) {
-			HMODULE hmod = GetModuleHandleW(h->library);
-			if (hmod)
-				addr = (unsigned char *)get_jseval_addr(hmod);
-		}
-		else if (!strcmp(h->funcname, "COleScript_ParseScriptText")) {
-			HMODULE hmod = GetModuleHandleW(h->library);
-			if (hmod)
-				addr = (unsigned char *)get_olescript_parsescripttext_addr(hmod);
-		}
-		else if (!strcmp(h->funcname, "CDocument_write")) {
-			HMODULE hmod = GetModuleHandleW(h->library);
-			if (hmod)
-				addr = (unsigned char *)get_cdocument_write_addr(hmod);
-		}
-		else {
-			addr = (unsigned char *)GetProcAddress(GetModuleHandleW(h->library), h->funcname);
-		}
+		else if (!strcmp(h->funcname, "JsEval"))
+			addr = (unsigned char *)get_jseval_addr(hmod);
+		else if (!strcmp(h->funcname, "COleScript_ParseScriptText"))
+			addr = (unsigned char *)get_olescript_parsescripttext_addr(hmod);
+		else if (!strcmp(h->funcname, "CDocument_write"))
+			addr = (unsigned char *)get_cdocument_write_addr(hmod);
+		else
+			addr = (unsigned char *)GetProcAddress(hmod, h->funcname);
 	}
 	if (addr == NULL) {
 		// function doesn't exist in this DLL, not a critical error
