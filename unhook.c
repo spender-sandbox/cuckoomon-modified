@@ -346,13 +346,13 @@ static DWORD WINAPI _watchdog_thread(LPVOID param)
 		ctx.ContextFlags = CONTEXT_FULL;
 		GetThreadContext((HANDLE)param, &ctx);
 		dllname = convert_address_to_dll_name_and_offset(ctx.Eip, &off);
-		sprintf(msg, "INFO: PID %u thread: %p EIP: %s+%x(%p) EAX: %p EBX: %p ECX: %p EDX: %p ESI: %p EDI: %p EBP: %p ESP: %p\n", GetCurrentProcessId(), param, dllname ? dllname : "", off, ctx.Eip, ctx.Eax, ctx.Ebx, ctx.Ecx, ctx.Edx, ctx.Esi, ctx.Edi, ctx.Ebp, ctx.Esp);
+		sprintf(msg, "INFO: PID %u thread: %p EIP: %s+%x(0x%lx) EAX: 0x%lx EBX: 0x%lx ECX: 0x%lx EDX: 0x%lx ESI: 0x%lx EDI: 0x%lx EBP: 0x%lx ESP: 0x%lx\n", GetCurrentProcessId(), param, dllname ? dllname : "", off, ctx.Eip, ctx.Eax, ctx.Ebx, ctx.Ecx, ctx.Edx, ctx.Esi, ctx.Edi, ctx.Ebp, ctx.Esp);
 
 		_operate_on_backtrace(ctx.Eip, ctx.Ebp, find_cuckoomon_addrs);
 
 		for (i = 0; i < cuckoomonaddrs_num; i++) {
 			char *dllname2 = convert_address_to_dll_name_and_offset(cuckoomonaddrs[i], &off);
-			sprintf(msg + strlen(msg), " %s+%x(%p)", dllname2 ? dllname2 : "", off, cuckoomonaddrs[i]);
+			sprintf(msg + strlen(msg), " %s+%x(0x%lx)", dllname2 ? dllname2 : "", off, cuckoomonaddrs[i]);
 			if (dllname2)
 				free(dllname2);
 		}
