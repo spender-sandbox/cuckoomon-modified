@@ -747,8 +747,11 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
     HANDLE ret = Old_FindFirstFileExA(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
 
-	// XXX: change me if we ever move the analyzer dir out of the root directory
-	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && !stricmp(((PWIN32_FIND_DATAA)lpFindFileData)->cFileName, g_config.analyzer + 3)) {
+	// XXX: change me if we ever move the analyzer or results dir out of the root directory
+	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE &&
+		(!stricmp(((PWIN32_FIND_DATAA)lpFindFileData)->cFileName, g_config.analyzer + 3) ||
+	     !stricmp(((PWIN32_FIND_DATAA)lpFindFileData)->cFileName, g_config.results + 3))
+		) {
 		lasterror_t lasterror;
 
 		lasterror.Win32Error = 0x00000002;
@@ -788,7 +791,10 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
 
 	// XXX: change me if we ever move the analyzer dir out of the root directory
-	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && !wcsicmp(((PWIN32_FIND_DATAW)lpFindFileData)->cFileName, g_config.w_analyzer + 3)) {
+	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE &&
+		(!wcsicmp(((PWIN32_FIND_DATAW)lpFindFileData)->cFileName, g_config.w_analyzer + 3) ||
+	     !wcsicmp(((PWIN32_FIND_DATAW)lpFindFileData)->cFileName, g_config.w_results + 3))
+		) {
 		lasterror_t lasterror;
 
 		lasterror.Win32Error = 0x00000002;
@@ -821,7 +827,8 @@ HOOKDEF(BOOL, WINAPI, FindNextFileW,
 ) {
 	BOOL ret = Old_FindNextFileW(hFindFile, lpFindFileData);
 
-	if (!g_config.no_stealth && ret && !wcsicmp(lpFindFileData->cFileName, g_config.w_analyzer + 3)) {
+	while (!g_config.no_stealth && ret && (!wcsicmp(lpFindFileData->cFileName, g_config.w_analyzer + 3) ||
+		!wcsicmp(lpFindFileData->cFileName, g_config.w_results + 3))) {
 		ret = Old_FindNextFileW(hFindFile, lpFindFileData);
 	}
 

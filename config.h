@@ -25,7 +25,10 @@ struct _g_config {
     // results directory, has to be hidden
     char results[MAX_PATH];
 
-    // analyzer directory, has to be hidden
+	// results directory, has to be hidden
+	wchar_t w_results[MAX_PATH];
+	
+	// analyzer directory, has to be hidden
     char analyzer[MAX_PATH];
 
 	// analyzer directory, has to be hidden
