@@ -639,7 +639,7 @@ HOOKDEF(BOOL, WINAPI, InternetSetOptionA,
 ) {
 	BOOL ret = Old_InternetSetOptionA(hInternet, dwOption, lpBuffer, dwBufferLength);
 	if (lpBuffer && dwBufferLength == 4) {
-		LOQ_bool("network", "phh", "InternetHandle", hInternet, "Option", dwOption, "Buffer", *(DWORD *)lpBuffer);
+		LOQ_bool("network", "phH", "InternetHandle", hInternet, "Option", dwOption, "Buffer", lpBuffer);
 	}
 	else if (lpBuffer) {
 		LOQ_bool("network", "phb", "InternetHandle", hInternet, "Option", dwOption, "Buffer", dwBufferLength, lpBuffer);
