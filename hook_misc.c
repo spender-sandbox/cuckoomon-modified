@@ -68,11 +68,11 @@ HOOKDEF(LPTOP_LEVEL_EXCEPTION_FILTER, WINAPI, SetUnhandledExceptionFilter,
     BOOL ret = 1;
     LPTOP_LEVEL_EXCEPTION_FILTER res;
 
-#if REPORT_EXCEPTIONS
-	res = NULL;
-#else
-	res = Old_SetUnhandledExceptionFilter(lpTopLevelExceptionFilter);
-#endif
+	if (g_config.debug)
+		res = NULL;
+	else
+		res = Old_SetUnhandledExceptionFilter(lpTopLevelExceptionFilter);
+
 	LOQ_bool("hooking", "");
     return res;
 }
@@ -81,10 +81,10 @@ HOOKDEF(UINT, WINAPI, SetErrorMode,
 	_In_ UINT uMode
 ) {
 	UINT ret = 0;
-#if REPORT_EXCEPTIONS
-#else
+
+	if (!g_config.debug)
 	ret = Old_SetErrorMode(uMode);
-#endif
+
 	//LOQ_void("system", "h", "Mode", uMode);
 	disable_tail_call_optimization();
 	return ret;

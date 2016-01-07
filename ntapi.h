@@ -770,8 +770,4 @@ extern void disable_tail_call_optimization(void);
 
 extern BOOL is_64bit_os;
 
-#define REPORT_EXCEPTIONS 0
-#define REPORT_ALL_EXCEPTIONS 0
-#define DISABLE_HOOK_CONTENT 0
-
 #endif

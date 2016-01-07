@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "unhook.h"
 #include "misc.h"
 #include "pipe.h"
+#include "config.h"
 
 extern DWORD g_tls_hook_index;
 
@@ -368,10 +369,6 @@ static void hook_create_pre_tramp(hook_t *h)
 	unsigned int off;
 
 	unsigned char pre_tramp1[] = {
-#if DISABLE_HOOK_CONTENT
-		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-#endif
 		// push rax/rcx/rdx/rbx
 		0x50, 0x51, 0x52, 0x53,
 		// push r8, r9, r10, r11
@@ -426,9 +423,11 @@ static void hook_create_pre_tramp(hook_t *h)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 
-#if DISABLE_HOOK_CONTENT
-	*(ULONG_PTR *)(pre_tramp1 + 6) = (ULONG_PTR)h->hookdata->tramp;
-#endif
+	if (g_config.disable_hook_content) {
+		memcpy(h->hookdata->pre_tramp, "\xff\x25\x00\x00\x00\x00", 6);
+		*(ULONG_PTR *)(h->hookdata->pre_tramp + 6) = (ULONG_PTR)h->hookdata->tramp;
+		return;
+	}
 
 	p = h->hookdata->pre_tramp;
 	off = sizeof(pre_tramp1) - sizeof(ULONG_PTR);
@@ -465,10 +464,6 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 	unsigned int off;
 
 	unsigned char pre_tramp1[] = {
-#if DISABLE_HOOK_CONTENT
-		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-#endif
 		// push rax/rcx/rdx/rbx
 		0x50, 0x51, 0x52, 0x53,
 		// push r8, r9, r10, r11
@@ -671,9 +666,11 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 
-#if DISABLE_HOOK_CONTENT
-	*(ULONG_PTR *)(pre_tramp1 + 6) = (ULONG_PTR)h->hookdata->tramp;
-#endif
+	if (g_config.disable_hook_content) {
+		memcpy(h->hookdata->pre_tramp, "\xff\x25\x00\x00\x00\x00", 6);
+		*(ULONG_PTR *)(h->hookdata->pre_tramp + 6) = (ULONG_PTR)h->hookdata->tramp;
+		return;
+	}
 
 	p = h->hookdata->pre_tramp;
 	off = sizeof(pre_tramp1) - sizeof(ULONG_PTR);

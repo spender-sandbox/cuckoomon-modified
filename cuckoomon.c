@@ -666,10 +666,8 @@ void set_hooks()
 	hook_enable();
 }
 
-#if REPORT_EXCEPTIONS
-LONG WINAPI cuckoomon_exception_handler(
-	__in struct _EXCEPTION_POINTERS *ExceptionInfo
-	) {
+LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *ExceptionInfo)
+{
 	char msg[16384];
 	char *dllname;
 	char *sehname;
@@ -702,10 +700,8 @@ LONG WINAPI cuckoomon_exception_handler(
 #endif
 
 
-#if REPORT_ALL_EXCEPTIONS == 0
-	if (ExceptionInfo->ExceptionRecord->ExceptionCode < 0xc0000000)
+	if (g_config.debug == 1 && ExceptionInfo->ExceptionRecord->ExceptionCode < 0xc0000000)
 		return EXCEPTION_CONTINUE_SEARCH;
-#endif
 
 	hook_disable();
 
@@ -723,7 +719,7 @@ LONG WINAPI cuckoomon_exception_handler(
 	if (sehname)
 		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, " SEH: %s+%x", sehname, offset);
 
-	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %.08x, Fault Address: %.08x, Esp: %.08x, Exception Code: %08x, ",
+	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %.08Ix, Fault Address: %.08Ix, Esp: %.08Ix, Exception Code: %08x, ",
 		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (ULONG_PTR)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
 	if (is_valid_address_range((ULONG_PTR)stack, 100 * sizeof(ULONG_PTR))) 
 	{
@@ -758,7 +754,6 @@ next:
 
 	return EXCEPTION_CONTINUE_SEARCH;
 }
-#endif
 
 static void notify_successful_load(void)
 {
@@ -878,19 +873,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		if (g_tls_hook_index == TLS_OUT_OF_INDEXES)
 			goto early_abort;
 
-#if REPORT_EXCEPTIONS
-		AddVectoredExceptionHandler(1, cuckoomon_exception_handler);
-		SetUnhandledExceptionFilter(cuckoomon_exception_handler);
-		SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOALIGNMENTFAULTEXCEPT | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
-		_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
-#endif
-
 		add_all_dlls_to_dll_ranges();
-
-#if !CUCKOODBG
-		// hide our module from peb
-        hide_module_from_peb(hModule);
-#endif
 
         // read the config settings
 		if (!read_config())
@@ -904,6 +887,18 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		// don't inject into our own binaries run out of the analyzer directory
 		if (!wcsnicmp(our_process_path, g_config.w_analyzer, wcslen(g_config.w_analyzer)))
 			goto out;
+
+		if (g_config.debug) {
+			AddVectoredExceptionHandler(1, cuckoomon_exception_handler);
+			SetUnhandledExceptionFilter(cuckoomon_exception_handler);
+			SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOALIGNMENTFAULTEXCEPT | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+			_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+		}
+		else {
+			hide_module_from_peb(hModule);
+		}
+
+
 
 		// obtain all protected pids
         pipe2(pids, &length, "GETPIDS");

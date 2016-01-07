@@ -82,6 +82,12 @@ struct _g_config {
 	// do we force flushing of each log?
 	int force_flush;
 
+	// Debugging level (1 = display exceptions, 2 = display all exceptions)
+	int debug;
+
+	// Disable hook content
+	int disable_hook_content;
+
     // server ip and port
     //unsigned int host_ip;
     //unsigned short host_port;

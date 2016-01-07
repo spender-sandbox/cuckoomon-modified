@@ -129,6 +129,12 @@ int read_config(void)
             else if(!strcmp(key, "startup-time")) {
                 g_config.startup_time = atoi(value);
             }
+			else if (!strcmp(key, "debug")) {
+				g_config.debug = atoi(value);
+			}
+			else if (!strcmp(key, "disable_hook_content")) {
+				g_config.disable_hook_content = value[0] == '1';
+			}
 			/*
 			else if(!strcmp(key, "host-ip")) {
                 g_config.host_ip = inet_addr(value);

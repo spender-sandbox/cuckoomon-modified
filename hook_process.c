@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ignore.h"
 #include "hook_sleep.h"
 #include "unhook.h"
+#include "config.h"
 
 HOOKDEF(HANDLE, WINAPI, CreateToolhelp32Snapshot,
 	__in DWORD dwFlags,
@@ -691,12 +692,6 @@ HOOKDEF_NOTAIL(WINAPI, RtlDispatchException,
 	return 0;
 }
 
-#if REPORT_EXCEPTIONS
-extern LONG WINAPI cuckoomon_exception_handler(
-	__in struct _EXCEPTION_POINTERS *ExceptionInfo
-	);
-#endif
-
 HOOKDEF_NOTAIL(WINAPI, NtRaiseException,
 	__in PEXCEPTION_RECORD ExceptionRecord,
 	__in PCONTEXT Context,
@@ -707,9 +702,8 @@ HOOKDEF_NOTAIL(WINAPI, NtRaiseException,
 	exc.ContextRecord = Context;
 	exc.ExceptionRecord = ExceptionRecord;
 
-#if REPORT_EXCEPTIONS
-	cuckoomon_exception_handler(&exc);
-#endif
+	if (g_config.debug)
+		cuckoomon_exception_handler(&exc);
 
 	return 0;
 }
