@@ -740,7 +740,7 @@ typedef enum  {
 
 typedef enum {
 	ProcessBreakOnTermination	= 29,
-	ProcessDEPPolicy = 34
+	ProcessInfoDEPPolicy = 34
 } PROCESSINFOCLASS;
 
 typedef struct _FILE_FS_VOLUME_INFORMATION {

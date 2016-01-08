@@ -536,11 +536,22 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
 		VirtualQueryEx(ProcessHandle, *BaseAddress, &meminfo, sizeof(meminfo));
 		set_lasterrors(&lasterrors);
 	}
-	LOQ_ntstatus("process", "pPPhhHs", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
-        "NumberOfBytesProtected", NumberOfBytesToProtect,
-		"MemoryType", meminfo.Type,
-        "NewAccessProtection", NewAccessProtection,
-		"OldAccessProtection", OldAccessProtection, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
+
+	if (NewAccessProtection == PAGE_EXECUTE_READWRITE && GetCurrentProcessId() == our_getprocessid(ProcessHandle) &&
+		(ULONG_PTR)meminfo.AllocationBase >= get_stack_bottom() && (((ULONG_PTR)meminfo.AllocationBase + meminfo.RegionSize) <= get_stack_top())) {
+		LOQ_ntstatus("process", "pPPhhHss", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+			"NumberOfBytesProtected", NumberOfBytesToProtect,
+			"MemoryType", meminfo.Type,
+			"NewAccessProtection", NewAccessProtection,
+			"OldAccessProtection", OldAccessProtection, "StackPivoted", is_stack_pivoted() ? "yes" : "no", "IsStack", "yes");
+	}
+	else {
+		LOQ_ntstatus("process", "pPPhhHs", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+			"NumberOfBytesProtected", NumberOfBytesToProtect,
+			"MemoryType", meminfo.Type,
+			"NewAccessProtection", NewAccessProtection,
+			"OldAccessProtection", OldAccessProtection, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
+	}
     return ret;
 }
 
@@ -569,8 +580,15 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
 		set_lasterrors(&lasterrors);
 	}
 
-	LOQ_bool("process", "ppphhHs", "ProcessHandle", hProcess, "Address", lpAddress,
-		"Size", dwSize, "MemType", meminfo.Type, "Protection", flNewProtect, "OldProtection", lpflOldProtect, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
+	if (flNewProtect == PAGE_EXECUTE_READWRITE && GetCurrentProcessId() == our_getprocessid(hProcess) &&
+		(ULONG_PTR)meminfo.AllocationBase >= get_stack_bottom() && (((ULONG_PTR)meminfo.AllocationBase + meminfo.RegionSize) <= get_stack_top())) {
+		LOQ_bool("process", "ppphhHss", "ProcessHandle", hProcess, "Address", lpAddress,
+			"Size", dwSize, "MemType", meminfo.Type, "Protection", flNewProtect, "OldProtection", lpflOldProtect, "StackPivoted", is_stack_pivoted() ? "yes" : "no", "IsStack", "yes");
+	}
+	else {
+		LOQ_bool("process", "ppphhHs", "ProcessHandle", hProcess, "Address", lpAddress,
+			"Size", dwSize, "MemType", meminfo.Type, "Protection", flNewProtect, "OldProtection", lpflOldProtect, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
+	}
     return ret;
 }
 

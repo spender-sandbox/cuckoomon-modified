@@ -179,6 +179,7 @@ static __inline PVOID get_peb(void)
 #endif
 }
 
+// Higher virtual address, not 'top' of stack
 static __inline ULONG_PTR get_stack_top(void)
 {
 #ifndef _WIN64
@@ -188,6 +189,7 @@ static __inline ULONG_PTR get_stack_top(void)
 #endif
 }
 
+// Lower virtual address, not base of stack
 static __inline ULONG_PTR get_stack_bottom(void)
 {
 #ifndef _WIN64

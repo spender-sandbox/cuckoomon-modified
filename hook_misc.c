@@ -519,7 +519,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetInformationProcess,
 	__in ULONG ProcessInformationLength
 ) {
 	NTSTATUS ret = Old_NtSetInformationProcess(ProcessHandle, ProcessInformationClass, ProcessInformation, ProcessInformationLength);
-	if (NT_SUCCESS(ret) && (ProcessInformationClass == ProcessDEPPolicy || ProcessInformationClass == ProcessBreakOnTermination) && ProcessInformationLength == 4)
+	if (NT_SUCCESS(ret) && (ProcessInformationClass == ProcessInfoDEPPolicy || ProcessInformationClass == ProcessBreakOnTermination) && ProcessInformationLength == 4)
 		LOQ_ntstatus("misc", "ii", "ProcessInformationClass", ProcessInformationClass, "Value", *(int *)ProcessInformation);
 	return ret;
 }
