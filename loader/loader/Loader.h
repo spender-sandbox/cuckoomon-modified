@@ -2,7 +2,9 @@
 // This file is published under the GNU GPL v3
 // http://www.gnu.org/licenses/gpl.html
 
+#define _CRT_SECURE_NO_WARNINGS 1
 #include <Windows.h>
+#include <stdio.h>
 
 enum {
 	INJECT_CREATEREMOTETHREAD,

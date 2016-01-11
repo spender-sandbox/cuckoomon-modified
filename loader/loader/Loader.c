@@ -458,6 +458,55 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		char *dumpfile = __argv[3];
 		return dump(pid, dumpfile);
 	}
+#ifdef CUCKOODBG
+	else if (!strcmp(__argv[1], "pipe")) {
+		// usage: loader.exe pipe <pipe name> <dll to load>
+		HANDLE pipehandle;
+		char pipe_name[512];
+		FILE *f = fopen("c:\\cmds.log", "a");
 
+		if (__argc != 4)
+			return ERROR_ARGCOUNT;
+
+		_snprintf(pipe_name, sizeof(pipe_name)-1, "\\\\.\\PIPE\\%s", __argv[2]);
+
+		while (1) {
+			pipehandle = CreateNamedPipeA(pipe_name, PIPE_ACCESS_DUPLEX,
+				PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
+				PIPE_UNLIMITED_INSTANCES,
+				16384,
+				16384,
+				0,
+				NULL);
+			if (ConnectNamedPipe(pipehandle, NULL) || GetLastError() == ERROR_PIPE_CONNECTED) {
+				char buf[16384];
+				char response[16384];
+				int response_len = 0;
+				int bytes_read = 0;
+				int bytes_written = 0;
+				memset(buf, 0, sizeof(buf));
+				ReadFile(pipehandle, buf, sizeof(buf), &bytes_read, NULL);
+				fprintf(f, "%s\n", buf);
+				fflush(f);
+				if (!strncmp(buf, "PROCESS:", 8)) {
+					int pid = -1, tid = -1;
+					char *p;
+					if ((p = strchr(buf, ','))) {
+						*p = '\0';
+						pid = atoi(&buf[8]);
+						tid = atoi(p + 1);
+					}
+					else {
+						pid = atoi(&buf[8]);
+					}
+					inject(pid, tid, __argv[3], is_suspended(pid, tid));
+				}
+				WriteFile(pipehandle, response, response_len, &bytes_written, NULL);
+				CloseHandle(pipehandle);
+			}
+		}
+		fclose(f);
+	}
+#endif
 	return ERROR_MODE;
 }

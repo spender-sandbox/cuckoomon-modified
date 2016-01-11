@@ -177,7 +177,7 @@ int pipe(const char *fmt, ...)
         char *buf = calloc(1, len + 1);
         _pipe_sprintf(buf, fmt, args);
 
-#ifdef CUCKOODBG
+#ifdef CUCKOODBG_PIPE
 		char filename[64];
 		snprintf(filename, sizeof(filename), "c:\\pipe%u.log", GetCurrentProcessId());
 		FILE *f = fopen(filename, "ab");
