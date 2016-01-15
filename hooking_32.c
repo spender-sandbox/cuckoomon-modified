@@ -743,6 +743,8 @@ int hook_api(hook_t *h, int type)
 	if (!memcmp(addr, "\x8b\xff\x55\x8b\xec\xeb\x02", 7)) {
 		type = HOOK_JMP_DIRECT;
 	}
+	if (!memcmp(addr, "\xeb\x02\xf3\x90", 4))
+		addr += 4;
 
 	// check if this is a valid hook type
 	if (type < 0 && type >= ARRAYSIZE(hook_types)) {
