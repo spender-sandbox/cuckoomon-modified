@@ -85,6 +85,9 @@ struct _g_config {
 	// Debugging level (1 = display exceptions, 2 = display all exceptions)
 	int debug;
 
+	// Default hook type (may be overridden for specific functions)
+	int hook_type;
+
 	// Disable hook content
 	int disable_hook_content;
 

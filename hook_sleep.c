@@ -315,6 +315,18 @@ HOOKDEF(DWORD, WINAPI, GetTickCount,
     return ret;
 }
 
+HOOKDEF(ULONGLONG, WINAPI, GetTickCount64,
+	void
+) {
+	ULONGLONG ret = Old_GetTickCount64();
+
+	// add the time we've skipped
+	ret += (time_skipped.QuadPart / 10000);
+
+	return ret;
+}
+
+
 HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemTime,
     _Out_  PLARGE_INTEGER SystemTime
 ) {

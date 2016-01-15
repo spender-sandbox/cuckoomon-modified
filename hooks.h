@@ -1921,6 +1921,10 @@ extern HOOKDEF(DWORD, WINAPI, GetTickCount,
     void
 );
 
+extern HOOKDEF(ULONGLONG, WINAPI, GetTickCount64,
+	void
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemTime,
     _Out_  PLARGE_INTEGER SystemTime
 );

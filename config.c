@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include "misc.h"
 #include "log.h"
+#include "hooking.h"
 
 int read_config(void)
 {
@@ -41,6 +42,12 @@ int read_config(void)
 	}
 
 	g_config.force_sleepskip = -1;
+#ifdef _WIN64
+	g_config.hook_type = HOOK_JMP_INDIRECT;
+#else
+	g_config.hook_type = HOOK_HOTPATCH_JMP_INDIRECT;
+#endif
+
 	memset(buf, 0, sizeof(buf));
 	while (fgets(buf, sizeof(buf), fp) != NULL)
 	{
@@ -131,6 +138,16 @@ int read_config(void)
             }
 			else if (!strcmp(key, "debug")) {
 				g_config.debug = atoi(value);
+			}
+			else if (!strcmp(key, "hook-type")) {
+#ifndef _WIN64
+				if (!strcmp(value, "direct"))
+					g_config.hook_type = HOOK_JMP_DIRECT;
+				else if (!strcmp(value, "indirect"))
+					g_config.hook_type = HOOK_JMP_INDIRECT;
+				else if (!strcmp(value, "safe"))
+					g_config.hook_type = HOOK_SAFEST;
+#endif
 			}
 			else if (!strcmp(key, "disable_hook_content")) {
 				g_config.disable_hook_content = value[0] == '1';

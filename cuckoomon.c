@@ -453,7 +453,8 @@ static hook_t g_hooks[] = {
     HOOK(kernel32, GetSystemTime),
 	HOOK(kernel32, GetSystemTimeAsFileTime),
 	HOOK(kernel32, GetTickCount),
-    HOOK(ntdll, NtQuerySystemTime),
+	HOOK(kernel32, GetTickCount64),
+	HOOK(ntdll, NtQuerySystemTime),
 	HOOK(user32, GetLastInputInfo),
 	HOOK(winmm, timeGetTime),
 	//
@@ -540,22 +541,13 @@ static hook_t g_hooks[] = {
 	HOOK(cryptsp, CryptCreateHash),
 };
 
-// get a random hooking method, except for hook_jmp_direct
-//#define HOOKTYPE randint(HOOK_NOP_JMP_DIRECT, HOOK_MOV_EAX_INDIRECT_PUSH_RETN)
-// error testing with hook_jmp_direct only
-#ifdef _WIN64
-#define HOOKTYPE HOOK_JMP_INDIRECT
-#else
-#define HOOKTYPE HOOK_HOTPATCH_JMP_INDIRECT
-#endif
-
 void set_hooks_dll(const wchar_t *library)
 {
 	int i;
 
 	for (i = 0; i < ARRAYSIZE(g_hooks); i++) {
         if(!wcsicmp(g_hooks[i].library, library)) {
-			if (hook_api(&g_hooks[i], HOOKTYPE) < 0)
+			if (hook_api(&g_hooks[i], g_config.hook_type) < 0)
 				pipe("WARNING:Unable to hook %z", g_hooks[i].funcname);
         }
     }
@@ -647,7 +639,7 @@ void set_hooks()
     // now, hook each api :)
     for (i = 0; i < ARRAYSIZE(g_hooks); i++) {
 		//pipe("INFO:Hooking %z", g_hooks[i].funcname);
-		if (hook_api(&g_hooks[i], HOOKTYPE) < 0)
+		if (hook_api(&g_hooks[i], g_config.hook_type) < 0)
 			pipe("WARNING:Unable to hook %z", g_hooks[i].funcname);
     }
 
@@ -831,7 +823,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 	get_lasterrors(&lasterror);
 
-    if(dwReason == DLL_PROCESS_ATTACH) {
+	if (dwReason == DLL_PROCESS_ATTACH) {
 		unsigned int i;
 		DWORD pids[MAX_PROTECTED_PIDS];
 		unsigned int length = sizeof(pids);
@@ -840,19 +832,11 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		   complete, and then did a successful createremotethread, so just do a cheap check for our hooks and fake that
 		   we loaded successfully
 		*/
-#ifdef _WIN64
-#if HOOKTYPE != HOOK_JMP_INDIRECT
-#error Update hook check
-#endif
-		if (((PUCHAR)WaitForDebugEvent)[0] == 0xff && ((PUCHAR)WaitForDebugEvent)[1] == 0x25)
+		/* Doesn't handle all hook types, modify as necessary */
+		if (!memcmp((PUCHAR)WaitForDebugEvent, "\x8b\xff\xff\x25", 4) || !memcmp((PUCHAR)WaitForDebugEvent, "\xff\x25", 2) ||
+			!memcmp((PUCHAR)WaitForDebugEvent, "\x8b\xff\xe9", 3) || !memcmp((PUCHAR)WaitForDebugEvent, "\xe9", 1) ||
+			!memcmp((PUCHAR)WaitForDebugEvent, "\xeb\xf9", 2))
 			goto early_abort;
-#else
-#if HOOKTYPE != HOOK_HOTPATCH_JMP_INDIRECT
-#error Update hook check
-#endif
-		if (((PUCHAR)WaitForDebugEvent)[0] == 0x8b && ((PUCHAR)WaitForDebugEvent)[1] == 0xff && ((PUCHAR)WaitForDebugEvent)[2] == 0xff && ((PUCHAR)WaitForDebugEvent)[3] == 0x25)
-			goto early_abort;
-#endif
 
 		g_our_dll_base = (ULONG_PTR)hModule;
 		g_our_dll_size = get_image_size(g_our_dll_base);

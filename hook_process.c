@@ -529,6 +529,10 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
 	ret = Old_NtProtectVirtualMemory(ProcessHandle, BaseAddress,
         NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
 
+	/* Don't log an uninteresting case */
+	if (OldAccessProtection && *OldAccessProtection == NewAccessProtection)
+		return ret;
+
 	memset(&meminfo, 0, sizeof(meminfo));
 	if (NT_SUCCESS(ret)) {
 		lasterror_t lasterrors;
@@ -571,6 +575,10 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
 
 	ret = Old_VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect,
         lpflOldProtect);
+
+	/* Don't log an uninteresting case */
+	if (lpflOldProtect && *lpflOldProtect == flNewProtect)
+		return ret;
 
 	memset(&meminfo, 0, sizeof(meminfo));
 	if (ret) {

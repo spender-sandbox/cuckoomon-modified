@@ -561,6 +561,14 @@ static int hook_api_native_jmp_indirect(hook_t *h, unsigned char *from,
 	return hook_api_jmp_indirect(h, from, to);
 }
 
+static int hook_api_safest(hook_t *h, unsigned char *from, unsigned char *to)
+{
+	hook_api_jmp_direct(h, from - 5, to);
+	*from++ = 0xeb;
+	*from++ = 0xf9;
+	return 0;
+}
+
 hook_data_t *alloc_hookdata_near(void *addr)
 {
 	DWORD oldprot;
@@ -621,6 +629,7 @@ int hook_api(hook_t *h, int type)
         /* HOOK_SPECIAL_JMP */ {&hook_api_special_jmp, 7},
 		/* HOOK_NATIVE_JMP_INDIRECT */ {&hook_api_native_jmp_indirect, 11 },
 		/* HOOK_HOTPATCH_JMP_INDIRECT */{ &hook_api_hotpatch_jmp_indirect, 8 },
+		/* HOOK_SAFEST */{ &hook_api_safest, 2 },
 	};
 
     // is this address already hooked?
@@ -631,7 +640,7 @@ int hook_api(hook_t *h, int type)
     // resolve the address to hook
     addr = h->addr;
 
-    if(addr == NULL && h->library != NULL && h->funcname != NULL) {
+	if(addr == NULL && h->library != NULL && h->funcname != NULL) {
 		HMODULE hmod = GetModuleHandleW(h->library);
 		/* if the DLL isn't loaded, don't bother attempting anything else */
 		if (hmod == NULL)
@@ -646,12 +655,18 @@ int hook_api(hook_t *h, int type)
 			}
 			addr = (unsigned char *)get_near_rel_target(&baseaddr[instroff]);
 		}
-		else if (!strcmp(h->funcname, "JsEval"))
+		else if (!strcmp(h->funcname, "JsEval")) {
+			type = HOOK_JMP_DIRECT;
 			addr = (unsigned char *)get_jseval_addr(hmod);
-		else if (!strcmp(h->funcname, "COleScript_ParseScriptText"))
+		} 
+		else if (!strcmp(h->funcname, "COleScript_ParseScriptText")) {
+			type = HOOK_JMP_DIRECT;
 			addr = (unsigned char *)get_olescript_parsescripttext_addr(hmod);
-		else if (!strcmp(h->funcname, "CDocument_write"))
+		}
+		else if (!strcmp(h->funcname, "CDocument_write")) {
+			type = HOOK_JMP_DIRECT;
 			addr = (unsigned char *)get_cdocument_write_addr(hmod);
+		}
 		else
 			addr = (unsigned char *)GetProcAddress(hmod, h->funcname);
     }
@@ -720,6 +735,14 @@ int hook_api(hook_t *h, int type)
 	if (!strcmp(h->funcname, "GetSystemTime"))
 		type = HOOK_JMP_DIRECT;
 
+	/* Some versions of Windows will leave us with a short jump over
+	   a looped pause instruction in the bytes we want to modify for a
+	   small number of APIs (GetTickCount/GetSystemTimeAsFileTime)
+	 */
+	if (!memcmp(addr, "\x8b\xff\x55\x8b\xec\xeb\x02", 7)) {
+		type = HOOK_JMP_DIRECT;
+	}
+
 	// check if this is a valid hook type
 	if (type < 0 && type >= ARRAYSIZE(hook_types)) {
 		pipe("WARNING: Provided invalid hook type: %d", type);
@@ -740,6 +763,10 @@ int hook_api(hook_t *h, int type)
 	// happen due to delay-loaded DLLs
 	if (address_already_hooked(addr))
 		return 0;
+
+	if (type == HOOK_SAFEST && (memcmp(addr, "\x8b\xff", 2) ||
+		(memcmp(addr - 5, "\xcc\xcc\xcc\xcc\xcc", 5) && memcmp(addr - 5, "\x90\x90\x90\x90\x90", 5))))
+		type = HOOK_JMP_DIRECT;
 
 	// make the address writable
 	if (VirtualProtect(addr, hook_types[type].len, PAGE_EXECUTE_READWRITE,
@@ -764,7 +791,10 @@ int hook_api(hook_t *h, int type)
 			// Add unhook detection for our newly created hook.
 			// Ensure any changes behind our hook are also caught by
 			// making the buffersize 16.
-			unhook_detect_add_region(h, addr, orig, addr, 16);
+			if (type == HOOK_SAFEST)
+				unhook_detect_add_region(h, addr - 5, orig, addr, 16);
+			else
+				unhook_detect_add_region(h, addr, orig, addr, 16);
 
 			// if successful, assign the trampoline address to *old_func
 			if (ret == 0) {
