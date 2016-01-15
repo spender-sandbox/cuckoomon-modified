@@ -610,26 +610,27 @@ int hook_api(hook_t *h, int type)
     static struct {
         int(*hook)(hook_t *h, unsigned char *from, unsigned char *to);
         int len;
+		int offset;
     } hook_types[] = {
-        /* HOOK_JMP_DIRECT */ {&hook_api_jmp_direct, 5},
-        /* HOOK_NOP_JMP_DIRECT */ {&hook_api_nop_jmp_direct, 6},
-        /* HOOK_HOTPATCH_JMP_DIRECT */ {&hook_api_hotpatch_jmp_direct, 7},
-        /* HOOK_PUSH_RETN */ {&hook_api_push_retn, 6},
-        /* HOOK_NOP_PUSH_RETN */ {&hook_api_nop_push_retn, 7},
-        /* HOOK_JMP_INDIRECT */ {&hook_api_jmp_indirect, 6},
-        /* HOOK_MOV_EAX_JMP_EAX */ {&hook_api_mov_eax_jmp_eax, 7},
-        /* HOOK_MOV_EAX_PUSH_RETN */ {&hook_api_mov_eax_push_retn, 7},
+        /* HOOK_JMP_DIRECT */ {&hook_api_jmp_direct, 5, 0},
+        /* HOOK_NOP_JMP_DIRECT */ {&hook_api_nop_jmp_direct, 6, 0},
+        /* HOOK_HOTPATCH_JMP_DIRECT */ {&hook_api_hotpatch_jmp_direct, 7, 0},
+        /* HOOK_PUSH_RETN */ {&hook_api_push_retn, 6, 0},
+        /* HOOK_NOP_PUSH_RETN */ {&hook_api_nop_push_retn, 7, 0},
+        /* HOOK_JMP_INDIRECT */ {&hook_api_jmp_indirect, 6, 0},
+        /* HOOK_MOV_EAX_JMP_EAX */ {&hook_api_mov_eax_jmp_eax, 7, 0},
+        /* HOOK_MOV_EAX_PUSH_RETN */ {&hook_api_mov_eax_push_retn, 7, 0},
         /* HOOK_MOV_EAX_INDIRECT_JMP_EAX */
-            {&hook_api_mov_eax_indirect_jmp_eax, 7},
+            {&hook_api_mov_eax_indirect_jmp_eax, 7, 0},
         /* HOOK_MOV_EAX_INDIRECT_PUSH_RETN */
-            {&hook_api_mov_eax_indirect_push_retn, 7},
+            {&hook_api_mov_eax_indirect_push_retn, 7, 0},
 #if HOOK_ENABLE_FPU
-        /* HOOK_PUSH_FPU_RETN */ {&hook_api_push_fpu_retn, 11},
+        /* HOOK_PUSH_FPU_RETN */ {&hook_api_push_fpu_retn, 11, 0},
 #endif
-        /* HOOK_SPECIAL_JMP */ {&hook_api_special_jmp, 7},
-		/* HOOK_NATIVE_JMP_INDIRECT */ {&hook_api_native_jmp_indirect, 11 },
-		/* HOOK_HOTPATCH_JMP_INDIRECT */{ &hook_api_hotpatch_jmp_indirect, 8 },
-		/* HOOK_SAFEST */{ &hook_api_safest, 2 },
+        /* HOOK_SPECIAL_JMP */ {&hook_api_special_jmp, 7, 0},
+		/* HOOK_NATIVE_JMP_INDIRECT */ {&hook_api_native_jmp_indirect, 11, 0},
+		/* HOOK_HOTPATCH_JMP_INDIRECT */{ &hook_api_hotpatch_jmp_indirect, 8, 0},
+		/* HOOK_SAFEST */{ &hook_api_safest, 2, 5},
 	};
 
     // is this address already hooked?
@@ -769,7 +770,7 @@ int hook_api(hook_t *h, int type)
 		type = HOOK_JMP_DIRECT;
 
 	// make the address writable
-	if (VirtualProtect(addr, hook_types[type].len, PAGE_EXECUTE_READWRITE,
+	if (VirtualProtect(addr - hook_types[type].offset, hook_types[type].offset + hook_types[type].len, PAGE_EXECUTE_READWRITE,
 		&old_protect)) {
 
 		h->hookdata = alloc_hookdata_near(addr);
@@ -791,10 +792,7 @@ int hook_api(hook_t *h, int type)
 			// Add unhook detection for our newly created hook.
 			// Ensure any changes behind our hook are also caught by
 			// making the buffersize 16.
-			if (type == HOOK_SAFEST)
-				unhook_detect_add_region(h, addr - 5, orig, addr, 16);
-			else
-				unhook_detect_add_region(h, addr, orig, addr, 16);
+			unhook_detect_add_region(h, addr - hook_types[type].offset, orig, addr - hook_types[type].offset, 16);
 
 			// if successful, assign the trampoline address to *old_func
 			if (ret == 0) {
@@ -811,7 +809,7 @@ int hook_api(hook_t *h, int type)
 		}
 
 		// restore the old protection
-		VirtualProtect(addr, hook_types[type].len, old_protect,
+		VirtualProtect(addr - hook_types[type].offset, hook_types[type].offset + hook_types[type].len, old_protect,
 			&old_protect);
 	}
 	else {
