@@ -62,16 +62,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 // loq("3s", "key1", "value", "key2", "value2", "key3", "value3");
 //
 
+#include "hooking.h"
+
 void loq(int index, const char *category, const char *name,
     int is_success, ULONG_PTR return_value, const char *fmt, ...);
 void log_new_process();
 void log_new_thread();
 void log_anomaly(const char *subcategory, const char *msg);
 void log_hook_anomaly(const char *subcategory, int success,
-    const char *funcname, const char *msg);
-void log_hook_modification(const char *funcname, const char *origbytes, const char *newbytes, unsigned int len);
-void log_hook_removal(const char *funcname);
-void log_hook_restoration(const char *funcname);
+    const hook_t *h, const char *msg);
+void log_hook_modification(const hook_t *h, const char *origbytes, const char *newbytes, unsigned int len);
+void log_hook_removal(const hook_t *h);
+void log_hook_restoration(const hook_t *h);
 void log_procname_anomaly(PUNICODE_STRING InitialName, PUNICODE_STRING InitialPath, PUNICODE_STRING CurrentName, PUNICODE_STRING CurrentPath);
 
 void log_init(int debug);

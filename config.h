@@ -1,3 +1,6 @@
+#ifndef __CONFIG_H
+#define __CONFIG_H
+
 /*
 Cuckoo Sandbox - Automated Malware Analysis
 Copyright (C) 2010-2012 Cuckoo Sandbox Developers
@@ -101,3 +104,5 @@ struct _g_config {
 extern struct _g_config g_config;
 
 int read_config(void);
+
+#endif

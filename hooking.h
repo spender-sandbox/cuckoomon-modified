@@ -16,7 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef __HOOKING_H
+#define __HOOKING_H
+
 #include "ntapi.h"
+#include "config.h"
 #include <Windows.h>
 
 enum {
@@ -80,6 +84,9 @@ typedef struct _hook_t {
     // as well (this address has more priority than library/funcname)
     void *addr;
 
+	// where we made our modifications
+	void *hook_addr;
+
     // pointer to the new function
     void *new_func;
 
@@ -130,12 +137,12 @@ hook_info_t* hook_info();
 void hook_enable();
 void hook_disable();
 int called_by_hook(void);
-int addr_in_our_dll_range(ULONG_PTR addr);
+int addr_in_our_dll_range(void *unused, ULONG_PTR addr);
 void get_lasterrors(lasterror_t *errors);
 void set_lasterrors(lasterror_t *errors);
 int WINAPI enter_hook(hook_t *h, ULONG_PTR _ebp, ULONG_PTR retaddr);
 void emit_rel(unsigned char *buf, unsigned char *source, unsigned char *target);
-int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(ULONG_PTR));
+int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, void *extra, int(*func)(void *, ULONG_PTR));
 
 extern LARGE_INTEGER time_skipped;
 
@@ -225,3 +232,40 @@ static __inline ULONG_PTR get_stack_bottom(void)
         memcpy(local_name.Buffer, param_name->Buffer, \
             local_name.Length); \
     }
+
+static inline BOOLEAN disable_this_hook(hook_t *h)
+{
+	const char *required_apis[] = {
+		"NtCreateThread",
+		"NtCreateThreadEx"
+		"NtCreateProcess",
+		"NtCreateProcessEx",
+		"NtCreateUserProcess",
+		"RtlCreateUserProcess",
+		"RtlCreateUserThread",
+		"CreateRemoteThread",
+		"NtQueueApcThread",
+		"NtQueueApcThreadEx",
+		"NtMapViewOfSection",
+		"NtWriteVirtualMemory",
+		"WriteProcessMemory",
+		"NtSetContextThread",
+		"NtResumeThread"
+	};
+	int i;
+
+	if (g_config.disable_hook_content == 2)
+		return TRUE;
+
+	if (g_config.disable_hook_content != 1)
+		return FALSE;
+
+	for (i = 0; i < sizeof(required_apis) / sizeof(required_apis[0]); i++) {
+		if (!strcmp(h->funcname, required_apis[i]))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+#endif

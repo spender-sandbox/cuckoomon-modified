@@ -56,7 +56,8 @@ int address_already_hooked(uint8_t *addr)
 	uint32_t idx;
 
 	for (idx = 0; idx < g_index; idx++)
-		if (addr == g_addr[idx])
+		/* hack to handle the safe hooktype */
+		if (addr == g_addr[idx] || addr == (g_addr[idx] + 5))
 			return 1;
 
 	return 0;
@@ -82,6 +83,22 @@ void unhook_detect_add_region(const hook_t *hook, uint8_t *addr,
     g_index++;
 }
 
+void invalidate_regions_for_hook(const hook_t *hook)
+{
+	uint32_t idx;
+
+	for (idx = 0; idx < g_index; idx++) {
+		if (g_unhook_hooks[idx] == hook) {
+			/* get the unhook watcher to ignore this region */
+			g_hook_reported[idx] = 1;
+			/* since this hook was removed, we shouldn't prevent the same address from being hooked again
+			   later, see address_already_hooked() above */
+			g_addr[idx] = 0;
+		}
+	}
+
+}
+
 void restore_hooks_on_range(ULONG_PTR start, ULONG_PTR end)
 {
 	lasterror_t lasterror;
@@ -95,7 +112,7 @@ void restore_hooks_on_range(ULONG_PTR start, ULONG_PTR end)
 				continue;
 			if (!memcmp(g_orig[idx], g_addr[idx], g_length[idx])) {
 				memcpy(g_addr[idx], g_our[idx], g_length[idx]);
-				log_hook_restoration(g_unhook_hooks[idx]->funcname);
+				log_hook_restoration(g_unhook_hooks[idx]);
 			}
 		}
 	}
@@ -127,7 +144,7 @@ static DWORD WINAPI _unhook_detect_thread(LPVOID param)
         }
 
 		for (idx = 0; idx < g_index; idx++) {
-			if (g_hook_reported[idx] == 0) {
+			if (g_unhook_hooks[idx]->is_hooked && g_hook_reported[idx] == 0) {
 				char *tmpbuf = NULL;
 				if (!is_valid_address_range((ULONG_PTR)g_addr[idx], g_length[idx])) {
 					continue;
@@ -149,12 +166,12 @@ static DWORD WINAPI _unhook_detect_thread(LPVOID param)
 							char *tmpbuf2;
 							tmpbuf2 = tmpbuf = malloc(g_length[idx]);
 							memcpy(tmpbuf, g_addr[idx], g_length[idx]);
-							log_hook_modification(g_unhook_hooks[idx]->funcname, g_our[idx], tmpbuf, g_length[idx]);
+							log_hook_modification(g_unhook_hooks[idx], g_our[idx], tmpbuf, g_length[idx]);
 							tmpbuf = NULL;
 							free(tmpbuf2);
 						} 
 						else
-							log_hook_removal(g_unhook_hooks[idx]->funcname);
+							log_hook_removal(g_unhook_hooks[idx]);
 					}
 					g_hook_reported[idx] = 1;
 				}
@@ -311,7 +328,7 @@ static int find_cuckoomon_addrs(ULONG_PTR addr)
 	return 0;
 }
 
-static int _operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(ULONG_PTR))
+static int _operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, void *extra, int(*func)(void *, ULONG_PTR))
 {
 	int ret;
 
@@ -321,7 +338,7 @@ static int _operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, int(*func)(U
 		ULONG_PTR addr = *(ULONG_PTR *)(_ebp + sizeof(ULONG_PTR));
 		_ebp = *(ULONG_PTR *)_ebp;
 
-		ret = func(addr);
+		ret = func(extra, addr);
 		if (ret)
 			return ret;
 	}
@@ -348,7 +365,7 @@ static DWORD WINAPI _watchdog_thread(LPVOID param)
 		dllname = convert_address_to_dll_name_and_offset(ctx.Eip, &off);
 		sprintf(msg, "INFO: PID %u thread: %p EIP: %s+%x(0x%lx) EAX: 0x%lx EBX: 0x%lx ECX: 0x%lx EDX: 0x%lx ESI: 0x%lx EDI: 0x%lx EBP: 0x%lx ESP: 0x%lx\n", GetCurrentProcessId(), param, dllname ? dllname : "", off, ctx.Eip, ctx.Eax, ctx.Ebx, ctx.Ecx, ctx.Edx, ctx.Esi, ctx.Edi, ctx.Ebp, ctx.Esp);
 
-		_operate_on_backtrace(ctx.Eip, ctx.Ebp, find_cuckoomon_addrs);
+		_operate_on_backtrace(ctx.Eip, ctx.Ebp, NULL, find_cuckoomon_addrs);
 
 		for (i = 0; i < cuckoomonaddrs_num; i++) {
 			char *dllname2 = convert_address_to_dll_name_and_offset(cuckoomonaddrs[i], &off);

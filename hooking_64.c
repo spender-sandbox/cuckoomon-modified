@@ -298,13 +298,13 @@ void add_unwind_info(hook_t *h)
 	unwindinfo->Version = 1;
 	unwindinfo->Flags = UNW_FLAG_NHANDLER;
 	if (h->notail && h->numargs > 4) {
-		unwindinfo->SizeOfProlog = 160;
+		unwindinfo->SizeOfProlog = 0xad;
 	}
 	else if (h->notail) {
-		unwindinfo->SizeOfProlog = 113;
+		unwindinfo->SizeOfProlog = 0x7d;
 	}
 	else {
-		unwindinfo->SizeOfProlog = 43;
+		unwindinfo->SizeOfProlog = 50;
 	}
 	unwindinfo->FrameRegister = 0;
 	unwindinfo->FrameOffset = 0;
@@ -312,40 +312,84 @@ void add_unwind_info(hook_t *h)
 	i = 0;
 	if (h->notail && h->numargs > 4) {
 		unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
-		unwindinfo->UnwindCode[i].CodeOffset = 159;
+		unwindinfo->UnwindCode[i].CodeOffset = 0xa7;
 		unwindinfo->UnwindCode[i].OpInfo = 3; // (3 + 1) * 8 = 0x20
+		i++;
+
+		unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
+		unwindinfo->UnwindCode[i].CodeOffset = 0x9a;
+		unwindinfo->UnwindCode[i].OpInfo = h->numargs - 5;
 		i++;
 
 		if (h->numargs & 1) {
 			unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
-			unwindinfo->UnwindCode[i].CodeOffset = 155;
+			unwindinfo->UnwindCode[i].CodeOffset = 0x97;
 			unwindinfo->UnwindCode[i].OpInfo = 0; // (0 + 1) * 8 = 8
 			i++;
 		}
+	}
+
+	if (h->notail) {
 		unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
-		unwindinfo->UnwindCode[i].CodeOffset = 138;
-		unwindinfo->UnwindCode[i].OpInfo = h->numargs - 5;
+		unwindinfo->UnwindCode[i].CodeOffset = 0x2e;
+		unwindinfo->UnwindCode[i].OpInfo = 3; // (3 + 1) * 8 = 0x20
 		i++;
+
+		for (x = 0; x < ARRAYSIZE(regs1); x++) {
+			unwindinfo->UnwindCode[x + i].UnwindOp = UWOP_PUSH_NONVOL;
+			unwindinfo->UnwindCode[x + i].CodeOffset = 16 - (2 * x);
+			unwindinfo->UnwindCode[x + i].OpInfo = regs1[x];
+		}
+		i += x;
+
+
+		for (x = 0; x < ARRAYSIZE(regs2); x++) {
+			unwindinfo->UnwindCode[x + i].UnwindOp = UWOP_PUSH_NONVOL;
+			unwindinfo->UnwindCode[x + i].CodeOffset = 8 - x;
+			unwindinfo->UnwindCode[x + i].OpInfo = regs2[x];
+		}
+		i += x;
+
+		// rdi
+		unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
+		unwindinfo->UnwindCode[i].CodeOffset = 4;
+		unwindinfo->UnwindCode[i].OpInfo = 7;
+		i++;
+
+		// rsi
+		unwindinfo->UnwindCode[i].UnwindOp = UWOP_PUSH_NONVOL;
+		unwindinfo->UnwindCode[i].CodeOffset = 3;
+		unwindinfo->UnwindCode[i].OpInfo = 6;
+		i++;
+
+	}
+	else {
+		unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
+		unwindinfo->UnwindCode[i].CodeOffset = 44;
+		unwindinfo->UnwindCode[i].OpInfo = 3; // (3 + 1) * 8 = 0x20
+		i++;
+
+		for (x = 0; x < ARRAYSIZE(regs1); x++) {
+			unwindinfo->UnwindCode[x + i].UnwindOp = UWOP_PUSH_NONVOL;
+			unwindinfo->UnwindCode[x + i].CodeOffset = 14 - (2 * x);
+			unwindinfo->UnwindCode[x + i].OpInfo = regs1[x];
+		}
+		i += x;
+
+
+		for (x = 0; x < ARRAYSIZE(regs2); x++) {
+			unwindinfo->UnwindCode[x + i].UnwindOp = UWOP_PUSH_NONVOL;
+			unwindinfo->UnwindCode[x + i].CodeOffset = 6 - x;
+			unwindinfo->UnwindCode[x + i].OpInfo = regs2[x];
+		}
+		i += x;
 	}
 
 	unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
-	unwindinfo->UnwindCode[i].CodeOffset = 42;
-	unwindinfo->UnwindCode[i].OpInfo = 4; // (4 + 1) * 8 = 0x28
+	unwindinfo->UnwindCode[i].CodeOffset = 1;
+	unwindinfo->UnwindCode[i].OpInfo = 0; // (0 + 1) * 8 = 8
 	i++;
 
-	for (x = 0; x < ARRAYSIZE(regs1); x++) {
-		unwindinfo->UnwindCode[x + i].UnwindOp = UWOP_PUSH_NONVOL;
-		unwindinfo->UnwindCode[x + i].CodeOffset = 12 - (2 * x);
-		unwindinfo->UnwindCode[x + i].OpInfo = regs1[x];
-	}
-	i += x;
-
-	for (x = 0; x < ARRAYSIZE(regs2); x++) {
-		unwindinfo->UnwindCode[x + i].UnwindOp = UWOP_PUSH_NONVOL;
-		unwindinfo->UnwindCode[x + i].CodeOffset = 4 - x;
-		unwindinfo->UnwindCode[x + i].OpInfo = regs2[x];
-	}
-	i += x;
 	unwindinfo->CountOfCodes = i;
 
 	RtlAddFunctionTable(functable, 1, (DWORD64)h->hookdata);
@@ -369,6 +413,10 @@ static void hook_create_pre_tramp(hook_t *h)
 	unsigned int off;
 
 	unsigned char pre_tramp1[] = {
+		// pushfq
+		0x9c,
+		// cld
+		0xfc,
 		// push rax/rcx/rdx/rbx
 		0x50, 0x51, 0x52, 0x53,
 		// push r8, r9, r10, r11
@@ -377,18 +425,19 @@ static void hook_create_pre_tramp(hook_t *h)
 		0xe8, 0x00, 0x00, 0x00, 0x00,
 		// pop r8
 		0x41, 0x58,
-		// sub r8, 17
-		0x49, 0x83, 0xe8, 0x11,
-		// mov r8, qword ptr [rsp+0x40]
-		// 0x4c, 0x8b, 0x44, 0x24, 0x40,
-		// lea rdx, [rsp+0x40]
-		0x48, 0x8d, 0x54, 0x24, 0x40,
+		// sub r8, 19
+		0x49, 0x83, 0xe8, 0x13,
+		// mov r8, qword ptr [rsp+0x48]
+		// 0x4c, 0x8b, 0x44, 0x24, 0x48,
+		// lea rdx, [rsp+0x48]
+		0x48, 0x8d, 0x54, 0x24, 0x48,
 		// mov rcx, h
 		0x48, 0xb9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
+	// 40
 	unsigned char pre_tramp12[] = {
-		// sub rsp, 0x28
-		0x48, 0x83, 0xec, 0x28,
+		// sub rsp, 0x20
+		0x48, 0x83, 0xec, 0x20,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
 		0xff, 0x15, 0x02, 0x00, 0x00, 0x00,
 		// jmp $+8
@@ -399,31 +448,35 @@ static void hook_create_pre_tramp(hook_t *h)
 	unsigned char pre_tramp2[] = {
 		// test eax, eax
 		0x85, 0xc0,
-		// jnz 0x1e
-		0x75, 0x1e,
-		// add rsp, 0x28
-		0x48, 0x83, 0xc4, 0x28,
+		// jnz 0x1f
+		0x75, 0x1f,
+		// add rsp, 0x20
+		0x48, 0x83, 0xc4, 0x20,
 		// pop r11, r10, r9, r8
 		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 		// pop rbx/rdx/rcx/rax
 		0x5b, 0x5a, 0x59, 0x58,
+		// popfq
+		0x9d,
 		// jmp h->tramp (original function)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 	unsigned char pre_tramp3[] = {
-		// add rsp, 0x28
-		0x48, 0x83, 0xc4, 0x28,
+		// add rsp, 0x20
+		0x48, 0x83, 0xc4, 0x20,
 		// pop r11, r10, r9, r8
 		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 		// pop rbx/rdx/rcx/rax
 		0x5b, 0x5a, 0x59, 0x58,
+		// popfq
+		0x9d,
 		// jmp h->new_func (New_ func)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 
-	if (g_config.disable_hook_content) {
+	if (disable_this_hook(h)) {
 		memcpy(h->hookdata->pre_tramp, "\xff\x25\x00\x00\x00\x00", 6);
 		*(ULONG_PTR *)(h->hookdata->pre_tramp + 6) = (ULONG_PTR)h->hookdata->tramp;
 		return;
@@ -464,6 +517,12 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 	unsigned int off;
 
 	unsigned char pre_tramp1[] = {
+		// pushfq
+		0x9c,
+		// cld
+		0xfc,
+		// push rsi/rdi
+		0x56, 0x57,
 		// push rax/rcx/rdx/rbx
 		0x50, 0x51, 0x52, 0x53,
 		// push r8, r9, r10, r11
@@ -472,19 +531,16 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0xe8, 0x00, 0x00, 0x00, 0x00,
 		// pop r8
 		0x41, 0x58,
-		// sub r8, 17
-		0x49, 0x83, 0xe8, 0x11,
-		// mov r8, qword ptr [rsp+0x40]
-		// 0x4c, 0x8b, 0x44, 0x24, 0x40,
-		// lea rdx, [rsp+0x40]
-		0x48, 0x8d, 0x54, 0x24, 0x40,
+		// sub r8, 0x15
+		0x49, 0x83, 0xe8, 0x15,
+		// lea rdx, [rsp+0x58]
+		0x48, 0x8d, 0x54, 0x24, 0x58,
 		// mov rcx, h
 		0x48, 0xb9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 	};
-	// 38
 	unsigned char pre_tramp12[] = {
-		// sub rsp, 0x28
-		0x48, 0x83, 0xec, 0x28,
+		// sub rsp, 0x20
+		0x48, 0x83, 0xec, 0x20,
 		// call enter_hook, returns 0 if we should call the original func, otherwise 1 if we should call our New_ version
 		0xff, 0x15, 0x02, 0x00, 0x00, 0x00,
 		// jmp $+8
@@ -492,33 +548,35 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		// address of enter_hook
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
-	// 58
 	unsigned char pre_tramp2[] = {
 		// test eax, eax
 		0x85, 0xc0,
-		// jnz 0x1e
-		0x75, 0x1e,
-		// add rsp, 0x28
-		0x48, 0x83, 0xc4, 0x28,
+		// jnz 0x21
+		0x75, 0x21,
+		// add rsp, 0x20
+		0x48, 0x83, 0xc4, 0x20,
 		// pop r11, r10, r9, r8
 		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 		// pop rbx/rdx/rcx/rax
 		0x5b, 0x5a, 0x59, 0x58,
+		// pop rdi/rsi
+		0x5f, 0x5e,
+		// popfq
+		0x9d,
 		// jmp h->tramp (original function)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
 		// address of original function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
-	// 92
 	unsigned char pre_tramp3_nostack[] = {
-		// mov rcx, [rsp+0x58]
-		0x48, 0x8b, 0x4c, 0x24, 0x58,
-		// mov rdx, [rsp+0x50]
-		0x48, 0x8b, 0x54, 0x24, 0x50,
-		// mov r8, [rsp+0x40]
-		0x4c, 0x8b, 0x44, 0x24, 0x40,
-		// mov r9, [rsp+0x38]
-		0x4c, 0x8b, 0x4c, 0x24, 0x38,
+		// mov rcx, [rsp+0x50]
+		0x48, 0x8b, 0x4c, 0x24, 0x50,
+		// mov rdx, [rsp+0x48]
+		0x48, 0x8b, 0x54, 0x24, 0x48,
+		// mov r8, [rsp+0x38]
+		0x4c, 0x8b, 0x44, 0x24, 0x38,
+		// mov r9, [rsp+0x30]
+		0x4c, 0x8b, 0x4c, 0x24, 0x30,
 		// 112
 		// call h->new_func (New_ func)
 		0xff, 0x15, 0x02, 0x00, 0x00, 0x00,
@@ -527,7 +585,6 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		// address of new function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
-	// 92
 	unsigned char pre_tramp3_stack[] = {
 		// mov ecx, numargs
 		0xb9, h->numargs, 0x00, 0x00, 0x00,
@@ -535,40 +592,34 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x83, 0xe9, 0x04,
 		// mov eax, ecx
 		0x89, 0xc8,
-		// lea rsi, [rsp+0x90]
-		0x48, 0x8d, 0xb4, 0x24, 0x90, 0x00, 0x00, 0x00,
+		// lea rsi, [rsp+0xa0]
+		0x48, 0x8d, 0xb4, 0x24, 0xa0, 0x00, 0x00, 0x00,
 		// shl eax, 3
 		0xc1, 0xe0, 0x03,
-		// push rcx
-		0x51,
-		// offset by 8 due to the push rcx above
-		// mov rcx, [rsp+0x60]
-		0x48, 0x8b, 0x4c, 0x24, 0x60,
-		// mov rdx, [rsp+0x58]
-		0x48, 0x8b, 0x54, 0x24, 0x58,
-		// mov r8, [rsp+0x48]
-		0x4c, 0x8b, 0x44, 0x24, 0x48,
-		// mov r9, [rsp+0x40]
-		0x4c, 0x8b, 0x4c, 0x24, 0x40,
-		// pop rcx
-		0x59,
-		// sub rsp, rax
-		0x48, 0x29, 0xc4,
-		// 138
-		// mov rdi, rsp
-		0x48, 0x89, 0xe7,
-		// repne movsq
-		0xf2, 0x48, 0xa5,
+		// mov r10, [rsp+0x50], this is RCX, we're storing it in a temp reg for now
+		0x4c, 0x8b, 0x54, 0x24, 0x50,
+		// mov rdx, [rsp+0x48]
+		0x48, 0x8b, 0x54, 0x24, 0x48,
+		// mov r8, [rsp+0x38]
+		0x4c, 0x8b, 0x44, 0x24, 0x38,
+		// mov r9, [rsp+0x30]
+		0x4c, 0x8b, 0x4c, 0x24, 0x30,
 		// test eax, 8
 		0xa9, 0x08, 0x00, 0x00, 0x00,
 		// jz $+0x4
 		0x74, 0x04,
 		// sub rsp, 8
 		0x48, 0x83, 0xec, 0x08,
-		// 155
+		// sub rsp, rax
+		0x48, 0x29, 0xc4,
+		// mov rdi, rsp
+		0x48, 0x89, 0xe7,
+		// repne movsq
+		0xf2, 0x48, 0xa5,
+		// mov rcx, r10
+		0x4c, 0x89, 0xd1,
 		// sub rsp, 0x20
 		0x48, 0x83, 0xec, 0x20,
-		// 159
 		// call h->new_func (New_ func)
 		0xff, 0x15, 0x02, 0x00, 0x00, 0x00,
 		// jmp $+8
@@ -579,14 +630,18 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 	unsigned char pre_tramp4_nostack[] = {
 		// test eax, eax
 		0x85, 0xc0,
-		// jnz 0x1e
-		0x75, 0x1e,
-		// add rsp, 0x28
-		0x48, 0x83, 0xc4, 0x28,
+		// jnz 0x21
+		0x75, 0x21,
+		// add rsp, 0x20 (from pre_tramp12)
+		0x48, 0x83, 0xc4, 0x20,
 		// pop r11, r10, r9, r8
 		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 		// pop rbx/rdx/rcx/rax
 		0x5b, 0x5a, 0x59, 0x58,
+		// pop rdi/rsi
+		0x5f, 0x5e,
+		// popfq
+		0x9d,
 		// jmp h->tramp (original function)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
 		// address of original function
@@ -595,8 +650,8 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 	unsigned char pre_tramp4_stack[] = {
 		// test eax, eax
 		0x85, 0xc0,
-		// jnz 0x39
-		0x75, 0x39,
+		// jnz 0x3c
+		0x75, 0x3c,
 		// mov eax, numargs
 		0xb8, h->numargs, 0x00, 0x00, 0x00,
 		// sub eax, 0x4
@@ -613,30 +668,37 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x83, 0xc0, 0x20,
 		// add rsp, rax
 		0x48, 0x01, 0xc4,
-		// add rsp, 0x28
-		0x48, 0x83, 0xc4, 0x28,
+		// add rsp, 0x20 (from pre_tramp12)
+		0x48, 0x83, 0xc4, 0x20,
 		// pop r11, r10, r9, r8
 		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 		// pop rbx/rdx/rcx/rax
 		0x5b, 0x5a, 0x59, 0x58,
+		// pop rdi/rsi
+		0x5f, 0x5e,
+		// popfq
+		0x9d,
 		// jmp h->tramp (original function)
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
 		// address of original function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 	unsigned char pre_tramp5_nostack[] = {
-		// add rsp, 0x28
-		0x48, 0x83, 0xc4, 0x28,
+		// add rsp, 0x20 (from pre_tramp12)
+		0x48, 0x83, 0xc4, 0x20,
 		// pop r11, r10, r9, r8
 		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 		// pop rbx/rdx/rcx/rax
 		0x5b, 0x5a, 0x59, 0x58,
+		// pop rdi/rsi
+		0x5f, 0x5e,
+		// popfq
+		0x9d,
 		// jmp h->alt_func
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
 		// address of alternate function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
-	// 235
 	unsigned char pre_tramp5_stack[] = {
 		// mov eax, numargs
 		0xb8, h->numargs, 0x00, 0x00, 0x00,
@@ -654,19 +716,23 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0x83, 0xc0, 0x20,
 		// add rsp, rax
 		0x48, 0x01, 0xc4,
-		// add rsp, 0x28
-		0x48, 0x83, 0xc4, 0x28,
+		// add rsp, 0x20 (from pre_tramp12)
+		0x48, 0x83, 0xc4, 0x20,
 		// pop r11, r10, r9, r8
 		0x41, 0x5b, 0x41, 0x5a, 0x41, 0x59, 0x41, 0x58,
 		// pop rbx/rdx/rcx/rax
 		0x5b, 0x5a, 0x59, 0x58,
+		// pop rdi/rsi
+		0x5f, 0x5e,
+		// popfq
+		0x9d,
 		// jmp h->alt_func
 		0xff, 0x25, 0x00, 0x00, 0x00, 0x00,
 		// address of alternate function
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 	};
 
-	if (g_config.disable_hook_content) {
+	if (disable_this_hook(h)) {
 		memcpy(h->hookdata->pre_tramp, "\xff\x25\x00\x00\x00\x00", 6);
 		*(ULONG_PTR *)(h->hookdata->pre_tramp + 6) = (ULONG_PTR)h->hookdata->tramp;
 		return;
@@ -918,6 +984,7 @@ int hook_api(hook_t *h, int type)
 
 				// successful hook is successful
 				h->is_hooked = 1;
+				h->hook_addr = addr;
 			}
 		}
 		else {
@@ -967,7 +1034,7 @@ static unsigned int our_stackwalk(ULONG_PTR _rip, ULONG_PTR sp, PVOID *backtrace
 	return frame + 1;
 }
 
-int operate_on_backtrace(ULONG_PTR sp, ULONG_PTR _rip, int(*func)(ULONG_PTR))
+int operate_on_backtrace(ULONG_PTR sp, ULONG_PTR _rip, void *extra, int(*func)(void *, ULONG_PTR))
 {
 	int ret;
 	PVOID backtrace[HOOK_BACKTRACE_DEPTH];
@@ -982,15 +1049,15 @@ int operate_on_backtrace(ULONG_PTR sp, ULONG_PTR _rip, int(*func)(ULONG_PTR))
 	frames = our_stackwalk(_rip, sp, backtrace, HOOK_BACKTRACE_DEPTH);
 
 	for (i = 0; i < frames; i++) {
-		if (!addr_in_our_dll_range((ULONG_PTR)backtrace[i]))
+		if (!addr_in_our_dll_range(NULL, (ULONG_PTR)backtrace[i]))
 			break;
 	}
 
-	if (((PUCHAR)backtrace[i])[0] == 0xeb && ((PUCHAR)backtrace[i])[1] == 0x08)
+	if (i < frames && ((PUCHAR)backtrace[i])[0] == 0xeb && ((PUCHAR)backtrace[i])[1] == 0x08)
 		i++;
 
 	for (; i < frames; i++) {
-		ret = func((ULONG_PTR)backtrace[i]);
+		ret = func(extra, (ULONG_PTR)backtrace[i]);
 		if (ret)
 			goto out;
 	}

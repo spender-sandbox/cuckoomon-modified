@@ -44,7 +44,7 @@ void emit_rel(unsigned char *buf, unsigned char *source, unsigned char *target)
 // need to be very careful about what we call in here, as it can be called in the context of any hook
 // including those that hold the loader lock
 
-static int set_caller_info(ULONG_PTR addr)
+static int set_caller_info(void *unused, ULONG_PTR addr)
 {
 	hook_info_t *hookinfo = hook_info();
 
@@ -59,7 +59,7 @@ static int set_caller_info(ULONG_PTR addr)
 	return 0;
 }
 
-int addr_in_our_dll_range(ULONG_PTR addr)
+int addr_in_our_dll_range(void *unused, ULONG_PTR addr)
 {
 	if (addr >= g_our_dll_base && addr < (g_our_dll_base + g_our_dll_size))
 		return 1;
@@ -70,7 +70,7 @@ int called_by_hook(void)
 {
 	hook_info_t *hookinfo = hook_info();
 
-	return operate_on_backtrace(hookinfo->return_address, hookinfo->frame_pointer, addr_in_our_dll_range);
+	return operate_on_backtrace(hookinfo->return_address, hookinfo->frame_pointer, NULL, addr_in_our_dll_range);
 }
 
 extern BOOLEAN is_ignored_thread(DWORD tid);
@@ -113,7 +113,7 @@ int WINAPI enter_hook(hook_t *h, ULONG_PTR sp, ULONG_PTR ebp_or_rip)
 		hookinfo->main_caller_retaddr = 0;
 		hookinfo->parent_caller_retaddr = 0;
 
-		operate_on_backtrace(sp, ebp_or_rip, set_caller_info);
+		operate_on_backtrace(sp, ebp_or_rip, NULL, set_caller_info);
 
 		return 1;
 	}

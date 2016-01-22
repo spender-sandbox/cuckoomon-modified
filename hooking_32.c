@@ -231,7 +231,7 @@ static void hook_create_pre_tramp(hook_t *h)
 	};
 
 
-	if (g_config.disable_hook_content) {
+	if (disable_this_hook(h)) {
 		h->hookdata->pre_tramp[0] = 0xe9;
 		emit_rel(h->hookdata->pre_tramp + 1, h->hookdata->pre_tramp + 1, h->hookdata->tramp);
 		return;
@@ -332,7 +332,7 @@ static void hook_create_pre_tramp_notail(hook_t *h)
 		0xe9, 0x00, 0x00, 0x00, 0x00
 	};
 
-	if (g_config.disable_hook_content) {
+	if (disable_this_hook(h)) {
 		h->hookdata->pre_tramp[0] = 0xe9;
 		emit_rel(h->hookdata->pre_tramp + 1, h->hookdata->pre_tramp + 1, h->hookdata->tramp);
 		return;
@@ -804,6 +804,7 @@ int hook_api(hook_t *h, int type)
 
 				// successful hook is successful
 				h->is_hooked = 1;
+				h->hook_addr = addr;
 			}
 		}
 		else {
@@ -821,7 +822,7 @@ int hook_api(hook_t *h, int type)
     return ret;
 }
 
-int operate_on_backtrace(ULONG_PTR _esp, ULONG_PTR _ebp, int(*func)(ULONG_PTR))
+int operate_on_backtrace(ULONG_PTR _esp, ULONG_PTR _ebp, void *extra, int(*func)(void *, ULONG_PTR))
 {
 	int ret;
 
@@ -830,7 +831,7 @@ int operate_on_backtrace(ULONG_PTR _esp, ULONG_PTR _ebp, int(*func)(ULONG_PTR))
 
 	unsigned int count = HOOK_BACKTRACE_DEPTH;
 
-	ret = func(*(ULONG_PTR *)_esp);
+	ret = func(extra, *(ULONG_PTR *)_esp);
 	if (ret)
 		return ret;
 
@@ -840,7 +841,7 @@ int operate_on_backtrace(ULONG_PTR _esp, ULONG_PTR _ebp, int(*func)(ULONG_PTR))
 		ULONG_PTR addr = *(ULONG_PTR *)(_ebp + sizeof(ULONG_PTR));
 		_ebp = *(ULONG_PTR *)_ebp;
 
-		ret = func(addr);
+		ret = func(extra, addr);
 		if (ret)
 			return ret;
 	}

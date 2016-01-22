@@ -150,7 +150,7 @@ int read_config(void)
 #endif
 			}
 			else if (!strcmp(key, "disable_hook_content")) {
-				g_config.disable_hook_content = value[0] == '1';
+				g_config.disable_hook_content = atoi(value);
 			}
 			/*
 			else if(!strcmp(key, "host-ip")) {

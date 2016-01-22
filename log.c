@@ -1044,12 +1044,13 @@ void log_environ()
 	free(machineguid);
 }
 void log_hook_anomaly(const char *subcategory, int success,
-    const char *funcname, const char *msg)
+    const hook_t *h, const char *msg)
 {
-    loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", success, 0, "isss",
+    loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", success, 0, "issps",
         "ThreadIdentifier", GetCurrentThreadId(),
         "Subcategory", subcategory,
-        "FunctionName", funcname,
+        "FunctionName", h->funcname,
+		"FunctionAddress", h->hook_addr,
         "Message", msg);
 }
 
@@ -1072,7 +1073,7 @@ void log_procname_anomaly(PUNICODE_STRING InitialName, PUNICODE_STRING InitialPa
 		"ModifiedProcessPath", CurrentPath);
 }
 
-void log_hook_modification(const char *funcname, const char *origbytes, const char *newbytes, unsigned int len)
+void log_hook_modification(const hook_t *h, const char *origbytes, const char *newbytes, unsigned int len)
 {
 	char msg1[128] = { 0 };
 	char msg2[128] = { 0 };
@@ -1088,30 +1089,33 @@ void log_hook_modification(const char *funcname, const char *origbytes, const ch
 		sprintf(p, "%02X ", (unsigned char)newbytes[i]);
 	}
 
-	loq(LOG_ID_ANOMALY_EXTRA, "__notification__", "__anomaly__", 1, 0, "isssss",
+	loq(LOG_ID_ANOMALY_EXTRA, "__notification__", "__anomaly__", 1, 0, "isspsss",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
-		"FunctionName", funcname,
+		"FunctionName", h->funcname,
+		"FunctionAddress", h->hook_addr,
 		"UnhookType", "modification",
 		"OriginalBytes", msg1,
 		"NewBytes", msg2);
 }
 
-void log_hook_removal(const char *funcname)
+void log_hook_removal(const hook_t *h)
 {
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "isss",
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "issps",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
-		"FunctionName", funcname,
+		"FunctionName", h->funcname,
+		"FunctionAddress", h->hook_addr,
 		"UnhookType", "removal");
 }
 
-void log_hook_restoration(const char *funcname)
+void log_hook_restoration(const hook_t *h)
 {
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "isss",
+	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "issps",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
-		"FunctionName", funcname,
+		"FunctionName", h->funcname,
+		"FunctionAddress", h->hook_addr,
 		"UnhookType", "restored");
 }
 

@@ -335,7 +335,6 @@ HOOKDEF_NOTAIL(WINAPI, CreateWindowExA,
 	__in_opt LPVOID lpParam
 ) {
 	HWND ret = (HWND)1;
-
 	// lpClassName can be one of the predefined window controls.. which lay in
 	// the 0..ffff range
 	if (((DWORD_PTR)lpClassName & 0xffff) == (DWORD_PTR)lpClassName) {

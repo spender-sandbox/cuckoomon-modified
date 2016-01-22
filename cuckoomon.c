@@ -46,16 +46,16 @@ void disable_tail_call_optimization(void)
 #define CUCKOODBG 0
 #endif
 
-#define HOOK(library, funcname) {L###library, #funcname, NULL, \
+#define HOOK(library, funcname) {L###library, #funcname, NULL, NULL, \
     &New_##funcname, (void **) &Old_##funcname, NULL, FALSE, 0, FALSE}
 
-#define HOOK_SPECIAL(library, funcname) {L###library, #funcname, NULL, \
+#define HOOK_SPECIAL(library, funcname) {L###library, #funcname, NULL, NULL, \
     &New_##funcname, (void **) &Old_##funcname, NULL, TRUE, 0, FALSE}
 
-#define HOOK_NOTAIL_ALT(library, funcname, numargs) {L###library, #funcname, NULL, \
+#define HOOK_NOTAIL_ALT(library, funcname, numargs) {L###library, #funcname, NULL, NULL, \
     &New_##funcname, (void **) &Old_##funcname, &Alt_##funcname, TRUE, numargs, TRUE}
 
-#define HOOK_NOTAIL(library, funcname, numargs) {L###library, #funcname, NULL, \
+#define HOOK_NOTAIL(library, funcname, numargs) {L###library, #funcname, NULL, NULL, \
     &New_##funcname, NULL, NULL, TRUE, numargs, TRUE}
 
 static hook_t g_hooks[] = {
@@ -249,7 +249,8 @@ static hook_t g_hooks[] = {
 
 	HOOK_NOTAIL(user32, CreateWindowExA, 12),
 	HOOK_NOTAIL(user32, CreateWindowExW, 12),
-    HOOK(user32, FindWindowA),
+
+	HOOK(user32, FindWindowA),
     HOOK(user32, FindWindowW),
     HOOK(user32, FindWindowExA),
     HOOK(user32, FindWindowExW),
@@ -263,8 +264,8 @@ static hook_t g_hooks[] = {
 	HOOK(user32, SetWindowLongW),
 	HOOK(user32, SetWindowLongPtrA),
 	HOOK(user32, SetWindowLongPtrW),
-
-    //
+	
+	//
     // Sync Hooks
     //
 
@@ -273,7 +274,9 @@ static hook_t g_hooks[] = {
 	HOOK(ntdll, NtCreateEvent),
 	HOOK(ntdll, NtOpenEvent),
 	HOOK(ntdll, NtCreateNamedPipeFile),
-    //
+
+	
+	//
     // Process Hooks
     //
 
@@ -376,6 +379,8 @@ static hook_t g_hooks[] = {
 	//
     // Network Hooks
     //
+
+		
 	HOOK(netapi32, NetUserGetInfo),
 	HOOK(netapi32, NetGetJoinInformation),
 	HOOK(netapi32, NetUserGetLocalGroups),
@@ -553,13 +558,16 @@ void set_hooks_dll(const wchar_t *library)
     }
 }
 
+extern void invalidate_regions_for_hook(const hook_t *hook);
+
 void revalidate_all_hooks(void)
 {
 	int i;
 	for (i = 0; i < ARRAYSIZE(g_hooks); i++) {
-		if (g_hooks[i].addr && !is_valid_address_range((ULONG_PTR)g_hooks[i].addr, 1)) {
+		if (g_hooks[i].hook_addr && !is_valid_address_range((ULONG_PTR)g_hooks[i].hook_addr, 1)) {
 			g_hooks[i].is_hooked = 0;
-			g_hooks[i].addr = NULL;
+			g_hooks[i].hook_addr = NULL;
+			invalidate_regions_for_hook(&g_hooks[i]);
 		}
 	}
 }
@@ -571,9 +579,16 @@ VOID CALLBACK DllLoadNotification(
 	_In_     const PLDR_DLL_NOTIFICATION_DATA NotificationData,
 	_In_opt_ PVOID                       Context)
 {
+	PWCHAR dllname;
+	COPY_UNICODE_STRING(library, NotificationData->Loaded.BaseDllName);
+
+	if (g_config.debug) {
+		int ret = 0;
+		/* Just for debug purposes, gives a stripped fake function name */
+		LOQ_void("system", "sup", "NotificationReason", NotificationReason == 1 ? "load" : "unload", "DllName", library.Buffer, "DllBase", NotificationReason == 1 ? NotificationData->Loaded.DllBase : NotificationData->Unloaded.DllBase);
+	}
+
 	if (NotificationReason == 1) {
-		PWCHAR dllname;
-		COPY_UNICODE_STRING(library, NotificationData->Loaded.BaseDllName);
 
 		if (g_config.file_of_interest && !wcsicmp(library.Buffer, g_config.file_of_interest))
 			set_dll_of_interest((ULONG_PTR)NotificationData->Loaded.DllBase);
@@ -658,13 +673,26 @@ void set_hooks()
 	hook_enable();
 }
 
+static int parse_stack_trace(void *msg, ULONG_PTR addr)
+{
+	unsigned int offset;
+	char *buf = convert_address_to_dll_name_and_offset(addr, &offset);
+	if (buf) {
+		snprintf((char *)msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, " %s+%x", buf, offset);
+		free(buf);
+	}
+
+	return 0;
+}
+
 LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *ExceptionInfo)
 {
-	char msg[16384];
+	char *msg;
 	char *dllname;
 	char *sehname;
 	unsigned int offset;
 	ULONG_PTR eip;
+	ULONG_PTR ebp;
 	ULONG_PTR seh = 0;
 	PUCHAR eipptr;
 #ifdef _WIN64
@@ -682,8 +710,10 @@ LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *Excepti
 
 #ifdef _WIN64
 	stack = (ULONG_PTR *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Rsp);
+	ebp = (ULONG_PTR)(ExceptionInfo->ContextRecord->Rbp);
 #else
 	stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
+	ebp = (ULONG_PTR)(ExceptionInfo->ContextRecord->Ebp);
 	{
 		DWORD *tebtmp = (DWORD *)NtCurrentTeb();
 		if (tebtmp[0] != 0xffffffff)
@@ -697,9 +727,12 @@ LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *Excepti
 
 	hook_disable();
 
+
 	get_lasterrors(&lasterror);
 
 	log_flush();
+
+	msg = malloc(32768);
 
 	dllname = convert_address_to_dll_name_and_offset(eip, &offset);
 
@@ -713,6 +746,10 @@ LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *Excepti
 
 	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %.08Ix, Fault Address: %.08Ix, Esp: %.08Ix, Exception Code: %08x, ",
 		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (ULONG_PTR)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
+
+	operate_on_backtrace(eip, ebp, msg, &parse_stack_trace);
+
+#ifdef _FULL_STACK_TRACE
 	if (is_valid_address_range((ULONG_PTR)stack, 100 * sizeof(ULONG_PTR))) 
 	{
 		DWORD i;
@@ -732,13 +769,16 @@ LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *Excepti
 		strcat(msg, "invalid stack, ");
 	}
 next:
+#endif
+
 	if (is_valid_address_range(eip, 16)) {
-		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, "Bytes at EIP: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+		snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg) - 1, " Bytes at EIP: %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
 			eipptr[0], eipptr[1], eipptr[2], eipptr[3], eipptr[4], eipptr[5], eipptr[6], eipptr[7], eipptr[8], eipptr[9], eipptr[10], eipptr[11], eipptr[12], eipptr[13], eipptr[14], eipptr[15]);
 	}
 	debug_message(msg);
 	if (dllname)
 		free(dllname);
+	free(msg);
 
 	set_lasterrors(&lasterror);
 
