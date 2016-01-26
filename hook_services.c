@@ -190,7 +190,7 @@ HOOKDEF(BOOL, WINAPI, StartServiceA,
 	BOOLEAN dispret = servicename_from_handle(hService, servicename);
 	BOOL ret;
 
-	if (dispret && (wcsicmp(servicename, L"osppsvc") || !g_config.file_of_interest || !wcsicmp(our_process_path, g_config.file_of_interest)))
+	if (dispret && !g_config.suspend_logging && (wcsicmp(servicename, L"osppsvc") || !g_config.file_of_interest || !wcsicmp(our_process_path, g_config.file_of_interest)))
 		pipe("SERVICE:%Z", servicename);
 	ret = Old_StartServiceA(hService, dwNumServiceArgs,
         lpServiceArgVectors);
@@ -209,7 +209,7 @@ HOOKDEF(BOOL, WINAPI, StartServiceW,
 	BOOLEAN dispret = servicename_from_handle(hService, servicename);
 	BOOL ret;
 
-	if (dispret && (wcsicmp(servicename, L"osppsvc") || !g_config.file_of_interest || !wcsicmp(our_process_path, g_config.file_of_interest)))
+	if (dispret && !g_config.suspend_logging && (wcsicmp(servicename, L"osppsvc") || !g_config.file_of_interest || !wcsicmp(our_process_path, g_config.file_of_interest)))
 		pipe("SERVICE:%Z", servicename);
     ret = Old_StartServiceW(hService, dwNumServiceArgs,
         lpServiceArgVectors);
