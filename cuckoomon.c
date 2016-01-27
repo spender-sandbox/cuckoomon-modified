@@ -375,6 +375,7 @@ static hook_t g_hooks[] = {
 	HOOK(imgutil, DecodeImage),
 	HOOK(advapi32, LsaOpenPolicy),
 	HOOK(mpr, WNetGetProviderNameW),
+	HOOK(rasapi32, RasValidateEntryNameW),
 
 	//
     // Network Hooks
@@ -520,6 +521,8 @@ static hook_t g_hooks[] = {
 	HOOK(advapi32, CryptExportKey),
 	HOOK(advapi32, CryptGenKey),
 	HOOK(advapi32, CryptCreateHash),
+	HOOK(advapi32, CryptEnumProvidersA),
+	HOOK(advapi32, CryptEnumProvidersW),
 
 	HOOK(wintrust, HTTPSCertificateTrust),
 	HOOK(wintrust, HTTPSFinalProv),
@@ -544,6 +547,8 @@ static hook_t g_hooks[] = {
 	HOOK(cryptsp, CryptExportKey),
 	HOOK(cryptsp, CryptGenKey),
 	HOOK(cryptsp, CryptCreateHash),
+	HOOK(cryptsp, CryptEnumProvidersA),
+	HOOK(cryptsp, CryptEnumProvidersW),
 };
 
 void set_hooks_dll(const wchar_t *library)

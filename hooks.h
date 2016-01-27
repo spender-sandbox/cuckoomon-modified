@@ -1170,6 +1170,11 @@ extern HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 // Misc Hooks
 //
 
+extern HOOKDEF(DWORD, WINAPI, RasValidateEntryNameW,
+	_In_ LPCWSTR lpszPhonebook,
+	_In_ LPCWSTR lpszEntry
+);
+
 extern HOOKDEF(void, WINAPI, GetSystemInfo,
 	__out LPSYSTEM_INFO lpSystemInfo
 );
@@ -2286,6 +2291,25 @@ extern HOOKDEF(BOOL, WINAPI, CryptCreateHash,
 	_In_   DWORD dwFlags,
 	_Out_  HCRYPTHASH *phHash
 );
+
+extern HOOKDEF(BOOL, WINAPI, CryptEnumProvidersA,
+	_In_    DWORD  dwIndex,
+	_In_    DWORD  *pdwReserved,
+	_In_    DWORD  dwFlags,
+	_Out_   DWORD  *pdwProvType,
+	_Out_   LPSTR pszProvName,
+	_Inout_ DWORD  *pcbProvName
+);
+
+extern HOOKDEF(BOOL, WINAPI, CryptEnumProvidersW,
+	_In_    DWORD  dwIndex,
+	_In_    DWORD  *pdwReserved,
+	_In_    DWORD  dwFlags,
+	_Out_   DWORD  *pdwProvType,
+	_Out_   LPWSTR pszProvName,
+	_Inout_ DWORD  *pcbProvName
+);
+
 
 extern HOOKDEF(HRESULT, WINAPI, HTTPSCertificateTrust,
 	PVOID data // PCRYPT_PROVIDER_DATA

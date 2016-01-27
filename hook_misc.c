@@ -800,3 +800,12 @@ HOOKDEF(DWORD, WINAPI, WNetGetProviderNameW,
 
 	return ret;
 }
+
+HOOKDEF(DWORD, WINAPI, RasValidateEntryNameW,
+	_In_ LPCWSTR lpszPhonebook,
+	_In_ LPCWSTR lpszEntry
+) {
+	DWORD ret = Old_RasValidateEntryNameW(lpszPhonebook, lpszEntry);
+	LOQ_zero("misc", "uu", "Phonebook", lpszPhonebook, "Entry", lpszEntry);
+	return ret;
+}

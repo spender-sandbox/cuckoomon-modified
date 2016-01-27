@@ -325,3 +325,29 @@ HOOKDEF(BOOL, WINAPI, CryptImportPublicKeyInfo,
 	LOQ_bool("crypto", "hsb", "CertEncodingType", dwCertEncodingType, "AlgOID", pInfo->Algorithm.pszObjId, "Blob", pInfo->PublicKey.cbData, pInfo->PublicKey.pbData);
 	return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, CryptEnumProvidersA,
+	_In_    DWORD  dwIndex,
+	_In_    DWORD  *pdwReserved,
+	_In_    DWORD  dwFlags,
+	_Out_   DWORD  *pdwProvType,
+	_Out_   LPSTR pszProvName,
+	_Inout_ DWORD  *pcbProvName
+) {
+	BOOL ret = Old_CryptEnumProvidersA(dwIndex, pdwReserved, dwFlags, pdwProvType, pszProvName, pcbProvName);
+	LOQ_bool("crypto", "is", "Index", dwIndex, "ProviderName", pszProvName);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, CryptEnumProvidersW,
+	_In_    DWORD  dwIndex,
+	_In_    DWORD  *pdwReserved,
+	_In_    DWORD  dwFlags,
+	_Out_   DWORD  *pdwProvType,
+	_Out_   LPWSTR pszProvName,
+	_Inout_ DWORD  *pcbProvName
+) {
+	BOOL ret = Old_CryptEnumProvidersW(dwIndex, pdwReserved, dwFlags, pdwProvType, pszProvName, pcbProvName);
+	LOQ_bool("crypto", "iu", "Index", dwIndex, "ProviderName", pszProvName);
+	return ret;
+}
