@@ -376,11 +376,11 @@ static hook_t g_hooks[] = {
 	HOOK(advapi32, LsaOpenPolicy),
 	HOOK(mpr, WNetGetProviderNameW),
 	HOOK(rasapi32, RasValidateEntryNameW),
+	HOOK(rasapi32, RasConnectionNotificationW),
 
 	//
     // Network Hooks
     //
-
 		
 	HOOK(netapi32, NetUserGetInfo),
 	HOOK(netapi32, NetGetJoinInformation),

@@ -1175,6 +1175,14 @@ extern HOOKDEF(DWORD, WINAPI, RasValidateEntryNameW,
 	_In_ LPCWSTR lpszEntry
 );
 
+extern HOOKDEF(DWORD, WINAPI, RasConnectionNotificationW,
+	_In_ PVOID hrasconn,
+	_In_ HANDLE   hEvent,
+	_In_ DWORD    dwFlags
+);
+
+
+
 extern HOOKDEF(void, WINAPI, GetSystemInfo,
 	__out LPSYSTEM_INFO lpSystemInfo
 );

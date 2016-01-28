@@ -60,7 +60,8 @@ int read_config(void)
         // split key=value
         p = strchr(buf, '=');
         if(p != NULL) {
-			const char *key = buf, *value = p + 1;
+			const char *key = buf;
+			char *value = p + 1;
 
 			*p = 0;
 			vallen = (unsigned int)strlen(value);
@@ -84,37 +85,23 @@ int read_config(void)
 					if (value[1] == ':') {
 						// is a file
 						char *tmp = calloc(1, MAX_PATH);
-						wchar_t *utmp = calloc(1, MAX_PATH * sizeof(wchar_t));
-						unsigned int full_len;
 
 						ensure_absolute_ascii_path(tmp, value);
-						full_len = (unsigned int)strlen(tmp);
-						for (i = 0; i < full_len; i++)
-							utmp[i] = (wchar_t)(unsigned short)tmp[i];
+						g_config.file_of_interest = ascii_to_unicode_dup(tmp);
 						free(tmp);
-
-						g_config.file_of_interest = utmp;
 						// if the file of interest is our own executable, then don't do any special handling
-						if (wcsicmp(our_process_path, utmp))
+						if (wcsicmp(our_process_path, g_config.file_of_interest))
 							g_config.suspend_logging = TRUE;
 					}
 					else {
 						// is a URL
-						unsigned int url_len = (unsigned int)strlen(value);
-						wchar_t *utmp = calloc(1, (url_len + 1) * sizeof(wchar_t));
-						for (i = 0; i < url_len; i++)
-							utmp[i] = (wchar_t)(unsigned short)value[i];
-						g_config.url_of_interest = utmp;
+						g_config.url_of_interest = ascii_to_unicode_dup(value);
 						g_config.suspend_logging = TRUE;
 					}
 				}
 			}
 			else if (!strcmp(key, "referrer")) {
-				unsigned int ref_len = (unsigned int)strlen(value);
-				wchar_t *rtmp = calloc(1, (ref_len + 1) * sizeof(wchar_t));
-				for (i = 0; i < ref_len; i++)
-					rtmp[i] = (wchar_t)(unsigned short)value[i];
-				g_config.w_referrer = rtmp;
+				g_config.w_referrer = ascii_to_unicode_dup(value);
 				g_config.referrer = strdup(value);
 			}
 			else if (!strcmp(key, "analyzer")) {
@@ -196,6 +183,36 @@ int read_config(void)
 			}
 			else if (!strcmp(key, "large-buffer-max")) {
 				large_buffer_log_max = (unsigned int)strtoul(value, NULL, 10);
+			}
+			else if (!strcmp(key, "exclude-apis")) {
+				unsigned int x = 0;
+				char *p2;
+				p = value;
+				while (p && x < EXCLUSION_MAX) {
+					p2 = strchr(p, ':');
+					if (p2) {
+						*p2 = '\0';
+					}
+					g_config.excluded_apinames[x] = strdup(p);
+					if (p2 == NULL)
+						break;
+					p = p2 + 1;
+				}
+			}
+			else if (!strcmp(key, "exclude-dlls")) {
+				unsigned int x = 0;
+				char *p2;
+				p = value;
+				while (p && x < EXCLUSION_MAX) {
+					p2 = strchr(p, ':');
+					if (p2) {
+						*p2 = '\0';
+					}
+					g_config.excluded_dllnames[x] = ascii_to_unicode_dup(p);
+					if (p2 == NULL)
+						break;
+					p = p2 + 1;
+				}
 			}
 		}
     }

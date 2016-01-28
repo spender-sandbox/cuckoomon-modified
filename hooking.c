@@ -59,6 +59,26 @@ static int set_caller_info(void *unused, ULONG_PTR addr)
 	return 0;
 }
 
+int hook_is_excluded(hook_t *h)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAYSIZE(g_config.excluded_apinames); i++) {
+		if (!g_config.excluded_apinames[i])
+			break;
+		if (!stricmp(h->funcname, g_config.excluded_apinames[i]))
+			return 1;
+	}
+	for (i = 0; i < ARRAYSIZE(g_config.excluded_dllnames); i++) {
+		if (!g_config.excluded_dllnames[i])
+			break;
+		if (!wcsicmp(h->library, g_config.excluded_dllnames[i]))
+			return 1;
+	}
+
+	return 0;
+}
+
 int addr_in_our_dll_range(void *unused, ULONG_PTR addr)
 {
 	if (addr >= g_our_dll_base && addr < (g_our_dll_base + g_our_dll_size))

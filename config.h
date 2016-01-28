@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define EXCLUSION_MAX 128
+
 struct _g_config {
     // name of the pipe to communicate with cuckoo
     wchar_t pipe_name[MAX_PATH];
@@ -99,6 +101,9 @@ struct _g_config {
     //unsigned short host_port;
 
 	BOOLEAN suspend_logging;
+
+	char *excluded_apinames[EXCLUSION_MAX];
+	wchar_t *excluded_dllnames[EXCLUSION_MAX];
 };
 
 extern struct _g_config g_config;

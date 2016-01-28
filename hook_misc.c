@@ -809,3 +809,13 @@ HOOKDEF(DWORD, WINAPI, RasValidateEntryNameW,
 	LOQ_zero("misc", "uu", "Phonebook", lpszPhonebook, "Entry", lpszEntry);
 	return ret;
 }
+
+HOOKDEF(DWORD, WINAPI, RasConnectionNotificationW,
+	_In_ PVOID hrasconn,
+	_In_ HANDLE   hEvent,
+	_In_ DWORD    dwFlags
+) {
+	DWORD ret = Old_RasConnectionNotificationW(hrasconn, hEvent, dwFlags);
+	LOQ_zero("misc", "");
+	return ret;
+}

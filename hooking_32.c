@@ -634,9 +634,12 @@ int hook_api(hook_t *h, int type)
 	};
 
     // is this address already hooked?
-    if(h->is_hooked != 0) {
+    if (h->is_hooked != 0) {
         return 0;
     }
+
+	if (hook_is_excluded(h))
+		return 0;
 
     // resolve the address to hook
     addr = h->addr;

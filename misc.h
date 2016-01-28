@@ -184,6 +184,8 @@ PUNICODE_STRING get_basename_of_module(HMODULE module_handle);
 
 void perform_create_time_fakery(FILETIME *createtime);
 
+wchar_t *ascii_to_unicode_dup(char *str);
+
 int is_stack_pivoted(void);
 
 LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *ExceptionInfo);

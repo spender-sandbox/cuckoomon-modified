@@ -859,6 +859,9 @@ int hook_api(hook_t *h, int type)
 		return 0;
 	}
 
+	if (hook_is_excluded(h))
+		return 0;
+
 	// resolve the address to hook
 	addr = h->addr;
 

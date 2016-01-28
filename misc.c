@@ -114,6 +114,16 @@ void addr_to_string(const IN_ADDR addr, char *string)
 	num_to_string(string+strlen(string), 4, chunk[3]);
 }
 
+wchar_t *ascii_to_unicode_dup(char *str)
+{
+	unsigned int len = (unsigned int)strlen(str);
+	unsigned int i;
+	wchar_t *rtmp = calloc(1, (len + 1) * sizeof(wchar_t));
+	for (i = 0; i < len; i++)
+		rtmp[i] = (wchar_t)(unsigned short)str[i];
+	return rtmp;
+}
+
 int is_stack_pivoted(void)
 {
 	hook_info_t *hookinfo = hook_info();
