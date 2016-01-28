@@ -697,14 +697,10 @@ LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *Excepti
 	char *sehname;
 	unsigned int offset;
 	ULONG_PTR eip;
-	ULONG_PTR ebp;
+	ULONG_PTR ebp_or_rip;
 	ULONG_PTR seh = 0;
 	PUCHAR eipptr;
-#ifdef _WIN64
 	ULONG_PTR *stack;
-#else
-	DWORD *stack;
-#endif
 	lasterror_t lasterror;
 
 	if (ExceptionInfo->ExceptionRecord == NULL || ExceptionInfo->ContextRecord == NULL)
@@ -715,10 +711,10 @@ LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *Excepti
 
 #ifdef _WIN64
 	stack = (ULONG_PTR *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Rsp);
-	ebp = (ULONG_PTR)(ExceptionInfo->ContextRecord->Rbp);
+	ebp_or_rip = eip;
 #else
-	stack = (DWORD *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
-	ebp = (ULONG_PTR)(ExceptionInfo->ContextRecord->Ebp);
+	stack = (ULONG_PTR *)(ULONG_PTR)(ExceptionInfo->ContextRecord->Esp);
+	ebp_or_rip = (ULONG_PTR)(ExceptionInfo->ContextRecord->Ebp);
 	{
 		DWORD *tebtmp = (DWORD *)NtCurrentTeb();
 		if (tebtmp[0] != 0xffffffff)
@@ -731,7 +727,6 @@ LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *Excepti
 		return EXCEPTION_CONTINUE_SEARCH;
 
 	hook_disable();
-
 
 	get_lasterrors(&lasterror);
 
@@ -752,7 +747,7 @@ LONG WINAPI cuckoomon_exception_handler(__in struct _EXCEPTION_POINTERS *Excepti
 	snprintf(msg + strlen(msg), sizeof(msg) - strlen(msg), " %.08Ix, Fault Address: %.08Ix, Esp: %.08Ix, Exception Code: %08x, ",
 		eip, ExceptionInfo->ExceptionRecord->ExceptionInformation[1], (ULONG_PTR)stack, ExceptionInfo->ExceptionRecord->ExceptionCode);
 
-	operate_on_backtrace(eip, ebp, msg, &parse_stack_trace);
+	operate_on_backtrace((ULONG_PTR)stack, ebp_or_rip, msg, &parse_stack_trace);
 
 #ifdef _FULL_STACK_TRACE
 	if (is_valid_address_range((ULONG_PTR)stack, 100 * sizeof(ULONG_PTR))) 
@@ -923,11 +918,10 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOALIGNMENTFAULTEXCEPT | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 			_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
 		}
-		else {
-			hide_module_from_peb(hModule);
-		}
 
-
+#if !CUCKOODBG
+		hide_module_from_peb(hModule);
+#endif
 
 		// obtain all protected pids
         pipe2(pids, &length, "GETPIDS");

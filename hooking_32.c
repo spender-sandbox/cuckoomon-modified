@@ -834,9 +834,11 @@ int operate_on_backtrace(ULONG_PTR _esp, ULONG_PTR _ebp, void *extra, int(*func)
 
 	unsigned int count = HOOK_BACKTRACE_DEPTH;
 
-	ret = func(extra, *(ULONG_PTR *)_esp);
-	if (ret)
-		return ret;
+	if (_esp >= bottom && _esp <= (top - sizeof(ULONG_PTR))) {
+		ret = func(extra, *(ULONG_PTR *)_esp);
+		if (ret)
+			return ret;
+	}
 
 	while (_ebp >= bottom && _ebp <= (top - (2 * sizeof(ULONG_PTR))) && count-- != 0)
 	{
