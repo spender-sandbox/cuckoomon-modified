@@ -840,3 +840,12 @@ HOOKDEF(BOOL, WINAPI, SystemTimeToTzSpecificLocalTime,
 	LOQ_bool("misc", "");
 	return ret;
 }
+
+HOOKDEF(HRESULT, WINAPI, CLSIDFromProgID,
+	_In_ LPCOLESTR lpszProgID,
+	_Out_ LPCLSID lpclsid
+) {
+	HRESULT ret = CLSIDFromProgID(lpszProgID, lpclsid);
+	LOQ_hresult("misc", "u", "ProgID", lpszProgID);
+	return ret;
+}

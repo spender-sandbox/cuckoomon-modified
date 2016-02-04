@@ -1435,6 +1435,10 @@ extern HOOKDEF(BOOL, WINAPI, SystemTimeToTzSpecificLocalTime,
 	_Out_    LPSYSTEMTIME            lpLocalTime
 );
 
+extern HOOKDEF(HRESULT, WINAPI, CLSIDFromProgID,
+	_In_ LPCOLESTR lpszProgID,
+	_Out_ LPCLSID lpclsid
+);
 
 //
 // Network Hooks
