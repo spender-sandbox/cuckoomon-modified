@@ -1429,6 +1429,13 @@ extern HOOKDEF(DWORD, WINAPI, WNetGetProviderNameW,
 	__inout LPDWORD lpBufferSize
 );
 
+extern HOOKDEF(BOOL, WINAPI, SystemTimeToTzSpecificLocalTime,
+	_In_opt_ LPTIME_ZONE_INFORMATION lpTimeZone,
+	_In_     LPSYSTEMTIME            lpUniversalTime,
+	_Out_    LPSYSTEMTIME            lpLocalTime
+);
+
+
 //
 // Network Hooks
 //

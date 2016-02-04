@@ -830,3 +830,13 @@ HOOKDEF(DWORD, WINAPI, RasConnectionNotificationW,
 	LOQ_zero("misc", "");
 	return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, SystemTimeToTzSpecificLocalTime,
+	_In_opt_ LPTIME_ZONE_INFORMATION lpTimeZone,
+	_In_     LPSYSTEMTIME            lpUniversalTime,
+	_Out_    LPSYSTEMTIME            lpLocalTime
+) {
+	BOOL ret = SystemTimeToTzSpecificLocalTime(lpTimeZone, lpUniversalTime, lpLocalTime);
+	LOQ_bool("misc", "");
+	return ret;
+}
