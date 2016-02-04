@@ -737,6 +737,17 @@ HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyW,
 	return ret;
 }
 
+HOOKDEF(BOOL, WINAPI, SetupDiBuildDriverInfoList,
+	_In_    HDEVINFO         DeviceInfoSet,
+	_Inout_ PSP_DEVINFO_DATA DeviceInfoData,
+	_In_    DWORD            DriverType
+) {
+	BOOL ret;
+	ret = Old_SetupDiBuildDriverInfoList(DeviceInfoSet, DeviceInfoData, DriverType);
+	LOQ_bool("misc", "");
+	return ret;
+}
+
 HOOKDEF(HRESULT, WINAPI, DecodeImageEx,
 	__in PVOID pStream, // IStream *
 	__in PVOID pMap, // IMapMIMEToCLSID *

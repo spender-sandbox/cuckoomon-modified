@@ -371,6 +371,7 @@ static hook_t g_hooks[] = {
 	HOOK(setupapi, SetupDiGetClassDevsW),
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyA),
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyW),
+	HOOK(setupapi, SetupDiBuildDriverInfoList),
 	HOOK(imgutil, DecodeImageEx),
 	HOOK(imgutil, DecodeImage),
 	HOOK(advapi32, LsaOpenPolicy),

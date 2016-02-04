@@ -1397,6 +1397,12 @@ extern HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyW,
 	_Out_opt_ PDWORD           RequiredSize
 );
 
+extern HOOKDEF(BOOL, WINAPI, SetupDiBuildDriverInfoList,
+	_In_    HDEVINFO         DeviceInfoSet,
+	_Inout_ PSP_DEVINFO_DATA DeviceInfoData,
+	_In_    DWORD            DriverType
+);
+
 extern HOOKDEF(HRESULT, WINAPI, DecodeImageEx,
 	__in PVOID pStream, // IStream *
 	__in PVOID pMap, // IMapMIMEToCLSID *
