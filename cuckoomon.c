@@ -859,6 +859,8 @@ DWORD g_tls_hook_index;
 
 extern void ignored_threads_init(void);
 
+extern CRITICAL_SECTION readfile_critsec;
+
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	char config_fname[MAX_PATH];
@@ -956,6 +958,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 
 		// initialize terminate notification event
 		terminate_event_init();
+
+		// initialize misc critical sections
+		InitializeCriticalSection(&readfile_critsec);
 
 		// initialize all hooks
         set_hooks();

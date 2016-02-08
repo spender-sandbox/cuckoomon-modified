@@ -321,7 +321,7 @@ DWORD g_watchdog_thread_id;
 static ULONG_PTR cuckoomonaddrs[20];
 static int cuckoomonaddrs_num;
 
-static int find_cuckoomon_addrs(ULONG_PTR addr)
+static int find_cuckoomon_addrs(void *unused, ULONG_PTR addr)
 {
 	if (cuckoomonaddrs_num < 20)
 		cuckoomonaddrs[cuckoomonaddrs_num++] = addr;

@@ -309,8 +309,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtOpenFile,
 
 static HANDLE LastFileHandle;
 static ULONG AccumulatedLength;
-static LONG volatile init_readfile_critsec;
-static CRITICAL_SECTION readfile_critsec;
+CRITICAL_SECTION readfile_critsec;
 static PVOID InitialBuffer;
 static SIZE_T InitialBufferLength;
 
@@ -331,14 +330,14 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 	BOOLEAN deletelast;
 	unsigned int read_count = 0;
 	ULONG_PTR length;
+	lasterror_t lasterrors;
+
+	get_lasterrors(&lasterrors);
 
 	if (NT_SUCCESS(ret))
 		length = IoStatusBlock->Information;
 	else
 		length = 0;
-
-	if (!InterlockedExchange(&init_readfile_critsec, 1))
-		InitializeCriticalSection(&readfile_critsec);
 
 	if (get_last_api() == API_NTREADFILE && FileHandle == LastFileHandle) {
 		// can overflow, but we don't care much
@@ -368,6 +367,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 	}
 
 	set_special_api(API_NTREADFILE, deletelast);
+
+	set_lasterrors(&lasterrors);
 
 	if (read_count <= 50) {
 		fname = calloc(32768, sizeof(wchar_t));
