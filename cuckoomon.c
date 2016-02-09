@@ -345,6 +345,8 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, LdrGetDllHandle),
     HOOK(ntdll, LdrGetProcedureAddress),
     HOOK(kernel32, DeviceIoControl),
+	HOOK_NOTAIL(ntdll, NtShutdownSystem, 1),
+	HOOK_NOTAIL(ntdll, NtSetSystemPowerState, 3),
     HOOK_NOTAIL(user32, ExitWindowsEx, 2),
 	HOOK_NOTAIL(advapi32, InitiateShutdownW, 5),
 	HOOK_NOTAIL(advapi32, InitiateSystemShutdownW, 5),

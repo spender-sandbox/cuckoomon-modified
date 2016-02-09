@@ -1305,6 +1305,16 @@ extern HOOKDEF_NOTAIL(WINAPI, InitiateSystemShutdownExW,
 	_In_	 DWORD	dwReason
 );
 
+extern HOOKDEF_NOTAIL(WINAPI, NtShutdownSystem,
+	__in  UINT Action
+);
+
+extern HOOKDEF_NOTAIL(WINAPI, NtSetSystemPowerState,
+	__in  UINT SystemAction,
+	__in  UINT MinSystemState,
+	__in  UINT Flags
+);
+
 extern HOOKDEF(BOOL, WINAPI, IsDebuggerPresent,
     void
 );

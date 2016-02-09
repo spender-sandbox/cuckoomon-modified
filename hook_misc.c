@@ -146,6 +146,26 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
 	return ret;
 }
 
+HOOKDEF_NOTAIL(WINAPI, NtShutdownSystem,
+	__in  UINT Action
+) {
+	DWORD ret = 0;
+	LOQ_zero("system", "i", "Action", Action);
+	pipe("SHUTDOWN:");
+	return ret;
+}
+
+HOOKDEF_NOTAIL(WINAPI, NtSetSystemPowerState,
+	__in  UINT SystemAction,
+	__in  UINT MinSystemState,
+	__in  UINT Flags
+) {
+	DWORD ret = 0;
+	LOQ_zero("system", "iih", "SystemAction", SystemAction, "MinSystemState", MinSystemState, "Flags", Flags);
+	pipe("SHUTDOWN:");
+	return ret;
+}
+
 HOOKDEF_NOTAIL(WINAPI, ExitWindowsEx,
     __in  UINT uFlags,
     __in  DWORD dwReason
