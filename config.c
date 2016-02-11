@@ -193,7 +193,7 @@ int read_config(void)
 					if (p2) {
 						*p2 = '\0';
 					}
-					g_config.excluded_apinames[x] = strdup(p);
+					g_config.excluded_apinames[x++] = strdup(p);
 					if (p2 == NULL)
 						break;
 					p = p2 + 1;
@@ -208,7 +208,7 @@ int read_config(void)
 					if (p2) {
 						*p2 = '\0';
 					}
-					g_config.excluded_dllnames[x] = ascii_to_unicode_dup(p);
+					g_config.excluded_dllnames[x++] = ascii_to_unicode_dup(p);
 					if (p2 == NULL)
 						break;
 					p = p2 + 1;
