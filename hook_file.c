@@ -748,10 +748,8 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
     HANDLE ret = Old_FindFirstFileExA(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
 
-	// XXX: change me if we ever move the analyzer or results dir out of the root directory
-	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE &&
-		(!stricmp(((PWIN32_FIND_DATAA)lpFindFileData)->cFileName, g_config.analyzer + 3) ||
-	     !stricmp(((PWIN32_FIND_DATAA)lpFindFileData)->cFileName, g_config.results + 3))
+	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && lpFileName &&
+		(!_strnicmp(lpFileName, g_config.analyzer, strlen(g_config.analyzer)) || !_strnicmp(lpFileName, g_config.results, strlen(g_config.results)))
 		) {
 		lasterror_t lasterror;
 
@@ -761,6 +759,22 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,
 		set_lasterrors(&lasterror);
 		ret = INVALID_HANDLE_VALUE;
 	}
+	else if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE &&
+		(!stricmp(((PWIN32_FIND_DATAA)lpFindFileData)->cFileName, g_config.analyzer + 3) ||
+			!stricmp(((PWIN32_FIND_DATAA)lpFindFileData)->cFileName, g_config.results + 3)))
+	{
+		BOOL result = FindNextFileA(ret, lpFindFileData);
+		if (result == FALSE) {
+			lasterror_t lasterror;
+
+			lasterror.Win32Error = 0x00000002;
+			lasterror.NtstatusError = 0xc000000f;
+			FindClose(ret);
+			set_lasterrors(&lasterror);
+			ret = INVALID_HANDLE_VALUE;
+		}
+	}
+
 
 	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && (!stricmp(lpFileName, "c:\\windows") || !stricmp(lpFileName, "c:\\pagefile.sys")))
 		perform_create_time_fakery(&((PWIN32_FIND_DATAA)lpFindFileData)->ftCreationTime);
@@ -791,11 +805,9 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
     HANDLE ret = Old_FindFirstFileExW(lpFileName, fInfoLevelId,
         lpFindFileData, fSearchOp, lpSearchFilter, dwAdditionalFlags);
 
-	// XXX: change me if we ever move the analyzer dir out of the root directory
-	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE &&
-		(!wcsicmp(((PWIN32_FIND_DATAW)lpFindFileData)->cFileName, g_config.w_analyzer + 3) ||
-	     !wcsicmp(((PWIN32_FIND_DATAW)lpFindFileData)->cFileName, g_config.w_results + 3))
-		) {
+	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && lpFileName &&
+		(!wcsnicmp(lpFileName, g_config.w_analyzer, wcslen(g_config.w_analyzer)) || !wcsnicmp(lpFileName, g_config.w_results, wcslen(g_config.w_results)))
+	) {
 		lasterror_t lasterror;
 
 		lasterror.Win32Error = 0x00000002;
@@ -803,6 +815,21 @@ HOOKDEF(HANDLE, WINAPI, FindFirstFileExW,
 		FindClose(ret);
 		set_lasterrors(&lasterror);
 		ret = INVALID_HANDLE_VALUE;
+	}
+	else if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE &&
+		(!wcsicmp(((PWIN32_FIND_DATAW)lpFindFileData)->cFileName, g_config.w_analyzer + 3) ||
+		 !wcsicmp(((PWIN32_FIND_DATAW)lpFindFileData)->cFileName, g_config.w_results + 3)))
+	{
+		BOOL result = FindNextFileW(ret, lpFindFileData);
+		if (result == FALSE) {
+			lasterror_t lasterror;
+
+			lasterror.Win32Error = 0x00000002;
+			lasterror.NtstatusError = 0xc000000f;
+			FindClose(ret);
+			set_lasterrors(&lasterror);
+			ret = INVALID_HANDLE_VALUE;
+		}
 	}
 
 	if (!g_config.no_stealth && ret != INVALID_HANDLE_VALUE && (!wcsicmp(lpFileName, L"c:\\windows") || !wcsicmp(lpFileName, L"c:\\pagefile.sys")))

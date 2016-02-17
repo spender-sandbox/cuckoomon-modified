@@ -25,7 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "config.h"
 #include <Sddl.h>
 
-#define UNHOOK_MAXCOUNT 1024
+#define UNHOOK_MAXCOUNT 2048
 #define UNHOOK_BUFSIZE 32
 
 static HANDLE g_unhook_thread_handle, g_watcher_thread_handle;
@@ -63,11 +63,15 @@ int address_already_hooked(uint8_t *addr)
 	return 0;
 }
 
+static int max_unhook_warned;
+
 void unhook_detect_add_region(const hook_t *hook, uint8_t *addr,
     const uint8_t *orig, const uint8_t *our, uint32_t length)
 {
     if(g_index == UNHOOK_MAXCOUNT) {
-        pipe("CRITICAL:Reached maximum number of unhook detection entries!");
+		if (!max_unhook_warned)
+			pipe("CRITICAL:Reached maximum number of unhook detection entries!");
+		max_unhook_warned = 1;
         return;
     }
 
