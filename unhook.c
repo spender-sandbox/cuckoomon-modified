@@ -63,12 +63,26 @@ int address_already_hooked(uint8_t *addr)
 	return 0;
 }
 
+uint32_t get_first_zero_addr_index(void)
+{
+	uint32_t i;
+	for (i = 0; i < g_index; i++) {
+		if (g_addr[i] == NULL) {
+			g_addr[i] = (uint8_t *)1;
+			return i;
+		}
+	}
+	return g_index;
+}
+
 static int max_unhook_warned;
 
 void unhook_detect_add_region(const hook_t *hook, uint8_t *addr,
     const uint8_t *orig, const uint8_t *our, uint32_t length)
 {
-    if(g_index == UNHOOK_MAXCOUNT) {
+	uint32_t index;
+
+	if(g_index == UNHOOK_MAXCOUNT - 1) {
 		if (!max_unhook_warned)
 			pipe("CRITICAL:Reached maximum number of unhook detection entries!");
 		max_unhook_warned = 1;
@@ -78,13 +92,18 @@ void unhook_detect_add_region(const hook_t *hook, uint8_t *addr,
 	if (address_already_hooked(addr))
 		return;
 
-	g_length[g_index] = MIN(length, UNHOOK_BUFSIZE);
-    g_addr[g_index] = addr;
-	g_unhook_hooks[g_index] = hook;
+	index = get_first_zero_addr_index();
 
-	memcpy(g_orig[g_index], orig, g_length[g_index]);
-	memcpy(g_our[g_index], our, g_length[g_index]);
-    g_index++;
+	g_length[index] = MIN(length, UNHOOK_BUFSIZE);
+    g_addr[index] = addr;
+	g_unhook_hooks[index] = hook;
+
+	memcpy(g_orig[index], orig, g_length[index]);
+	memcpy(g_our[index], our, g_length[index]);
+	g_hook_reported[index] = 0;
+
+	if (index == g_index)
+		g_index++;
 }
 
 void invalidate_regions_for_hook(const hook_t *hook)
