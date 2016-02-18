@@ -351,7 +351,7 @@ void add_unwind_info(hook_t *h)
 		i += x;
 
 		// rdi
-		unwindinfo->UnwindCode[i].UnwindOp = UWOP_ALLOC_SMALL;
+		unwindinfo->UnwindCode[i].UnwindOp = UWOP_PUSH_NONVOL;
 		unwindinfo->UnwindCode[i].CodeOffset = 4;
 		unwindinfo->UnwindCode[i].OpInfo = 7;
 		i++;
