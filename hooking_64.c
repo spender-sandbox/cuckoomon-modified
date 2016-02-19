@@ -1039,7 +1039,7 @@ static unsigned int our_stackwalk(ULONG_PTR _rip, ULONG_PTR sp, PVOID *backtrace
 
 int operate_on_backtrace(ULONG_PTR sp, ULONG_PTR _rip, void *extra, int(*func)(void *, ULONG_PTR))
 {
-	int ret;
+	int ret = 0;
 	PVOID backtrace[HOOK_BACKTRACE_DEPTH];
 	lasterror_t lasterror;
 	WORD frames;

@@ -827,7 +827,7 @@ int hook_api(hook_t *h, int type)
 
 int operate_on_backtrace(ULONG_PTR _esp, ULONG_PTR _ebp, void *extra, int(*func)(void *, ULONG_PTR))
 {
-	int ret;
+	int ret = 0;
 
 	ULONG_PTR top = get_stack_top();
 	ULONG_PTR bottom = get_stack_bottom();
