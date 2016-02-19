@@ -146,7 +146,7 @@ int operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, void *extra, int(*fu
 
 extern LARGE_INTEGER time_skipped;
 
-#define HOOK_BACKTRACE_DEPTH 40
+#define HOOK_BACKTRACE_DEPTH 80
 
 #define HOOK_ENABLE_FPU 0
 
