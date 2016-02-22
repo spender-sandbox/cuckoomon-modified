@@ -88,7 +88,7 @@ static hook_t g_hooks[] = {
 	HOOK_SPECIAL(mshtml, CDocument_write),
 
 	// COM object creation hook
-	HOOK_NOTAIL(ole32, CoCreateInstance, 5),
+	HOOK_SPECIAL(ole32, CoCreateInstance),
 
 	HOOK_NOTAIL(ntdll, RtlDispatchException, 2),
 	HOOK_NOTAIL(ntdll, NtRaiseException, 3),

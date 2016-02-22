@@ -192,7 +192,7 @@ static char *known_object(IID *app, IID *iface)
 	return NULL;
 }
 
-HOOKDEF_NOTAIL(WINAPI, CoCreateInstance,
+HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 	__in    REFCLSID rclsid,
 	__in	LPUNKNOWN pUnkOuter,
 	__in	DWORD dwClsContext,
@@ -205,7 +205,7 @@ HOOKDEF_NOTAIL(WINAPI, CoCreateInstance,
 	char idbuf2[40];
 	char *known;
 	lasterror_t lasterror;
-	HRESULT ret = 0;
+	HRESULT ret = Old_CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
 
 	get_lasterrors(&lasterror);
 
@@ -223,7 +223,7 @@ HOOKDEF_NOTAIL(WINAPI, CoCreateInstance,
 	else
 		LOQ_hresult("com", "shs", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2);
 
-	return 0;
+	return ret;
 }
 
 HOOKDEF(int, WINAPI, JsEval,
