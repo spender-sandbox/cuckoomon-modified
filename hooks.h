@@ -956,7 +956,7 @@ extern HOOKDEF(DWORD, WINAPI, GetLastError,
 	void
 );
 
-extern HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
+extern HOOKDEF_NOTAIL(WINAPI, CoCreateInstance,
 	__in    REFCLSID rclsid,
 	__in	LPUNKNOWN pUnkOuter,
 	__in	DWORD dwClsContext,
