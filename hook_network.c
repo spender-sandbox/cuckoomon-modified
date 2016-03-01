@@ -545,9 +545,9 @@ HOOKDEF(BOOL, WINAPI, HttpQueryInfoA,
 ) {
 	BOOL ret = Old_HttpQueryInfoA(hRequest, dwInfoLevel, lpvBuffer, lpdwBufferLength, lpdwIndex);
 	if (dwInfoLevel == HTTP_QUERY_DATE)
-		LOQ_bool("network", "piS", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", ret ? *lpdwBufferLength : 0, lpvBuffer);
+		LOQ_bool("network", "phS", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", ret ? *lpdwBufferLength : 0, lpvBuffer);
 	else
-		LOQ_bool("network", "piB", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", lpdwBufferLength, lpvBuffer);
+		LOQ_bool("network", "phB", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", lpdwBufferLength, lpvBuffer);
 	return ret;
 }
 
@@ -560,9 +560,9 @@ HOOKDEF(BOOL, WINAPI, HttpQueryInfoW,
 ) {
 	BOOL ret = Old_HttpQueryInfoW(hRequest, dwInfoLevel, lpvBuffer, lpdwBufferLength, lpdwIndex);
 	if (dwInfoLevel == HTTP_QUERY_DATE)
-		LOQ_bool("network", "piU", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", ret ? (*lpdwBufferLength / sizeof(WCHAR)) : 0, lpvBuffer);
+		LOQ_bool("network", "phU", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", ret ? (*lpdwBufferLength / sizeof(WCHAR)) : 0, lpvBuffer);
 	else
-		LOQ_bool("network", "piB", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", lpdwBufferLength, lpvBuffer);
+		LOQ_bool("network", "phB", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", lpdwBufferLength, lpvBuffer);
 	return ret;
 }
 
