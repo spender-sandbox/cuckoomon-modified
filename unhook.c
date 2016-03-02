@@ -341,12 +341,12 @@ int procname_watch_init()
 DWORD g_watchdog_thread_id;
 
 #ifndef _WIN64
-static ULONG_PTR cuckoomonaddrs[20];
+static ULONG_PTR cuckoomonaddrs[60];
 static int cuckoomonaddrs_num;
 
 static int find_cuckoomon_addrs(void *unused, ULONG_PTR addr)
 {
-	if (cuckoomonaddrs_num < 20)
+	if (cuckoomonaddrs_num < 60)
 		cuckoomonaddrs[cuckoomonaddrs_num++] = addr;
 	return 0;
 }
@@ -371,14 +371,16 @@ static int _operate_on_backtrace(ULONG_PTR retaddr, ULONG_PTR _ebp, void *extra,
 
 static DWORD WINAPI _watchdog_thread(LPVOID param)
 {
+	hook_disable();
+
 	while (1) {
-		char msg[1024];
+		char msg[16384];
 		char *dllname;
 		unsigned int off = 0;
 		int i;
 
 		CONTEXT ctx;
-		raw_sleep(1000);
+		raw_sleep(5000);
 		memset(&cuckoomonaddrs, 0, sizeof(cuckoomonaddrs));
 		cuckoomonaddrs_num = 0;
 		memset(&ctx, 0, sizeof(ctx));
