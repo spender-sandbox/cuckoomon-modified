@@ -773,4 +773,6 @@ extern BOOL is_64bit_os;
 extern DWORD raw_gettickcount(void);
 extern ULONGLONG raw_gettickcount64(void);
 
+extern OSVERSIONINFOA g_osverinfo;
+
 #endif

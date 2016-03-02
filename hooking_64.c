@@ -844,7 +844,7 @@ int hook_api(hook_t *h, int type)
 	DWORD old_protect;
 	int ret = -1;
 	unsigned char *addr;
-	OSVERSIONINFO os_info;
+
 	// table with all possible hooking types
 	static struct {
 		int(*hook)(hook_t *h, unsigned char *from, unsigned char *to);
@@ -894,9 +894,7 @@ int hook_api(hook_t *h, int type)
 		return 0;
 	}
 
-	memset(&os_info, 0, sizeof(os_info));
-	os_info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-	if (GetVersionEx(&os_info) && os_info.dwMajorVersion >= 6) {
+	if (g_osverinfo.dwMajorVersion >= 6) {
 		if (addr[0] == 0xeb) {
 			PUCHAR target = (PUCHAR)get_short_rel_target(addr);
 			unhook_detect_add_region(h, addr, addr, addr, 2);

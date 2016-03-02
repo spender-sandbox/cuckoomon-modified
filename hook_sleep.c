@@ -306,7 +306,10 @@ HOOKDEF(void, WINAPI, GetSystemTime,
 
 DWORD raw_gettickcount(void)
 {
-	return (DWORD)((*(ULONGLONG *)0x7ffe0320 * *(DWORD *)0x7ffe0004) >> 24);
+	if (g_osverinfo.dwMajorVersion >= 6)
+		return (DWORD)((*(ULONGLONG *)0x7ffe0320 * *(DWORD *)0x7ffe0004) >> 24);
+	else
+		return (DWORD)(((ULONGLONG)*(DWORD *)0x7ffe0000 * *(DWORD *)0x7ffe0004) >> 24);
 }
 
 ULONGLONG raw_gettickcount64(void)

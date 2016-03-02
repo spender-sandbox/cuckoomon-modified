@@ -101,6 +101,8 @@ typedef struct _hook_t {
     // (see comments @ hook_create_pre_trampoline)
     int allow_hook_recursion;
 
+	int fully_emulate;
+
 	unsigned char numargs;
 
 	int notail;

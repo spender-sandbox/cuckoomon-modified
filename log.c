@@ -970,7 +970,6 @@ void log_environ()
 	HMODULE mainbase = GetModuleHandleA(NULL);
 	DWORD installdate;
 	DWORD volser;
-	OSVERSIONINFOA osverinfo;
 	DWORD tmpsize = sizeof(tmp);
 
 	memset(tmp, 0, sizeof(tmp));
@@ -1011,8 +1010,6 @@ void log_environ()
 	else
 		sysvolguid = strdup("");
 
-	osverinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-	GetVersionEx(&osverinfo);
 	
 	loq(LOG_ID_ENVIRON, "__notification__", "__environ__", 1, 0, "ssisssssiisssph",
 		"UserName", username,
@@ -1023,8 +1020,8 @@ void log_environ()
 		"RegisteredOwner", registeredowner,
 		"RegisteredOrganization", registeredorg,
 		"ProductName", productname,
-		"OSMajor", osverinfo.dwMajorVersion,
-		"OSMinor", osverinfo.dwMinorVersion,
+		"OSMajor", g_osverinfo.dwMajorVersion,
+		"OSMinor", g_osverinfo.dwMinorVersion,
 		"SystemVolumeSerialNumber", sysvolserial,
 		"SystemVolumeGUID", sysvolguid,
 		"MachineGUID", machineguid,

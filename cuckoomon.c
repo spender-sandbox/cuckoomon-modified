@@ -47,16 +47,19 @@ void disable_tail_call_optimization(void)
 #endif
 
 #define HOOK(library, funcname) {L###library, #funcname, NULL, NULL, \
-    &New_##funcname, (void **) &Old_##funcname, NULL, FALSE, 0, FALSE}
+    &New_##funcname, (void **) &Old_##funcname, NULL, FALSE, FALSE, 0, FALSE}
 
 #define HOOK_SPECIAL(library, funcname) {L###library, #funcname, NULL, NULL, \
-    &New_##funcname, (void **) &Old_##funcname, NULL, TRUE, 0, FALSE}
+    &New_##funcname, (void **) &Old_##funcname, NULL, TRUE, FALSE, 0, FALSE}
+
+#define HOOK_EMULATE(library, funcname) {L###library, #funcname, NULL, NULL, \
+    &New_##funcname, (void **) &Old_##funcname, NULL, TRUE, TRUE, 0, FALSE}
 
 #define HOOK_NOTAIL_ALT(library, funcname, numargs) {L###library, #funcname, NULL, NULL, \
-    &New_##funcname, (void **) &Old_##funcname, &Alt_##funcname, TRUE, numargs, TRUE}
+    &New_##funcname, (void **) &Old_##funcname, &Alt_##funcname, TRUE, FALSE, numargs, TRUE}
 
 #define HOOK_NOTAIL(library, funcname, numargs) {L###library, #funcname, NULL, NULL, \
-    &New_##funcname, NULL, NULL, TRUE, numargs, TRUE}
+    &New_##funcname, NULL, NULL, TRUE, FALSE, numargs, TRUE}
 
 static hook_t g_hooks[] = {
 
@@ -463,8 +466,8 @@ static hook_t g_hooks[] = {
     HOOK_SPECIAL(kernel32, GetLocalTime),
     HOOK_SPECIAL(kernel32, GetSystemTime),
 	HOOK_SPECIAL(kernel32, GetSystemTimeAsFileTime),
-	HOOK_SPECIAL(kernel32, GetTickCount),
-	HOOK_SPECIAL(kernel32, GetTickCount64),
+	HOOK_EMULATE(kernel32, GetTickCount),
+	HOOK_EMULATE(kernel32, GetTickCount64),
 	HOOK_SPECIAL(ntdll, NtQuerySystemTime),
 	HOOK(user32, GetLastInputInfo),
 	HOOK_SPECIAL(winmm, timeGetTime),
@@ -863,6 +866,8 @@ extern void ignored_threads_init(void);
 
 extern CRITICAL_SECTION readfile_critsec;
 
+OSVERSIONINFOA g_osverinfo;
+
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
 	char config_fname[MAX_PATH];
@@ -888,6 +893,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		g_our_dll_base = (ULONG_PTR)hModule;
 		g_our_dll_size = get_image_size(g_our_dll_base);
 		
+		g_osverinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
+		GetVersionEx(&g_osverinfo);
+
 		resolve_runtime_apis();
 
 		init_private_heap();
@@ -968,9 +976,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
         set_hooks();
 
 		// initialize context watchdog
+#ifndef _WIN64
 		//init_watchdog();
 
-#ifndef _WIN64
 		if (!g_config.no_stealth) {
 			/* for people too lazy to setup VMs properly */
 			PEB *peb = get_peb();
