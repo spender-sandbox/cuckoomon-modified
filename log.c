@@ -509,7 +509,7 @@ void loq(int index, const char *category, const char *name,
 	// return parent location of malware callsite
 	bson_append_ptr(g_bson, "P", hookinfo->parent_caller_retaddr);
 	bson_append_int(g_bson, "T", GetCurrentThreadId());
-    bson_append_int(g_bson, "t", GetTickCount() - g_starttick );
+    bson_append_int(g_bson, "t", raw_gettickcount() - g_starttick );
 	// number of times this log was repeated -- we'll modify this 
 	bson_append_int(g_bson, "r", 0);
 
@@ -924,7 +924,7 @@ void announce_netlog()
 void log_new_process()
 {
 	FILETIME st;
-	g_starttick = GetTickCount();
+	g_starttick = raw_gettickcount();
 
     GetSystemTimeAsFileTime(&st);
 

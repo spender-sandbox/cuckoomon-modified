@@ -220,6 +220,20 @@ extern int hook_is_excluded(hook_t *h);
     return_value (calling_convention *Old_##apiname)(__VA_ARGS__); \
     return_value calling_convention Alt_##apiname(__VA_ARGS__)
 
+#ifndef _WIN64
+#define FORCE_FRAME_PTR_USE() \
+	do { \
+		volatile int x; \
+		__try { \
+			x = 1; \
+		} \
+		__except(EXCEPTION_EXECUTE_HANDLER) { \
+			; \
+		} \
+	} while (0)
+#else
+#define FORCE_FRAME_PTR_USE() do { } while (0)
+#endif
 
 // each thread has a special 260-wchar counting unicode_string buffer in its
 // thread information block, this is likely to be overwritten in certain

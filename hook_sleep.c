@@ -304,10 +304,30 @@ HOOKDEF(void, WINAPI, GetSystemTime,
 	LOQ_void("system", "");
 }
 
+DWORD raw_gettickcount(void)
+{
+	return (DWORD)((*(ULONGLONG *)0x7ffe0320 * *(DWORD *)0x7ffe0004) >> 24);
+}
+
+ULONGLONG raw_gettickcount64(void)
+{
+	ULARGE_INTEGER tickcount64;
+	DWORD multiplier = *(DWORD *)0x7ffe0004;
+	tickcount64.LowPart = *(DWORD *)0x7ffe0320;
+	tickcount64.HighPart = *(DWORD *)0x7ffe0324;
+
+	return (((ULONGLONG)tickcount64.LowPart  * multiplier) >> 24) +
+		   (((ULONGLONG)tickcount64.HighPart * multiplier) <<  8);
+}
+
 HOOKDEF(DWORD, WINAPI, GetTickCount,
     void
 ) {
-    DWORD ret = Old_GetTickCount();
+	DWORD ret;
+
+	FORCE_FRAME_PTR_USE();
+
+	ret = raw_gettickcount();
 
     // add the time we've skipped
     ret += (DWORD)(time_skipped.QuadPart / 10000);
@@ -318,7 +338,11 @@ HOOKDEF(DWORD, WINAPI, GetTickCount,
 HOOKDEF(ULONGLONG, WINAPI, GetTickCount64,
 	void
 ) {
-	ULONGLONG ret = Old_GetTickCount64();
+	ULONGLONG ret;
+
+	FORCE_FRAME_PTR_USE();
+
+	ret = raw_gettickcount64();
 
 	// add the time we've skipped
 	ret += (time_skipped.QuadPart / 10000);
@@ -341,7 +365,11 @@ HOOKDEF(NTSTATUS, WINAPI, NtQuerySystemTime,
 HOOKDEF(DWORD, WINAPI, timeGetTime,
 	void
 ) {
-	DWORD ret = Old_timeGetTime();
+	DWORD ret;
+	
+	FORCE_FRAME_PTR_USE();
+
+	ret = Old_timeGetTime();
 
 	// add the time we've skipped
 	ret += (DWORD)(time_skipped.QuadPart / 10000);
@@ -384,7 +412,7 @@ HOOKDEF(BOOL, WINAPI, GetLastInputInfo,
 
 	/* fake recent user activity */
 	if (lastinput_called > 2 && plii && plii->cbSize == 8)
-		plii->dwTime = GetTickCount() + (DWORD)(time_skipped.QuadPart / 10000);
+		plii->dwTime = raw_gettickcount() + (DWORD)(time_skipped.QuadPart / 10000);
 
 	return ret;
 }

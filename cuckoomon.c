@@ -460,14 +460,14 @@ static hook_t g_hooks[] = {
     //
     HOOK(ntdll, NtDelayExecution),
 	HOOK(ntdll, NtWaitForSingleObject),
-    HOOK(kernel32, GetLocalTime),
-    HOOK(kernel32, GetSystemTime),
-	HOOK(kernel32, GetSystemTimeAsFileTime),
-	HOOK(kernel32, GetTickCount),
-	HOOK(kernel32, GetTickCount64),
-	HOOK(ntdll, NtQuerySystemTime),
+    HOOK_SPECIAL(kernel32, GetLocalTime),
+    HOOK_SPECIAL(kernel32, GetSystemTime),
+	HOOK_SPECIAL(kernel32, GetSystemTimeAsFileTime),
+	HOOK_SPECIAL(kernel32, GetTickCount),
+	HOOK_SPECIAL(kernel32, GetTickCount64),
+	HOOK_SPECIAL(ntdll, NtQuerySystemTime),
 	HOOK(user32, GetLastInputInfo),
-	HOOK(winmm, timeGetTime),
+	HOOK_SPECIAL(winmm, timeGetTime),
 	//
     // Socket Hooks
     //

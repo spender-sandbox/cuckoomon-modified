@@ -770,4 +770,7 @@ extern void disable_tail_call_optimization(void);
 
 extern BOOL is_64bit_os;
 
+extern DWORD raw_gettickcount(void);
+extern ULONGLONG raw_gettickcount64(void);
+
 #endif
