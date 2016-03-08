@@ -106,6 +106,9 @@ int WINAPI enter_hook(hook_t *h, ULONG_PTR sp, ULONG_PTR ebp_or_rip)
 {
 	hook_info_t *hookinfo;
 	
+	if (h->fully_emulate)
+		return 1;
+
 	if (g_tls_hook_index >= 0x40 && h->new_func == &New_NtAllocateVirtualMemory) {
 		lasterror_t lasterrors;
 		get_lasterrors(&lasterrors);
@@ -127,9 +130,6 @@ int WINAPI enter_hook(hook_t *h, ULONG_PTR sp, ULONG_PTR ebp_or_rip)
 	hookinfo->stack_pointer = sp;
 	hookinfo->return_address = *(ULONG_PTR *)sp;
 	hookinfo->frame_pointer = ebp_or_rip;
-
-	if (h->fully_emulate)
-		return 1;
 
 	if ((hookinfo->disable_count < 1) && (h->allow_hook_recursion || (!called_by_hook() /*&& !is_ignored_thread(GetCurrentThreadId())*/))) {
 		/* set caller information */

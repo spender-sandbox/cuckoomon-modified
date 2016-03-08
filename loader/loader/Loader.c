@@ -450,6 +450,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				CloseHandle(threadhand);
 			}
 		}
+		return ret;
 	}
 	else if (!strcmp(__argv[1], "dump")) {
 		if (__argc != 4)

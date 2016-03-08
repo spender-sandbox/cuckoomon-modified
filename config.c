@@ -169,7 +169,7 @@ int read_config(void)
 				g_config.full_logs = value[0] == '1';
 			}
 			else if (!strcmp(key, "force-flush")) {
-				g_config.force_flush = value[0] == '1';
+				g_config.force_flush = atoi(value);
 			}
 			else if (!strcmp(key, "terminate-event")) {
 				strncpy(g_config.terminate_event_name, value,

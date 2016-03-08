@@ -924,7 +924,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 #endif
 
 		// don't inject into our own binaries run out of the analyzer directory
-		if (!wcsnicmp(our_process_path, g_config.w_analyzer, wcslen(g_config.w_analyzer)))
+		if (wcslen(g_config.w_analyzer) && !wcsnicmp(our_process_path, g_config.w_analyzer, wcslen(g_config.w_analyzer)))
 			goto out;
 
 		if (g_config.debug) {

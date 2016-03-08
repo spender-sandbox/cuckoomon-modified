@@ -354,6 +354,8 @@ void loq(int index, const char *category, const char *name,
 
 	get_lasterrors(&lasterror);
 
+	hook_disable();
+
 	EnterCriticalSection(&g_mutex);
 
 	if (!special_api_triggered)
@@ -891,7 +893,7 @@ buffer_log:
 				free(lastlog.buf);
 				lastlog.buf = NULL;
 				// flush logs once we're done seeing duplicates of a particular API
-				if (g_config.force_flush)
+				if (g_config.force_flush == 1)
 					log_flush();
 			}
 		}
@@ -908,7 +910,10 @@ buffer_log:
 	bson_destroy( g_bson );
     LeaveCriticalSection(&g_mutex);
 
-	//log_flush();
+	if (g_config.force_flush == 2)
+		log_flush();
+
+	hook_enable();
 
 	set_lasterrors(&lasterror);
 }
