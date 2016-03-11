@@ -89,12 +89,6 @@ HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 	interval = -newint.QuadPart;
 	milli = (unsigned long)(interval / 10000);
 
-	// only handle lame cases
-	if (Handle != GetCurrentProcess()) {
-		LOQ_ntstatus("system", "pi", "Handle", Handle, "Milliseconds", milli);
-		goto docall;
-	}
-
 	GetSystemTimeAsFileTime(&ft);
 	li.HighPart = ft.dwHighDateTime;
 	li.LowPart = ft.dwLowDateTime;
@@ -116,7 +110,6 @@ HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 	}
 	/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
 	else if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
-		LARGE_INTEGER newint;
 		newint.QuadPart = -(10000 * 10000);
 		time_skipped.QuadPart += interval - (10000 * 10000);
 		LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", milli, "Status", "Skipped");
@@ -214,7 +207,6 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 	}
 	/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
 	else if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
-		LARGE_INTEGER newint;
 		newint.QuadPart = -(10000 * 10000);
 		time_skipped.QuadPart += interval - (10000 * 10000);
 		LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
