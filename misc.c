@@ -786,7 +786,12 @@ char *ensure_absolute_ascii_path(char *out, const char *in)
 	goto out;
 
 normal_copy:
-	strncpy(out, in, MAX_PATH);
+	__try {
+		strncpy(out, in, MAX_PATH);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		out[0] = '\0';
+	}
 out:
 	if (is_wow64_fs_redirection_disabled() && !strnicmp(out, system32dir_a, system32dir_len)) {
 		memmove(out + system32dir_len + 1, out + system32dir_len, strlen(out + system32dir_len) + 1);
@@ -817,18 +822,24 @@ wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 
 	get_lasterrors(&lasterror);
 
-	if (!wcsncmp(in, L"\\??\\", 4)) {
-		inadj = in + 4;
-		is_globalroot = 1;
-	}
-	else if (!wcsnicmp(in, L"\\\\?\\globalroot", 14)) {
-		inadj = in + 14;
-		is_globalroot = 1;
-	}
-	else
-		inadj = in;
+	__try {
+		if (!wcsncmp(in, L"\\??\\", 4)) {
+			inadj = in + 4;
+			is_globalroot = 1;
+		}
+		else if (!wcsnicmp(in, L"\\\\?\\globalroot", 14)) {
+			inadj = in + 14;
+			is_globalroot = 1;
+		}
+		else
+			inadj = in;
 
-	inlen = lstrlenW(inadj);
+		inlen = lstrlenW(inadj);
+	}
+	__except (EXCEPTION_EXECUTE_HANDLER) {
+		out[0] = L'\0';
+		goto out;
+	}
 
 	tmpout = malloc(32768 * sizeof(wchar_t));
 	nonexistent = malloc(32768 * sizeof(wchar_t));
