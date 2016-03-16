@@ -149,30 +149,7 @@ static DWORD WINAPI _logwatcher_thread(LPVOID param)
 
 extern BOOLEAN g_dll_main_complete;
 
-void log_flush()
-{
-	/* The logging thread we create in DllMain won't actually start until after DllMain
-	completes, so we need to ensure we don't wait here on the logging thread as it will
-	result in a deadlock.
-	There's thus an implicit assumption here that we won't log more than BUFFERSIZE before
-	DllMain completes, otherwise we'll lose logs.
-	*/
-	//if (g_dll_main_complete && !process_shutting_down) {
-	//	SetEvent(g_log_flush);
-	//	while (g_idx && (g_sock != INVALID_SOCKET)) raw_sleep(50);
-	//}
-	//else {
-		/* if we're in main() still, then send the logs immediately just in case something bad
-		   happens early in execution of the malware's code
-		 */
-
-	//}
-	// we might get called by the pipe() code trying to flush logs before logging is
-	// actually initialized, so avoid any nastiness on trying to use unitialized
-	// critical sections
-	if (g_buffer)
-		_send_log();
-}
+static lastlog_t lastlog;
 
 static void log_raw_direct(const char *buf, size_t length) {
 	size_t copiedlen = 0;
@@ -188,6 +165,41 @@ static void log_raw_direct(const char *buf, size_t length) {
 		if (copiedlen != length)
 			log_flush();
 	}
+}
+
+void log_flush()
+{
+	/* The logging thread we create in DllMain won't actually start until after DllMain
+	completes, so we need to ensure we don't wait here on the logging thread as it will
+	result in a deadlock.
+	There's thus an implicit assumption here that we won't log more than BUFFERSIZE before
+	DllMain completes, otherwise we'll lose logs.
+	*/
+	//if (g_dll_main_complete && !process_shutting_down) {
+	//	SetEvent(g_log_flush);
+	//	while (g_idx && (g_sock != INVALID_SOCKET)) raw_sleep(50);
+	//}
+	//else {
+	/* if we're in main() still, then send the logs immediately just in case something bad
+	happens early in execution of the malware's code
+	*/
+
+	//}
+	// we might get called by the pipe() code trying to flush logs before logging is
+	// actually initialized, so avoid any nastiness on trying to use unitialized
+	// critical sections
+
+	// ok to nest these
+	EnterCriticalSection(&g_mutex);
+	if (lastlog.buf) {
+		log_raw_direct(lastlog.buf, lastlog.len);
+		free(lastlog.buf);
+		lastlog.buf = NULL;
+	}
+	LeaveCriticalSection(&g_mutex);
+
+	if (g_buffer)
+		_send_log();
 }
 
 void debug_message(const char *msg) {
@@ -334,8 +346,6 @@ DWORD get_last_api(void)
 {
 	return last_api_logged;
 }
-
-static lastlog_t lastlog;
 
 void loq(int index, const char *category, const char *name,
     int is_success, ULONG_PTR return_value, const char *fmt, ...)
@@ -889,12 +899,14 @@ buffer_log:
 				(*lastlog.repeated_ptr)++;
 			}
 			else {
-				log_raw_direct(lastlog.buf, lastlog.len);
-				free(lastlog.buf);
-				lastlog.buf = NULL;
 				// flush logs once we're done seeing duplicates of a particular API
 				if (g_config.force_flush == 1)
 					log_flush();
+				else {
+					log_raw_direct(lastlog.buf, lastlog.len);
+					free(lastlog.buf);
+					lastlog.buf = NULL;
+				}
 			}
 		}
 		if (lastlog.buf == NULL) {
@@ -1203,12 +1215,6 @@ void log_init(int debug)
 
 void log_free()
 {
-	// racy: fix me later
-	if (lastlog.buf != NULL) {
-		log_raw_direct(lastlog.buf, lastlog.len);
-		free(lastlog.buf);
-		lastlog.buf = NULL;
-	}
     log_flush();
 	if (g_sock == DEBUG_SOCKET) {
 		g_sock = INVALID_SOCKET;
