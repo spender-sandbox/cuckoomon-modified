@@ -714,7 +714,7 @@ int bson_ensure_space( bson *b, const size_t bytesNeeded ) {
     if ( pos + bytesNeeded <= (size_t) b->dataSize )
         return BSON_OK;
 
-    new_size = (3 * ( b->dataSize + bytesNeeded ) ) / 2;
+    new_size = (int)(3 * ( (size_t)b->dataSize + bytesNeeded ) ) / 2;
 
     if( new_size < b->dataSize ) {
         if( ( b->dataSize + bytesNeeded ) < INT_MAX )

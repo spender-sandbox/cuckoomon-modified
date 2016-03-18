@@ -36,8 +36,8 @@ size_t buffer_log_max = BUFFER_LOG_MAX;
 size_t large_buffer_log_max = LARGE_BUFFER_LOG_MAX;
 #define BUFFER_REGVAL_MAX 512
 
-static CRITICAL_SECTION g_mutex;
-static CRITICAL_SECTION g_writing_log_buffer_mutex;
+CRITICAL_SECTION g_mutex;
+CRITICAL_SECTION g_writing_log_buffer_mutex;
 static SOCKET g_sock;
 static HANDLE g_debug_log_handle;
 static unsigned int g_starttick;
