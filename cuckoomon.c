@@ -866,6 +866,9 @@ extern void ignored_threads_init(void);
 
 extern CRITICAL_SECTION readfile_critsec;
 
+extern CRITICAL_SECTION g_mutex;
+extern CRITICAL_SECTION g_writing_log_buffer_mutex;
+
 OSVERSIONINFOA g_osverinfo;
 
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
@@ -901,6 +904,9 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		init_private_heap();
 
 		set_os_bitness();
+
+		InitializeCriticalSection(&g_mutex);
+		InitializeCriticalSection(&g_writing_log_buffer_mutex);
 
 		// initialize file stuff, needs to be performed prior to any file normalization
 		file_init();

@@ -745,7 +745,8 @@ HOOKDEF(DWORD, WINAPI, WNetUseConnectionW,
 	_Out_    LPDWORD lpResult
 ) {
 	DWORD ret = Old_WNetUseConnectionW(hwndOwner, lpNetResource, lpPassword, lpUserID, dwFlags, lpAccessName, lpBufferSize, lpResult);
-	LOQ_zero("network", "uuuuuh", "LocalName", lpNetResource->lpRemoteName, "RemoteName", lpNetResource->lpRemoteName, "Password", lpPassword, "UserID", lpUserID, "AccessName", lpAccessName, "Flags", dwFlags);
+	LOQ_zero("network", "uuuuuh", "LocalName", lpNetResource ? lpNetResource->lpLocalName : NULL,
+		     "RemoteName", lpNetResource ? lpNetResource->lpRemoteName : NULL, "Password", lpPassword, "UserID", lpUserID, "AccessName", lpAccessName, "Flags", dwFlags);
 	return ret;
 }
 

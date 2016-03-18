@@ -162,8 +162,8 @@ static void log_raw_direct(const char *buf, size_t length) {
 		g_idx += (int)copylen;
 		copiedlen += copylen;
 		LeaveCriticalSection(&g_writing_log_buffer_mutex);
-		if (copiedlen != length)
-			log_flush();
+		if (copiedlen != length && g_buffer)
+			_send_log();
 	}
 }
 
@@ -1140,9 +1140,6 @@ DWORD g_logwatcher_thread_id;
 void log_init(int debug)
 {
 	g_buffer = calloc(1, BUFFERSIZE);
-
-	InitializeCriticalSection(&g_mutex);
-	InitializeCriticalSection(&g_writing_log_buffer_mutex);
 
 	g_log_flush = CreateEvent(NULL, FALSE, FALSE, NULL);
 
