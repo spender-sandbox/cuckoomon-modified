@@ -1015,8 +1015,15 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceA,
 	LOQ_bool("filesystem", "s", "RootPathName", lpRootPathName);
 
 	/* Fake harddrive size to 256GB */
-	if (!g_config.no_stealth && *lpSectorsPerCluster && *lpBytesPerSector) {
-		*lpTotalNumberOfClusters = (DWORD)(256060514304L / (*lpSectorsPerCluster * *lpBytesPerSector));
+	if (!g_config.no_stealth) {
+		__try {
+			if (lpTotalNumberOfClusters && lpSectorsPerCluster && lpBytesPerSector && *lpSectorsPerCluster && *lpBytesPerSector) {
+				*lpTotalNumberOfClusters = (DWORD)(256060514304L / (*lpSectorsPerCluster * *lpBytesPerSector));
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			;
+		}
 	}
 
 	return ret;
@@ -1033,8 +1040,15 @@ HOOKDEF(BOOL, WINAPI, GetDiskFreeSpaceW,
 	LOQ_bool("filesystem", "u", "RootPathName", lpRootPathName);
 
 	/* Fake harddrive size to 256GB */
-	if (!g_config.no_stealth && *lpSectorsPerCluster && *lpBytesPerSector) {
-		*lpTotalNumberOfClusters = (DWORD)(256060514304L / (*lpSectorsPerCluster * *lpBytesPerSector));
+	if (!g_config.no_stealth) {
+		__try {
+			if (lpTotalNumberOfClusters && lpSectorsPerCluster && lpBytesPerSector && *lpSectorsPerCluster && *lpBytesPerSector) {
+				*lpTotalNumberOfClusters = (DWORD)(256060514304L / (*lpSectorsPerCluster * *lpBytesPerSector));
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER) {
+			;
+		}
 	}
 
 	return ret;
