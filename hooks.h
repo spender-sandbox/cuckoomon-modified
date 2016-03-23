@@ -1266,6 +1266,16 @@ extern HOOKDEF(BOOL, WINAPI, DeviceIoControl,
     __inout_opt  LPOVERLAPPED lpOverlapped
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtSetTimer,
+	IN HANDLE               TimerHandle,
+	IN PLARGE_INTEGER       DueTime,
+	IN PVOID				TimerApcRoutine OPTIONAL,
+	IN PVOID                TimerContext OPTIONAL,
+	IN BOOLEAN              ResumeTimer,
+	IN LONG                 Period OPTIONAL,
+	OUT PBOOLEAN            PreviousState OPTIONAL
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    BOOLEAN Alertable,
     __in    PLARGE_INTEGER DelayInterval

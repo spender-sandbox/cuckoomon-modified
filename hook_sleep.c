@@ -150,6 +150,7 @@ skipcall:
 	set_lasterrors(&lasterror);
 	return ret;
 }
+
 HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    BOOLEAN Alertable,
     __in    PLARGE_INTEGER DelayInterval
@@ -173,7 +174,6 @@ HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
 
 	if (newint.QuadPart > 0LL) {
 		/* convert absolute time to relative time */
-		FILETIME ft;
 		GetSystemTimeAsFileTime(&ft);
 
 		newint.HighPart = ft.dwHighDateTime;
@@ -244,6 +244,67 @@ docall:
 	return Old_NtDelayExecution(Alertable, &newint);
 skipcall:
 	set_lasterrors(&lasterror);
+	return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtSetTimer,
+	IN HANDLE               TimerHandle,
+	IN PLARGE_INTEGER       DueTime,
+	IN PVOID				TimerApcRoutine OPTIONAL,
+	IN PVOID                TimerContext OPTIONAL,
+	IN BOOLEAN              ResumeTimer,
+	IN LONG                 Period OPTIONAL,
+	OUT PBOOLEAN            PreviousState OPTIONAL
+) {
+	NTSTATUS ret = 0;
+	LONGLONG interval;
+	FILETIME ft;
+	LARGE_INTEGER newint;
+	unsigned long milli;
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
+	newint.QuadPart = DueTime->QuadPart;
+	// handle INFINITE sleep
+	if (newint.QuadPart == 0x8000000000000000ULL) {
+		LOQ_ntstatus("system", "is", "Milliseconds", -1, "Status", "Infinite");
+		goto docall;
+	}
+
+	if (newint.QuadPart > 0LL) {
+		/* convert absolute time to relative time */
+		GetSystemTimeAsFileTime(&ft);
+
+		newint.HighPart = ft.dwHighDateTime;
+		newint.LowPart = ft.dwLowDateTime;
+		newint.QuadPart += time_skipped.QuadPart;
+		newint.QuadPart -= DueTime->QuadPart;
+		if (newint.QuadPart > 0LL)
+			newint.QuadPart = 0LL;
+	}
+	interval = -newint.QuadPart;
+	milli = (unsigned long)(interval / 10000);
+
+	/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
+	if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
+		newint.QuadPart = -(10000 * 10000);
+		time_skipped.QuadPart += interval - (10000 * 10000);
+		LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
+		goto docall;
+	}
+	else if (g_config.force_sleepskip > 0) {
+		time_skipped.QuadPart += interval;
+		LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
+		newint.QuadPart = 0;
+		goto docall;
+	}
+
+docall:
+	set_lasterrors(&lasterror);
+
+	ret = Old_NtSetTimer(TimerHandle, &newint, TimerApcRoutine, TimerContext, ResumeTimer, Period, PreviousState);
+
 	return ret;
 }
 
