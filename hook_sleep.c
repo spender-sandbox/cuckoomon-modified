@@ -308,6 +308,79 @@ docall:
 	return ret;
 }
 
+HOOKDEF(NTSTATUS, WINAPI, NtSetTimerEx,
+	IN HANDLE TimerHandle,
+	IN int TimerSetInformationClass,
+	__inout PVOID TimerSetInformation,
+	IN ULONG TimerSetInformationLength
+) {
+	NTSTATUS ret = 0;
+	LONGLONG interval;
+	FILETIME ft;
+	LARGE_INTEGER newint;
+	LARGE_INTEGER origdue;
+	unsigned long milli;
+	lasterror_t lasterror;
+	BOOL modified_delay = FALSE;
+	PTIMER_SET_COALESCABLE_TIMER_INFO timerinfo;
+
+	get_lasterrors(&lasterror);
+
+	if (TimerSetInformationClass)
+		goto docall;
+
+	timerinfo = (PTIMER_SET_COALESCABLE_TIMER_INFO)TimerSetInformation;
+	origdue = timerinfo->DueTime;
+
+	newint.QuadPart = origdue.QuadPart;
+	// handle INFINITE sleep
+	if (newint.QuadPart == 0x8000000000000000ULL) {
+		LOQ_ntstatus("system", "is", "Milliseconds", -1, "Status", "Infinite");
+		goto docall;
+	}
+
+	if (newint.QuadPart > 0LL) {
+		/* convert absolute time to relative time */
+		GetSystemTimeAsFileTime(&ft);
+
+		newint.HighPart = ft.dwHighDateTime;
+		newint.LowPart = ft.dwLowDateTime;
+		newint.QuadPart += time_skipped.QuadPart;
+		newint.QuadPart -= origdue.QuadPart;
+		if (newint.QuadPart > 0LL)
+			newint.QuadPart = 0LL;
+		timerinfo->DueTime.QuadPart = newint.QuadPart;
+		modified_delay = TRUE;
+	}
+	interval = -newint.QuadPart;
+	milli = (unsigned long)(interval / 10000);
+
+	/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
+	if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
+		timerinfo->DueTime.QuadPart = -(10000 * 10000);
+		time_skipped.QuadPart += interval - (10000 * 10000);
+		LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
+		goto docall;
+	}
+	else if (g_config.force_sleepskip > 0) {
+		time_skipped.QuadPart += interval;
+		LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
+		timerinfo->DueTime.QuadPart = 0;
+		modified_delay = TRUE;
+		goto docall;
+	}
+
+docall:
+	set_lasterrors(&lasterror);
+	ret = Old_NtSetTimerEx(TimerHandle, TimerSetInformationClass, TimerSetInformation, TimerSetInformationLength);
+
+	if (modified_delay) {
+		timerinfo->DueTime = origdue;
+	}
+
+	return ret;
+}
+
 HOOKDEF(void, WINAPI, GetLocalTime,
     __out  LPSYSTEMTIME lpSystemTime
 ) {

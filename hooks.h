@@ -1276,6 +1276,13 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtSetTimer,
 	OUT PBOOLEAN            PreviousState OPTIONAL
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtSetTimerEx,
+	IN HANDLE TimerHandle,
+	IN int TimerSetInformationClass,
+	__inout PVOID TimerSetInformation,
+	IN ULONG TimerSetInformationLength
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
     __in    BOOLEAN Alertable,
     __in    PLARGE_INTEGER DelayInterval
