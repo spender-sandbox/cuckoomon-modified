@@ -932,8 +932,8 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 			goto early_abort;
 #endif
 
-		// don't inject into our own binaries run out of the analyzer directory
-		if (wcslen(g_config.w_analyzer) && !wcsnicmp(our_process_path, g_config.w_analyzer, wcslen(g_config.w_analyzer)))
+		// don't inject into our own binaries run out of the analyzer directory unless they're the first process (intended)
+		if (wcslen(g_config.w_analyzer) && !wcsnicmp(our_process_path, g_config.w_analyzer, wcslen(g_config.w_analyzer)) && !g_config.first_process)
 			goto out;
 
 		if (g_config.debug) {
