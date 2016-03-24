@@ -1322,6 +1322,15 @@ extern HOOKDEF_NOTAIL(WINAPI, InitiateSystemShutdownExW,
 	_In_	 DWORD	dwReason
 );
 
+extern HOOKDEF_NOTAIL(WINAPI, NtRaiseHardError,
+	IN NTSTATUS 	ErrorStatus,
+	IN ULONG 	NumberOfParameters,
+	IN ULONG 	UnicodeStringParameterMask,
+	IN PULONG_PTR 	Parameters,
+	IN ULONG 	ValidResponseOptions,
+	OUT PULONG 	Response
+);
+
 extern HOOKDEF_NOTAIL(WINAPI, NtShutdownSystem,
 	__in  UINT Action
 );

@@ -541,7 +541,8 @@ BOOL is_directory_objattr(const OBJECT_ATTRIBUTES *obj)
 BOOL file_exists(const OBJECT_ATTRIBUTES *obj)
 {
 	FILE_BASIC_INFORMATION basic_information;
-	if (NT_SUCCESS(pNtQueryAttributesFile(obj, &basic_information)))
+	NTSTATUS ret = pNtQueryAttributesFile(obj, &basic_information);
+	if (NT_SUCCESS(ret) || ret == STATUS_INVALID_DEVICE_REQUEST)
 		return TRUE;
 	return FALSE;
 }

@@ -86,11 +86,16 @@ int addr_in_our_dll_range(void *unused, ULONG_PTR addr)
 	return 0;
 }
 
+static int __called_by_hook(ULONG_PTR stack_pointer, ULONG_PTR frame_pointer)
+{
+	return operate_on_backtrace(stack_pointer, frame_pointer, NULL, addr_in_our_dll_range);
+}
+
 int called_by_hook(void)
 {
 	hook_info_t *hookinfo = hook_info();
 
-	return operate_on_backtrace(hookinfo->return_address, hookinfo->frame_pointer, NULL, addr_in_our_dll_range);
+	return __called_by_hook(hookinfo->stack_pointer, hookinfo->frame_pointer);
 }
 
 extern BOOLEAN is_ignored_thread(DWORD tid);
@@ -126,12 +131,12 @@ int WINAPI enter_hook(hook_t *h, ULONG_PTR sp, ULONG_PTR ebp_or_rip)
 
 	hookinfo = hook_info();
 
-	hookinfo->current_hook = h;
-	hookinfo->stack_pointer = sp;
-	hookinfo->return_address = *(ULONG_PTR *)sp;
-	hookinfo->frame_pointer = ebp_or_rip;
+	if ((hookinfo->disable_count < 1) && (h->allow_hook_recursion || (!__called_by_hook(sp, ebp_or_rip) /*&& !is_ignored_thread(GetCurrentThreadId())*/))) {
+		hookinfo->current_hook = h;
+		hookinfo->stack_pointer = sp;
+		hookinfo->return_address = *(ULONG_PTR *)sp;
+		hookinfo->frame_pointer = ebp_or_rip;
 
-	if ((hookinfo->disable_count < 1) && (h->allow_hook_recursion || (!called_by_hook() /*&& !is_ignored_thread(GetCurrentThreadId())*/))) {
 		/* set caller information */
 		hookinfo->main_caller_retaddr = 0;
 		hookinfo->parent_caller_retaddr = 0;

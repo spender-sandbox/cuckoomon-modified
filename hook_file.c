@@ -188,8 +188,8 @@ static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 
     if(is_directory_objattr(obj) == 0) {
 
-        wchar_t *fname = calloc(1, 32768 * sizeof(wchar_t));
-		wchar_t *absolutename = calloc(1, 32768 * sizeof(wchar_t));
+        wchar_t *fname = calloc(32768, sizeof(wchar_t));
+		wchar_t *absolutename = calloc(32768, sizeof(wchar_t));
 
 		path_from_object_attributes(obj, fname, 32768);
 

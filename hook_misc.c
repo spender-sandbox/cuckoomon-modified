@@ -209,6 +209,20 @@ HOOKDEF_NOTAIL(WINAPI, InitiateSystemShutdownW,
 	return ret;
 }
 
+HOOKDEF_NOTAIL(WINAPI, NtRaiseHardError,
+	IN NTSTATUS 	ErrorStatus,
+	IN ULONG 	NumberOfParameters,
+	IN ULONG 	UnicodeStringParameterMask,
+	IN PULONG_PTR 	Parameters,
+	IN ULONG 	ValidResponseOptions,
+	OUT PULONG 	Response
+) {
+	DWORD ret = 0;
+	LOQ_zero("system", "h", "ErrorStatus", ErrorStatus);
+	pipe("SHUTDOWN:");
+	return ret;
+}
+
 HOOKDEF_NOTAIL(WINAPI, InitiateSystemShutdownExW,
 	_In_opt_ LPWSTR lpMachineName,
 	_In_opt_ LPWSTR lpMessage,

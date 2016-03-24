@@ -354,6 +354,7 @@ static hook_t g_hooks[] = {
 	HOOK_NOTAIL(advapi32, InitiateShutdownW, 5),
 	HOOK_NOTAIL(advapi32, InitiateSystemShutdownW, 5),
 	HOOK_NOTAIL(advapi32, InitiateSystemShutdownExW, 6),
+	HOOK_NOTAIL(ntdll, NtRaiseHardError, 6),
     HOOK(kernel32, IsDebuggerPresent),
     HOOK(advapi32, LookupPrivilegeValueW),
     HOOK(ntdll, NtClose),
