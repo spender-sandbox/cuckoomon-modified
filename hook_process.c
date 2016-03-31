@@ -703,19 +703,19 @@ HOOKDEF_NOTAIL(WINAPI, RtlDispatchException,
 	__in PEXCEPTION_RECORD ExceptionRecord,
 	__in PCONTEXT Context)
 {
-	if (ExceptionRecord && (ULONG_PTR)ExceptionRecord->ExceptionAddress >= g_our_dll_base && (ULONG_PTR)ExceptionRecord->ExceptionAddress < (g_our_dll_base + g_our_dll_size)) {
-		char buf[128];
-		ULONG_PTR seh = 0;
 #ifndef _WIN64
+	if (ExceptionRecord && (ULONG_PTR)ExceptionRecord->ExceptionAddress >= g_our_dll_base && (ULONG_PTR)ExceptionRecord->ExceptionAddress < (g_our_dll_base + g_our_dll_size)) {
+		char buf[160];
+		ULONG_PTR seh = 0;
 		DWORD *tebtmp = (DWORD *)NtCurrentTeb();
 		if (tebtmp[0] != 0xffffffff)
 			seh = ((DWORD *)tebtmp[0])[1];
-#endif
 		if (seh < g_our_dll_base || seh >= (g_our_dll_base + g_our_dll_size)) {
-			_snprintf(buf, sizeof(buf), "Exception reported at offset 0x%x in cuckoomon itself", (DWORD)((ULONG_PTR)ExceptionRecord->ExceptionAddress - g_our_dll_base));
+			_snprintf(buf, sizeof(buf), "Exception reported at offset 0x%x in cuckoomon itself while accessing 0x%x from hook %s", (DWORD)((ULONG_PTR)ExceptionRecord->ExceptionAddress - g_our_dll_base), ExceptionRecord->ExceptionInformation[1], hook_info()->current_hook ? hook_info()->current_hook->funcname : "unknown");
 			log_anomaly("cuckoocrash", buf);
 		}
 	}
+#endif
 
 	// flush logs prior to handling of an exception without having to register a vectored exception handler
 	log_flush();

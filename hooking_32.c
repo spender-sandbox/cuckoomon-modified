@@ -644,7 +644,7 @@ int hook_api(hook_t *h, int type)
     // resolve the address to hook
     addr = h->addr;
 
-	if(addr == NULL && h->library != NULL && h->funcname != NULL) {
+	if (addr == NULL && h->library != NULL && h->funcname != NULL) {
 		HMODULE hmod = GetModuleHandleW(h->library);
 		/* if the DLL isn't loaded, don't bother attempting anything else */
 		if (hmod == NULL)
@@ -674,7 +674,8 @@ int hook_api(hook_t *h, int type)
 		else
 			addr = (unsigned char *)GetProcAddress(hmod, h->funcname);
     }
-    if(addr == NULL) {
+
+    if (addr == NULL || addr == (unsigned char *)0xffbadd11) {
 		// function doesn't exist in this DLL, not a critical error
 		return 0;
     }

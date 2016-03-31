@@ -922,6 +922,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 		if (g_tls_hook_index == TLS_OUT_OF_INDEXES)
 			goto early_abort;
 
+		// adds our own DLL range as well, since the hiding is done later
 		add_all_dlls_to_dll_ranges();
 
         // read the config settings

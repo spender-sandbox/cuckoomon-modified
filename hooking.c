@@ -132,6 +132,7 @@ int WINAPI enter_hook(hook_t *h, ULONG_PTR sp, ULONG_PTR ebp_or_rip)
 	hookinfo = hook_info();
 
 	if ((hookinfo->disable_count < 1) && (h->allow_hook_recursion || (!__called_by_hook(sp, ebp_or_rip) /*&& !is_ignored_thread(GetCurrentThreadId())*/))) {
+		hookinfo->last_hook = hookinfo->current_hook;
 		hookinfo->current_hook = h;
 		hookinfo->stack_pointer = sp;
 		hookinfo->return_address = *(ULONG_PTR *)sp;

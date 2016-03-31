@@ -95,7 +95,12 @@ HOOKDEF_ALT(NTSTATUS, WINAPI, LdrLoadDll,
 	__out       PHANDLE ModuleHandle
 ) {
 	NTSTATUS ret;
+	hook_info_t saved_hookinfo;
+
+	memcpy(&saved_hookinfo, hook_info(), sizeof(saved_hookinfo));
 	ret = Old_LdrLoadDll(PathToFile, Flags, ModuleFileName, ModuleHandle);
+	memcpy(hook_info(), &saved_hookinfo, sizeof(saved_hookinfo));
+
 	disable_tail_call_optimization();
 	return ret;
 }
@@ -124,10 +129,15 @@ HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
     __out       LPPROCESS_INFORMATION lpProcessInformation,
     __in_opt    LPVOID lpUnknown2
 ) {
-    BOOL ret = Old_CreateProcessInternalW(lpUnknown1, lpApplicationName,
+	BOOL ret;
+	hook_info_t saved_hookinfo;
+	
+	memcpy(&saved_hookinfo, hook_info(), sizeof(saved_hookinfo));
+	ret = Old_CreateProcessInternalW(lpUnknown1, lpApplicationName,
         lpCommandLine, lpProcessAttributes, lpThreadAttributes,
         bInheritHandles, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment,
         lpCurrentDirectory, lpStartupInfo, lpProcessInformation, lpUnknown2);
+	memcpy(hook_info(), &saved_hookinfo, sizeof(saved_hookinfo));
 
     if(ret != FALSE) {
 		pipe("PROCESS:%d:%d,%d", (dwCreationFlags & CREATE_SUSPENDED) ? 1 : 0, lpProcessInformation->dwProcessId,
@@ -205,7 +215,12 @@ HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 	char idbuf2[40];
 	char *known;
 	lasterror_t lasterror;
-	HRESULT ret = Old_CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
+	HRESULT ret;
+	hook_info_t saved_hookinfo;
+
+	memcpy(&saved_hookinfo, hook_info(), sizeof(saved_hookinfo));
+	ret = Old_CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
+	memcpy(hook_info(), &saved_hookinfo, sizeof(saved_hookinfo));
 
 	get_lasterrors(&lasterror);
 
@@ -215,6 +230,16 @@ HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 		id1.Data4[0], id1.Data4[1], id1.Data4[2], id1.Data4[3], id1.Data4[4], id1.Data4[5], id1.Data4[6], id1.Data4[7]);
 	sprintf(idbuf2, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id2.Data1, id2.Data2, id2.Data3,
 		id2.Data4[0], id2.Data4[1], id2.Data4[2], id2.Data4[3], id2.Data4[4], id2.Data4[5], id2.Data4[6], id2.Data4[7]);
+
+	if (!strcmp(idbuf1, "4590F812-1D3A-11D0-891F-00AA004B2E24") || !strcmp(idbuf1, "172BDDF8-CEEA-11D1-8B05-00600806D9B6") ||
+		!strcmp(idbuf1, "CF4CC405-E2C5-4DDD-B3CE-5E7582D8C9FA")) {
+		pipe("WMI:");
+	}
+	if (!strcmp(idbuf1, "0F87369F-A4E5-4CFC-BD3E-73E6154572DD") || !strcmp(idbuf1, "0F87369F-A4E5-4CFC-BD3E-5529CE8784B0"))
+		pipe("TASKSCHED:");
+	if (!strcmp(idbuf1, "000209FF-0000-0000-C000-000000000046") || !strcmp(idbuf1, "00024500-0000-0000-C000-000000000046") || !strcmp(idbuf1, "91493441-5A91-11CF-8700-00AA0060263B") ||
+		!strcmp(idbuf1, "000246FF-0000-0000-C000-000000000046"))
+		pipe("INTEROP:");
 
 	set_lasterrors(&lasterror);
 

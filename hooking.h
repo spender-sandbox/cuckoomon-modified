@@ -115,6 +115,7 @@ typedef struct _hook_t {
 
 typedef struct _hook_info_t {
 	int disable_count;
+	hook_t *last_hook;
 	hook_t *current_hook;
 	ULONG_PTR return_address;
 	ULONG_PTR stack_pointer;
