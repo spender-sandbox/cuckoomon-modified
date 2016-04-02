@@ -152,12 +152,38 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtQueryDirectoryObject,
   __out_opt  PULONG ReturnLength
 );
 
-extern HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
+extern HOOKDEF_NOTAIL(WINAPI, MoveFileWithProgressW,
     __in      LPWSTR lpExistingFileName,
     __in_opt  LPWSTR lpNewFileName,
     __in_opt  LPPROGRESS_ROUTINE lpProgressRoutine,
     __in_opt  LPVOID lpData,
     __in      DWORD dwFlags
+);
+
+extern HOOKDEF_ALT(BOOL, WINAPI, MoveFileWithProgressW,
+	__in      LPWSTR lpExistingFileName,
+	__in_opt  LPWSTR lpNewFileName,
+	__in_opt  LPPROGRESS_ROUTINE lpProgressRoutine,
+	__in_opt  LPVOID lpData,
+	__in      DWORD dwFlags
+);
+
+extern HOOKDEF_NOTAIL(WINAPI, MoveFileWithProgressTransactedW,
+	__in      LPWSTR lpExistingFileName,
+	__in_opt  LPWSTR lpNewFileName,
+	__in_opt  LPPROGRESS_ROUTINE lpProgressRoutine,
+	__in_opt  LPVOID lpData,
+	__in      DWORD dwFlags,
+	__in	  HANDLE hTransaction
+);
+
+extern HOOKDEF_ALT(BOOL, WINAPI, MoveFileWithProgressTransactedW,
+	__in      LPWSTR lpExistingFileName,
+	__in_opt  LPWSTR lpNewFileName,
+	__in_opt  LPPROGRESS_ROUTINE lpProgressRoutine,
+	__in_opt  LPVOID lpData,
+	__in      DWORD dwFlags,
+	__in	  HANDLE hTransaction
 );
 
 extern HOOKDEF(BOOL, WINAPI, CreateDirectoryW,
@@ -177,14 +203,6 @@ extern HOOKDEF(BOOL, WINAPI, RemoveDirectoryA,
 
 extern HOOKDEF(BOOL, WINAPI, RemoveDirectoryW,
     __in  LPWSTR lpPathName
-);
-
-extern HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
-    __in      LPWSTR lpExistingFileName,
-    __in_opt  LPWSTR lpNewFileName,
-    __in_opt  LPPROGRESS_ROUTINE lpProgressRoutine,
-    __in_opt  LPVOID lpData,
-    __in      DWORD dwFlags
 );
 
 extern HOOKDEF(HANDLE, WINAPI, FindFirstFileExA,

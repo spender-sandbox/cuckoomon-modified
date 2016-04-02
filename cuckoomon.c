@@ -96,6 +96,11 @@ static hook_t g_hooks[] = {
 	HOOK_NOTAIL(ntdll, RtlDispatchException, 2),
 	HOOK_NOTAIL(ntdll, NtRaiseException, 3),
 
+	// lowest variant of MoveFile()
+	HOOK_NOTAIL_ALT(kernel32, MoveFileWithProgressW, 5),
+	HOOK_NOTAIL_ALT(kernelbase, MoveFileWithProgressTransactedW, 6),
+	HOOK_NOTAIL_ALT(kernel32, MoveFileWithProgressTransactedW, 6),
+
 	//
     // File Hooks
     //
@@ -121,9 +126,6 @@ static hook_t g_hooks[] = {
 
     HOOK(kernel32, RemoveDirectoryA),
     HOOK(kernel32, RemoveDirectoryW),
-
-    // lowest variant of MoveFile()
-    HOOK(kernel32, MoveFileWithProgressW),
 
 	HOOK(kernel32, FindFirstFileExA),
     HOOK(kernel32, FindFirstFileExW),

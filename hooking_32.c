@@ -659,6 +659,14 @@ int hook_api(hook_t *h, int type)
 			}
 			addr = (unsigned char *)get_near_rel_target(&baseaddr[instroff]);
 		}
+		else if (!wcscmp(h->library, L"kernel32") && !strcmp(h->funcname, "MoveFileWithProgressTransactedW")) {
+			unsigned char *tmpaddr = (unsigned char *)GetProcAddress(hmod, "MoveFileWithProgressW");
+			if (tmpaddr[22] == 0xe8 && tmpaddr[28] == 0xc2) {
+				addr = (unsigned char *)get_near_rel_target(tmpaddr + 22);
+			}
+			else
+				addr = (unsigned char *)GetProcAddress(hmod, h->funcname);
+		}
 		else if (!strcmp(h->funcname, "JsEval")) {
 			type = HOOK_JMP_DIRECT;
 			addr = (unsigned char *)get_jseval_addr(hmod);

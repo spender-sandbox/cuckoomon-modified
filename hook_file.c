@@ -706,7 +706,27 @@ HOOKDEF(BOOL, WINAPI, RemoveDirectoryW,
     return ret;
 }
 
-HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
+HOOKDEF_NOTAIL(WINAPI, MoveFileWithProgressW,
+	__in      LPWSTR lpExistingFileName,
+	__in_opt  LPWSTR lpNewFileName,
+	__in_opt  LPPROGRESS_ROUTINE lpProgressRoutine,
+	__in_opt  LPVOID lpData,
+	__in      DWORD dwFlags
+) {
+	BOOL ret = TRUE;
+
+	if (lpProgressRoutine) {
+		wchar_t *path = malloc(32768 * sizeof(wchar_t));
+		ensure_absolute_unicode_path(path, lpExistingFileName);
+		LOQ_bool("filesystem", "uFh", "ExistingFileName", path,
+			"NewFileName", lpNewFileName, "Flags", dwFlags);
+		free(path);
+		return 0;
+	}
+	return 1;
+}
+
+HOOKDEF_ALT(BOOL, WINAPI, MoveFileWithProgressW,
     __in      LPWSTR lpExistingFileName,
     __in_opt  LPWSTR lpNewFileName,
     __in_opt  LPPROGRESS_ROUTINE lpProgressRoutine,
@@ -733,6 +753,66 @@ HOOKDEF(BOOL, WINAPI, MoveFileWithProgressW,
     }
 
 	free(path);
+
+	return ret;
+}
+
+HOOKDEF_NOTAIL(WINAPI, MoveFileWithProgressTransactedW,
+	__in      LPWSTR lpExistingFileName,
+	__in_opt  LPWSTR lpNewFileName,
+	__in_opt  LPPROGRESS_ROUTINE lpProgressRoutine,
+	__in_opt  LPVOID lpData,
+	__in      DWORD dwFlags,
+	__in	  HANDLE hTransaction
+) {
+	BOOL ret = TRUE;
+
+	if (lpProgressRoutine) {
+		wchar_t *path = malloc(32768 * sizeof(wchar_t));
+		ensure_absolute_unicode_path(path, lpExistingFileName);
+		LOQ_bool("filesystem", "uFh", "ExistingFileName", path,
+			"NewFileName", lpNewFileName, "Flags", dwFlags);
+		free(path);
+		return 0;
+	}
+	return 1;
+}
+
+HOOKDEF_ALT(BOOL, WINAPI, MoveFileWithProgressTransactedW,
+	__in      LPWSTR lpExistingFileName,
+	__in_opt  LPWSTR lpNewFileName,
+	__in_opt  LPPROGRESS_ROUTINE lpProgressRoutine,
+	__in_opt  LPVOID lpData,
+	__in      DWORD dwFlags,
+	__in	  HANDLE hTransaction
+) {
+	BOOL ret;
+	hook_info_t saved_hookinfo;
+
+	memcpy(&saved_hookinfo, hook_info(), sizeof(saved_hookinfo));
+	ret = Old_MoveFileWithProgressTransactedW(lpExistingFileName, lpNewFileName,
+		lpProgressRoutine, lpData, dwFlags, hTransaction);
+	memcpy(hook_info(), &saved_hookinfo, sizeof(saved_hookinfo));
+
+	if (!called_by_hook()) {
+		wchar_t *path = malloc(32768 * sizeof(wchar_t));
+
+		ensure_absolute_unicode_path(path, lpExistingFileName);
+
+		LOQ_bool("filesystem", "uFh", "ExistingFileName", path,
+			"NewFileName", lpNewFileName, "Flags", dwFlags);
+		if (ret != FALSE) {
+			if (lpNewFileName)
+				pipe("FILE_MOVE:%Z::%F", path, lpNewFileName);
+			else {
+				// we can do this here because it's not scheduled for deletion until reboot
+				pipe("FILE_DEL:%Z", path);
+			}
+
+		}
+
+		free(path);
+	}
 
 	return ret;
 }

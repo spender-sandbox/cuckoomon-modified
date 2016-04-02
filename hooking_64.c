@@ -839,6 +839,55 @@ hook_data_t *alloc_hookdata_near(void *addr)
 	return NULL;
 }
 
+unsigned char *handle_stub(hook_t *h, unsigned char *addr)
+{
+	unsigned char stack_offset = 0;
+	unsigned char *p = addr;
+	unsigned char *new_addr = NULL;
+	int found_call = 0;
+
+	while (*p != 0xc3 && *p != 0xe9 && *p != 0xeb) {
+		if (!memcmp(p, "\x48\x83\xec", 3)) {
+			if (stack_offset)
+				goto out;
+			stack_offset = p[3];
+			p += 4;
+		}
+		else if (!memcmp(p, "\x48\x8b\x44\x24", 4))
+			p += 5;
+		else if (!memcmp(p, "\x48\x8b\x84\x24", 4))
+			p += 8;
+		else if (!memcmp(p, "\x8b\x44\x24", 3))
+			p += 4;
+		else if (!memcmp(p, "\x8b\x84\x24", 3))
+			p += 7;
+		else if (!memcmp(p, "\x48\x89\x44\x24", 4))
+			p += 5;
+		else if (!memcmp(p, "\x89\x44\x24", 3))
+			p += 4;
+		else if (!memcmp(p, "\x48\x83\xc4", 3)) {
+			if (!stack_offset || *(unsigned char *)&p[3] != stack_offset)
+				goto out;
+			p += 4;
+		}
+		else if (p[0] == 0xe8) {
+			unsigned char *target;
+			target = (unsigned char *)get_near_rel_target(p);
+			if (target[0] != 0xff || target[1] != 0x25)
+				goto out;
+			new_addr = (unsigned char *)get_indirect_target(target);
+			found_call = 1;
+			p += 5;
+		}
+		else
+			goto out;
+	}
+	if (new_addr)
+		return new_addr;
+out:
+	return addr;
+}
+
 int hook_api(hook_t *h, int type)
 {
 	DWORD old_protect;
@@ -880,6 +929,13 @@ int hook_api(hook_t *h, int type)
 			}
 			addr = (unsigned char *)get_near_rel_target(&baseaddr[instroff]);
 		}
+		else if (!wcscmp(h->library, L"kernel32") && !strcmp(h->funcname, "MoveFileWithProgressTransactedW")) {
+			unsigned char *tmpaddr = (unsigned char *)GetProcAddress(hmod, "MoveFileWithProgressW");
+			if (tmpaddr[18] == 0xe8 && tmpaddr[27] == 0xc3) {
+				addr = (unsigned char *)get_near_rel_target(tmpaddr + 18);
+			} else
+				addr = (unsigned char *)GetProcAddress(hmod, h->funcname);
+		}
 		else if (!strcmp(h->funcname, "JsEval"))
 			addr = (unsigned char *)get_jseval_addr(hmod);
 		else if (!strcmp(h->funcname, "COleScript_ParseScriptText"))
@@ -894,44 +950,43 @@ int hook_api(hook_t *h, int type)
 		return 0;
 	}
 
-	if (g_osverinfo.dwMajorVersion >= 6) {
-		if (addr[0] == 0xeb) {
-			PUCHAR target = (PUCHAR)get_short_rel_target(addr);
-			unhook_detect_add_region(h, addr, addr, addr, 2);
-			if (target[0] == 0xff && target[1] == 0x25) {
-				PUCHAR origaddr = addr;
-				addr = (PUCHAR)get_indirect_target(target);
-				// handle delay-loaded DLL stubs
-				if (!memcmp(addr, "\x48\x8d\x05", 3) && addr[7] == 0xe9) {
-					// skip this particular hook, we'll hook the delay-loaded DLL at the time
-					// is is loaded.  This means we will have duplicate "hook" entries
-					// but to avoid any problems, we will check before hooking to see
-					// if the final function has already been hooked
-					return 0;
-				}
-				unhook_detect_add_region(h, target, target, target, 6);
-			}
-		}
-		else if (addr[0] == 0xe9) {
-			PUCHAR target = (PUCHAR)get_near_rel_target(addr);
-			unhook_detect_add_region(h, addr, addr, addr, 5);
-			if (target[0] == 0xff && target[1] == 0x25) {
-				addr = (PUCHAR)get_indirect_target(target);
-				// handle delay-loaded DLL stubs
-				if (!memcmp(addr, "\x48\x8d\x05", 3) && addr[7] == 0xe9) {
-					// skip this particular hook, we'll hook the delay-loaded DLL at the time
-					// is is loaded.  This means we will have duplicate "hook" entries
-					// but to avoid any problems, we will check before hooking to see
-					// if the final function has already been hooked
-					return 0;
-				}
-				unhook_detect_add_region(h, target, target, target, 6);
-			}
-			else {
-				addr = target;
+	addr = handle_stub(h, addr);
+
+	if (addr[0] == 0xeb) {
+		PUCHAR target = (PUCHAR)get_short_rel_target(addr);
+		if (target[0] == 0xff && target[1] == 0x25) {
+			PUCHAR origaddr = addr;
+			addr = (PUCHAR)get_indirect_target(target);
+			// handle delay-loaded DLL stubs
+			if (!memcmp(addr, "\x48\x8d\x05", 3) && addr[7] == 0xe9) {
+				// skip this particular hook, we'll hook the delay-loaded DLL at the time
+				// is is loaded.  This means we will have duplicate "hook" entries
+				// but to avoid any problems, we will check before hooking to see
+				// if the final function has already been hooked
+				return 0;
 			}
 		}
 	}
+	else if (addr[0] == 0xe9) {
+		PUCHAR target = (PUCHAR)get_near_rel_target(addr);
+		unhook_detect_add_region(h, addr, addr, addr, 5);
+		if (target[0] == 0xff && target[1] == 0x25) {
+			addr = (PUCHAR)get_indirect_target(target);
+			// handle delay-loaded DLL stubs
+			if (!memcmp(addr, "\x48\x8d\x05", 3) && addr[7] == 0xe9) {
+				// skip this particular hook, we'll hook the delay-loaded DLL at the time
+				// is is loaded.  This means we will have duplicate "hook" entries
+				// but to avoid any problems, we will check before hooking to see
+				// if the final function has already been hooked
+				return 0;
+			}
+		}
+		else {
+			addr = target;
+		}
+	}
+
+	addr = handle_stub(h, addr);
 
 	/*
 	if (!wcscmp(h->library, L"ntdll") && !memcmp(addr, "\x4c\x8b\xd1\xb8", 4)) {
@@ -1064,6 +1119,7 @@ int operate_on_backtrace(ULONG_PTR sp, ULONG_PTR _rip, void *extra, int(*func)(v
 	}
 
 out:
+
 	hook_enable();
 	set_lasterrors(&lasterror);
 	return ret;
