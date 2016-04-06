@@ -2017,6 +2017,11 @@ extern HOOKDEF(void, WINAPI, GetSystemTimeAsFileTime,
 	_Out_ LPFILETIME lpSystemTimeAsFileTime
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtQueryPerformanceCounter,
+	_Out_     PLARGE_INTEGER PerformanceCounter,
+	_Out_opt_ PLARGE_INTEGER PerformanceFrequency
+);
+
 //
 // Socket Hooks
 //

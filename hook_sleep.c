@@ -381,6 +381,27 @@ docall:
 	return ret;
 }
 
+static LARGE_INTEGER perf_multiplier;
+
+HOOKDEF(NTSTATUS, WINAPI, NtQueryPerformanceCounter,
+	_Out_     PLARGE_INTEGER PerformanceCounter,
+	_Out_opt_ PLARGE_INTEGER PerformanceFrequency
+) {
+	NTSTATUS ret;
+	ENSURE_LARGE_INTEGER(PerformanceFrequency);
+
+	ret = Old_NtQueryPerformanceCounter(PerformanceCounter, PerformanceFrequency);
+
+	if (NT_SUCCESS(ret)) {
+		if (!perf_multiplier.QuadPart)
+			perf_multiplier.QuadPart = PerformanceFrequency->QuadPart / 1000;
+		PerformanceCounter->QuadPart += (time_skipped.QuadPart / 10000) * perf_multiplier.QuadPart;
+	}
+
+	return ret;
+}
+
+
 HOOKDEF(void, WINAPI, GetLocalTime,
     __out  LPSYSTEMTIME lpSystemTime
 ) {
@@ -389,7 +410,6 @@ HOOKDEF(void, WINAPI, GetLocalTime,
 	DWORD ret = 0;
 
 	Old_GetLocalTime(lpSystemTime);
-
 
 	get_lasterrors(&lasterror);
 

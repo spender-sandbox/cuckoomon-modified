@@ -122,6 +122,9 @@ do { \
 #define LOQ_sockerr(cat, fmt, ...) _LOQ(ret != SOCKET_ERROR, cat, fmt, ##__VA_ARGS__)
 #define LOQ_sock(cat, fmt, ...) _LOQ(ret != INVALID_SOCKET, cat, fmt, ##__VA_ARGS__)
 
+#define ENSURE_LARGE_INTEGER(param) \
+    LARGE_INTEGER _##param; _##param.QuadPart = 0; if(param == NULL) param = &_##param
+
 #define ENSURE_DWORD(param) \
     DWORD _##param = 0; if(param == NULL) param = &_##param
 
