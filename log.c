@@ -1014,6 +1014,10 @@ void log_environ()
 	machineguid = strdup(tmp);
 	memset(tmp, 0, sizeof(tmp));
 	GetVolumeInformationA("C:\\", NULL, 0, &volser, NULL, NULL, NULL, 0);
+
+	if (g_config.serial_number)
+		volser = g_config.serial_number;
+
 	sprintf(tmp, "%04x-%04x", HIWORD(volser), LOWORD(volser));
 	sysvolserial = strdup(tmp);
 	memset(tmp, 0, sizeof(tmp));

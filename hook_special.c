@@ -231,8 +231,8 @@ HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 	sprintf(idbuf2, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id2.Data1, id2.Data2, id2.Data3,
 		id2.Data4[0], id2.Data4[1], id2.Data4[2], id2.Data4[3], id2.Data4[4], id2.Data4[5], id2.Data4[6], id2.Data4[7]);
 
-	if (!strcmp(idbuf1, "4590F812-1D3A-11D0-891F-00AA004B2E24") || !strcmp(idbuf1, "172BDDF8-CEEA-11D1-8B05-00600806D9B6") ||
-		!strcmp(idbuf1, "CF4CC405-E2C5-4DDD-B3CE-5E7582D8C9FA")) {
+	if (!strcmp(idbuf1, "4590F811-1D3A-11D0-891F-00AA004B2E24") || !strcmp(idbuf1, "4590F812-1D3A-11D0-891F-00AA004B2E24") ||
+		!strcmp(idbuf1, "172BDDF8-CEEA-11D1-8B05-00600806D9B6") || !strcmp(idbuf1, "CF4CC405-E2C5-4DDD-B3CE-5E7582D8C9FA")) {
 		pipe("WMI:");
 	}
 	if (!strcmp(idbuf1, "0F87369F-A4E5-4CFC-BD3E-73E6154572DD") || !strcmp(idbuf1, "0F87369F-A4E5-4CFC-BD3E-5529CE8784B0"))

@@ -32,37 +32,45 @@ static int grant_debug_privileges(void)
 static BOOLEAN is_suspended(int pid, int tid)
 {
 	ULONG length;
-	PSYSTEM_PROCESS_INFORMATION pspi, proc;
+	PSYSTEM_PROCESS_INFORMATION pspi = NULL, proc;
 	ULONG requestedlen = 16384;
 	_NtQuerySystemInformation pNtQuerySystemInformation = (_NtQuerySystemInformation)GetProcAddress(GetModuleHandleA("ntdll.dll"), "NtQuerySystemInformation");
+	BOOLEAN ret = FALSE;
 
 	pspi = malloc(requestedlen);
 	if (pspi == NULL)
-		return FALSE;
+		goto out;
 
 	while (pNtQuerySystemInformation(SystemProcessInformation, pspi, requestedlen, &length) == STATUS_INFO_LENGTH_MISMATCH) {
 		free(pspi);
 		requestedlen <<= 1;
 		pspi = malloc(requestedlen);
 		if (pspi == NULL)
-			return FALSE;
+			goto out;
 	}
 	// now we have a valid list of process information
-	for (proc = pspi; proc->NextEntryOffset; proc = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)proc + proc->NextEntryOffset)) {
+	proc = pspi;
+	while (1) {
 		ULONG i;
 		if ((int)(ULONG_PTR)proc->UniqueProcessId != pid)
-			continue;
+			goto next;
 		for (i = 0; i < proc->NumberOfThreads; i++) {
 			PSYSTEM_THREAD thread = &proc->Threads[i];
 			if (tid && (int)(ULONG_PTR)thread->ClientId.UniqueThread != tid)
 				continue;
 			if (thread->WaitReason != Suspended)
-				return FALSE;
+				goto out;
 		}
+next:
+		if (!proc->NextEntryOffset)
+			break;
+		proc = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)proc + proc->NextEntryOffset);
 	}
-	free(pspi);
-
-	return TRUE;
+	ret = TRUE;
+out:
+	if (pspi)
+		free(pspi);
+	return ret;
 }
 
 static unsigned int get_shellcode(unsigned char *buf, PVOID injstruct)

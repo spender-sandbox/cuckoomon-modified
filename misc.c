@@ -1348,7 +1348,7 @@ int is_wow64_fs_redirection_disabled(void)
 BOOLEAN is_suspended(DWORD pid, DWORD tid)
 {
 	ULONG length;
-	PSYSTEM_PROCESS_INFORMATION pspi, proc;
+	PSYSTEM_PROCESS_INFORMATION pspi = NULL, proc;
 	ULONG requestedlen = 16384;
 	lasterror_t lasterror;
 	BOOLEAN ret = FALSE;
@@ -1367,10 +1367,12 @@ BOOLEAN is_suspended(DWORD pid, DWORD tid)
 			goto out;
 	}
 	// now we have a valid list of process information
-	for (proc = pspi; proc->NextEntryOffset; proc = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)proc + proc->NextEntryOffset)) {
+	proc = pspi;
+	while (1) {
 		ULONG i;
+
 		if ((DWORD)(ULONG_PTR)proc->UniqueProcessId != pid)
-			continue;
+			goto next;
 		for (i = 0; i < proc->NumberOfThreads; i++) {
 			PSYSTEM_THREAD thread = &proc->Threads[i];
 			if (tid && (DWORD)(ULONG_PTR)thread->ClientId.UniqueThread != tid)
@@ -1378,10 +1380,17 @@ BOOLEAN is_suspended(DWORD pid, DWORD tid)
 			if (thread->WaitReason != Suspended)
 				goto out;
 		}
+		break;
+next:
+		if (!proc->NextEntryOffset)
+			break;
+		proc = (PSYSTEM_PROCESS_INFORMATION)((PCHAR)proc + proc->NextEntryOffset);
 	}
-	free(pspi);
 	ret = TRUE;
 out:
+	if (pspi)
+		free(pspi);
+
 	set_lasterrors(&lasterror);
 
 	return ret;
