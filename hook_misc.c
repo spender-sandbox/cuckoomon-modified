@@ -34,7 +34,15 @@ HOOKDEF(HHOOK, WINAPI, SetWindowsHookExA,
     __in  DWORD dwThreadId
 ) {
 
-    HHOOK ret = Old_SetWindowsHookExA(idHook, lpfn, hMod, dwThreadId);
+	HHOOK ret;
+
+	if (hMod && lpfn && dwThreadId) {
+		DWORD pid = get_pid_by_tid(dwThreadId);
+		if (pid && pid != GetCurrentProcessId())
+			pipe("PROCESS:%d:%d,%d", is_suspended(pid, dwThreadId), pid, dwThreadId);
+	}
+
+	ret = Old_SetWindowsHookExA(idHook, lpfn, hMod, dwThreadId);
     LOQ_nonnull("system", "ippi", "HookIdentifier", idHook, "ProcedureAddress", lpfn,
         "ModuleAddress", hMod, "ThreadId", dwThreadId);
     return ret;
@@ -47,7 +55,15 @@ HOOKDEF(HHOOK, WINAPI, SetWindowsHookExW,
     __in  DWORD dwThreadId
 ) {
 
-    HHOOK ret = Old_SetWindowsHookExW(idHook, lpfn, hMod, dwThreadId);
+	HHOOK ret;
+	
+	if (hMod && lpfn && dwThreadId) {
+		DWORD pid = get_pid_by_tid(dwThreadId);
+		if (pid && pid != GetCurrentProcessId())
+			pipe("PROCESS:%d:%d,%d", is_suspended(pid, dwThreadId), pid, dwThreadId);
+	}
+
+	ret = Old_SetWindowsHookExW(idHook, lpfn, hMod, dwThreadId);
     LOQ_nonnull("system", "ippi", "HookIdentifier", idHook, "ProcedureAddress", lpfn,
         "ModuleAddress", hMod, "ThreadId", dwThreadId);
     return ret;

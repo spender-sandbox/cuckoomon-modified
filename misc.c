@@ -1345,6 +1345,36 @@ int is_wow64_fs_redirection_disabled(void)
 #endif
 }
 
+DWORD get_pid_by_tid(DWORD tid)
+{
+	DWORD ret = 0;
+	THREAD_BASIC_INFORMATION threadinfo;
+	ULONG retlen;
+	NTSTATUS status;
+	HANDLE th = NULL;
+	lasterror_t lasterrors;
+
+	get_lasterrors(&lasterrors);
+
+	th = OpenThread(THREAD_QUERY_INFORMATION, FALSE, tid);
+	if (th == NULL)
+		goto out;
+
+	status = pNtQueryInformationThread(th, ThreadBasicInformation, &threadinfo, sizeof(threadinfo), &retlen);
+	if (!NT_SUCCESS(status))
+		goto out;
+
+	ret = (DWORD)(ULONG_PTR)threadinfo.ClientId.UniqueProcess;
+
+out:
+	if (th)
+		CloseHandle(th);
+
+	set_lasterrors(&lasterrors);
+
+	return ret;
+}
+
 BOOLEAN is_suspended(DWORD pid, DWORD tid)
 {
 	ULONG length;

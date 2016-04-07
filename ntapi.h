@@ -743,6 +743,10 @@ typedef enum {
 	ProcessInfoDEPPolicy = 34
 } PROCESSINFOCLASS;
 
+typedef enum {
+	ThreadBasicInformation = 0,
+} THREAD_INFORMATION_CLASS;
+
 typedef struct _FILE_FS_VOLUME_INFORMATION {
     LARGE_INTEGER VolumeCreationTime;
     ULONG         VolumeSerialNumber;
