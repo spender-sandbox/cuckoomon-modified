@@ -359,6 +359,7 @@ static hook_t g_hooks[] = {
 	HOOK_NOTAIL(ntdll, NtRaiseHardError, 6),
     HOOK(kernel32, IsDebuggerPresent),
     HOOK(advapi32, LookupPrivilegeValueW),
+	HOOK(advapi32, GetCurrentHwProfileW),
     HOOK(ntdll, NtClose),
     HOOK(kernel32, WriteConsoleA),
     HOOK(kernel32, WriteConsoleW),
@@ -380,6 +381,7 @@ static hook_t g_hooks[] = {
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyA),
 	HOOK(setupapi, SetupDiGetDeviceRegistryPropertyW),
 	HOOK(setupapi, SetupDiBuildDriverInfoList),
+	HOOK(setupapi, IsUserAdmin),
 	HOOK(imgutil, DecodeImageEx),
 	HOOK(imgutil, DecodeImage),
 	HOOK(advapi32, LsaOpenPolicy),
@@ -484,6 +486,7 @@ static hook_t g_hooks[] = {
     //
 
 	HOOK(ws2_32, WSAStartup),
+	HOOK(ws2_32, gethostname),
     HOOK(ws2_32, gethostbyname),
     HOOK(ws2_32, socket),
     HOOK(ws2_32, connect),

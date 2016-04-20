@@ -1369,6 +1369,14 @@ extern HOOKDEF(BOOL, WINAPI, LookupPrivilegeValueW,
     __out     PLUID lpLuid
 );
 
+extern HOOKDEF(BOOL, WINAPI, GetCurrentHwProfileW,
+	_Out_ LPHW_PROFILE_INFO lpHwProfileInfo
+);
+
+extern HOOKDEF(BOOL, WINAPI, IsUserAdmin,
+	void
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtClose,
     __in    HANDLE Handle
 );
@@ -2038,6 +2046,11 @@ extern HOOKDEF(int, WINAPI, WSAStartup,
 
 extern HOOKDEF(struct hostent *, WSAAPI, gethostbyname,
     __in  const char *name
+);
+
+extern HOOKDEF(int, WSAAPI, gethostname,
+	_Out_ char *name,
+	_In_  int  namelen
 );
 
 extern HOOKDEF(SOCKET, WSAAPI, socket,

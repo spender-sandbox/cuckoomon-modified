@@ -500,3 +500,14 @@ HOOKDEF(BOOL, PASCAL, TransmitFile,
         "NumberOfBytesPerSend", nNumberOfBytesPerSend);
     return ret;
 }
+
+HOOKDEF(int, WSAAPI, gethostname,
+	_Out_ char *name,
+	_In_  int  namelen
+) {
+	int ret = Old_gethostname(name, namelen);
+	
+	LOQ_sockerr("network", "s", "HostName", ret != SOCKET_ERROR && namelen ? name : NULL);
+
+	return ret;
+}

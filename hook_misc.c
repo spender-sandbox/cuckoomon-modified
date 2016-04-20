@@ -906,3 +906,19 @@ HOOKDEF(HRESULT, WINAPI, CLSIDFromProgID,
 	LOQ_hresult("misc", "u", "ProgID", lpszProgID);
 	return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, GetCurrentHwProfileW,
+	_Out_ LPHW_PROFILE_INFO lpHwProfileInfo
+) {
+	BOOL ret = Old_GetCurrentHwProfileW(lpHwProfileInfo);
+	LOQ_bool("misc", "uu", "ProfileGUID", lpHwProfileInfo->szHwProfileGuid, "ProfileName", lpHwProfileInfo->szHwProfileName);
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, IsUserAdmin,
+	void
+) {
+	BOOL ret = Old_IsUserAdmin();
+	LOQ_bool("misc", "");
+	return ret;
+}
