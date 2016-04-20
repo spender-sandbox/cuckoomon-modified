@@ -291,8 +291,6 @@ HOOKDEF(HINTERNET, WINAPI, InternetOpenUrlA,
 ) {
     HINTERNET ret = Old_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders,
         dwHeadersLength, dwFlags, dwContext);
-    if(dwHeadersLength == (DWORD) -1)
-		dwHeadersLength = (DWORD)strlen(lpszHeaders);
     LOQ_nonnull("network", "psSh", "ConnectionHandle", hInternet, "URL", lpszUrl,
         "Headers", dwHeadersLength, lpszHeaders, "Flags", dwFlags);
     return ret;
