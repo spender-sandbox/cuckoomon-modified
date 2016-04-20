@@ -1850,6 +1850,11 @@ extern HOOKDEF(ULONG, WINAPI, GetAdaptersAddresses,
 	_Inout_ PULONG                SizePointer
 );
 
+extern HOOKDEF(DWORD, WINAPI, GetAdaptersInfo,
+	_Out_   PVOID pAdapterInfo, // PIP_ADAPTER_INFO
+	_Inout_ PULONG           pOutBufLen
+);
+
 extern HOOKDEF(ULONG, WINAPI, NetGetJoinInformation,
 	_In_  LPCWSTR               lpServer,
 	_Out_ LPWSTR                *lpNameBuffer,

@@ -778,6 +778,15 @@ HOOKDEF(ULONG, WINAPI, GetAdaptersAddresses,
 	return ret;
 }
 
+HOOKDEF(DWORD, WINAPI, GetAdaptersInfo,
+	_Out_   PVOID pAdapterInfo, // PIP_ADAPTER_INFO
+	_Inout_ PULONG           pOutBufLen
+) {
+	DWORD ret = Old_GetAdaptersInfo(pAdapterInfo, pOutBufLen);
+	LOQ_zero("network", "");
+	return ret;
+}
+
 HOOKDEF(ULONG, WINAPI, NetGetJoinInformation,
 	_In_  LPCWSTR               lpServer,
 	_Out_ LPWSTR                *lpNameBuffer,
