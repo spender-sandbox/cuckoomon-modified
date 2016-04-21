@@ -390,6 +390,8 @@ static hook_t g_hooks[] = {
 	HOOK(rasapi32, RasConnectionNotificationW),
 	HOOK(kernel32, SystemTimeToTzSpecificLocalTime),
 	HOOK(ole32, CLSIDFromProgID),
+	HOOK(kernel32, GlobalMemoryStatus),
+	HOOK(kernel32, GlobalMemoryStatusEx),
 
 	//
     // Network Hooks

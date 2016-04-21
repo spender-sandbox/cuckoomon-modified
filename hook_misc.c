@@ -922,3 +922,23 @@ HOOKDEF(BOOL, WINAPI, IsUserAdmin,
 	LOQ_bool("misc", "");
 	return ret;
 }
+
+HOOKDEF(void, WINAPI, GlobalMemoryStatus,
+	_Out_ LPMEMORYSTATUS lpBuffer
+) {
+	BOOL ret = TRUE;
+	Old_GlobalMemoryStatus(lpBuffer);
+	if (!g_config.no_stealth && lpBuffer->dwTotalPhys < 0x80000000)
+		lpBuffer->dwTotalPhys = 0x80000000;
+	LOQ_void("misc", "ii", "MemoryLoad", lpBuffer->dwMemoryLoad, "TotalPhysicalMB", lpBuffer->dwTotalPhys / (1024 * 1024));
+}
+
+HOOKDEF(BOOL, WINAPI, GlobalMemoryStatusEx,
+	_Out_ LPMEMORYSTATUSEX lpBuffer
+) {
+	BOOL ret = Old_GlobalMemoryStatusEx(lpBuffer);
+	if (ret && !g_config.no_stealth && lpBuffer->ullTotalPhys < 0x80000000)
+		lpBuffer->ullTotalPhys = 0x80000000;
+	LOQ_void("misc", "ii", "MemoryLoad", lpBuffer->dwMemoryLoad, "TotalPhysicalMB", lpBuffer->ullTotalPhys / (1024 * 1024));
+	return ret;
+}

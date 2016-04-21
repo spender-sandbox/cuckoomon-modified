@@ -1502,6 +1502,14 @@ extern HOOKDEF(HRESULT, WINAPI, CLSIDFromProgID,
 	_Out_ LPCLSID lpclsid
 );
 
+extern HOOKDEF(void, WINAPI, GlobalMemoryStatus,
+	_Out_ LPMEMORYSTATUS lpBuffer
+);
+
+extern HOOKDEF(BOOL, WINAPI, GlobalMemoryStatusEx,
+	_Out_ LPMEMORYSTATUSEX lpBuffer
+);
+
 //
 // Network Hooks
 //
