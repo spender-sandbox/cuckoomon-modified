@@ -271,7 +271,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateFile,
         "ShareAccess", ShareAccess, "FileAttributes", FileAttributes, "ExistedBefore", file_existed ? "yes" : "no", "StackPivoted", is_stack_pivoted() ? "yes" : "no");
     if(NT_SUCCESS(ret)) {
 		add_file_to_log_tracking(*FileHandle);
-		if (DesiredAccess & DUMP_FILE_MASK)
+		if ((DesiredAccess & DUMP_FILE_MASK) && !(FileAttributes & FILE_ATTRIBUTE_TEMPORARY))
 			handle_new_file(*FileHandle, ObjectAttributes);
     }
     return ret;

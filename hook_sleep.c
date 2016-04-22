@@ -53,7 +53,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 	__in    BOOLEAN Alertable,
 	__in_opt    PLARGE_INTEGER Timeout
 ) {
-	NTSTATUS ret = STATUS_TIMEOUT;
+	NTSTATUS ret = 0;
 	LONGLONG interval;
 	LARGE_INTEGER newint;
 	LARGE_INTEGER li;
@@ -93,23 +93,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 	li.HighPart = ft.dwHighDateTime;
 	li.LowPart = ft.dwLowDateTime;
 
-	// check if we're still within the hardcoded limit
-	if (sleep_skip_active && (li.QuadPart < time_start.QuadPart + MAX_SLEEP_SKIP_DIFF * 10000)) {
-		time_skipped.QuadPart += interval;
-
-		if (num_wait_skipped < 20) {
-			// notify how much we've skipped
-			LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", milli, "Status", "Skipped");
-			num_wait_skipped++;
-		}
-		else if (num_wait_skipped == 20) {
-			LOQ_ntstatus("system", "s", "Status", "Skipped log limit reached");
-			num_wait_skipped++;
-		}
-		goto skipcall;
-	}
 	/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
-	else if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
+	if (milli >= 30000 && milli <= 3600000 && g_config.force_sleepskip != 0) {
 		newint.QuadPart = -(10000 * 10000);
 		time_skipped.QuadPart += interval - (10000 * 10000);
 		LOQ_ntstatus("system", "pis", "Handle", Handle, "Milliseconds", milli, "Status", "Skipped");
@@ -146,9 +131,6 @@ HOOKDEF(NTSTATUS, WINAPI, NtWaitForSingleObject,
 docall:
 	set_lasterrors(&lasterror);
 	return Old_NtWaitForSingleObject(Handle, Alertable, &newint);
-skipcall:
-	set_lasterrors(&lasterror);
-	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtDelayExecution,
