@@ -257,7 +257,7 @@ HOOKDEF(BOOL, WINAPI, CryptExportKey,
 ) {
 	BOOL ret = Old_CryptExportKey(hKey, hExpKey, dwBlobType, dwFlags, pbData, pdwDataLen);
 	if (pbData && pdwDataLen)
-		LOQ_bool("crypto", "b", "Buffer", *pdwDataLen, pbData);
+		LOQ_bool("crypto", "bihi", "Buffer", *pdwDataLen, pbData, "BlobType", dwBlobType, "Flags", dwFlags, "Length", *pdwDataLen);
 	return ret;
 }
 
