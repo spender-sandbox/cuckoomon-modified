@@ -236,6 +236,17 @@ void perform_device_fakery(PVOID OutputBuffer, ULONG OutputBufferLength, ULONG I
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "VMware", "DELL__");
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "Virtual", "C300_BD");
 	}
+
+	/* WMI fakery */
+	if (IoControlCode == 0x00224000) {
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "Xen", "VIA");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "QEMU", "DELL");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "VBOX", "DELL");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "VMware", "DELL  ");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "Red Hat", "Lenovo ");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "Virtual", "Compute");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "MS_VM_CERT/SHA1", "Dell System    ");
+	}
 }
 
 void perform_create_time_fakery(FILETIME *createtime)
