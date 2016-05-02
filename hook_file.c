@@ -482,7 +482,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtDeviceIoControlFile,
         "OutputBuffer", length, OutputBuffer);
 
 	if (!g_config.no_stealth && NT_SUCCESS(ret) && OutputBuffer)
-		perform_device_fakery(OutputBuffer, OutputBufferLength, IoControlCode);
+		perform_device_fakery(OutputBuffer, length, IoControlCode);
 
 	return ret;
 }

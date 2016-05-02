@@ -242,9 +242,11 @@ void perform_device_fakery(PVOID OutputBuffer, ULONG OutputBufferLength, ULONG I
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "Xen", "VIA");
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "QEMU", "DELL");
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "VBOX", "DELL");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "vbox", "dell");
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "VMware", "DELL  ");
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "Red Hat", "Lenovo ");
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "Virtual", "Compute");
+		replace_string_in_buf(OutputBuffer, OutputBufferLength, "innotek GmbH", "ASUS Systems");
 		replace_string_in_buf(OutputBuffer, OutputBufferLength, "MS_VM_CERT/SHA1", "Dell System    ");
 	}
 }

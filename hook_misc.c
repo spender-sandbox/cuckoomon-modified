@@ -155,16 +155,18 @@ HOOKDEF(BOOL, WINAPI, DeviceIoControl,
     __out_opt    LPDWORD lpBytesReturned,
     __inout_opt  LPOVERLAPPED lpOverlapped
 ) {
-	BOOL ret = Old_DeviceIoControl(hDevice, dwIoControlCode, lpInBuffer,
+	BOOL ret;
+	ENSURE_DWORD(lpBytesReturned);
+	
+	ret = Old_DeviceIoControl(hDevice, dwIoControlCode, lpInBuffer,
 		nInBufferSize, lpOutBuffer, nOutBufferSize, lpBytesReturned,
 		lpOverlapped);
     LOQ_bool("device", "phbb", "DeviceHandle", hDevice, "IoControlCode", dwIoControlCode,
         "InBuffer", nInBufferSize, lpInBuffer,
-        "OutBuffer", lpBytesReturned ? *lpBytesReturned : nOutBufferSize,
-            lpOutBuffer);
+        "OutBuffer", *lpBytesReturned, lpOutBuffer);
 
 	if (!g_config.no_stealth && ret && lpOutBuffer)
-		perform_device_fakery(lpOutBuffer, nOutBufferSize, dwIoControlCode);
+		perform_device_fakery(lpOutBuffer, *lpBytesReturned, dwIoControlCode);
 
 	return ret;
 }
