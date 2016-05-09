@@ -944,3 +944,33 @@ HOOKDEF(BOOL, WINAPI, GlobalMemoryStatusEx,
 	LOQ_void("misc", "ii", "MemoryLoad", lpBuffer->dwMemoryLoad, "TotalPhysicalMB", lpBuffer->ullTotalPhys / (1024 * 1024));
 	return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, SystemParametersInfoA,
+	_In_    UINT  uiAction,
+	_In_    UINT  uiParam,
+	_Inout_ PVOID pvParam,
+	_In_    UINT  fWinIni
+) {
+	BOOL ret = Old_SystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
+	if (ret && (uiAction == SPI_SETDESKWALLPAPER || uiAction == SPI_GETDESKWALLPAPER))
+		LOQ_bool("misc", "hhs", "Action", uiAction, "uiParam", uiParam, "pvParam", pvParam);
+	else
+		LOQ_bool("misc", "hh", "Action", uiAction, "uiParam", uiParam);
+
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, SystemParametersInfoW,
+	_In_    UINT  uiAction,
+	_In_    UINT  uiParam,
+	_Inout_ PVOID pvParam,
+	_In_    UINT  fWinIni
+) {
+	BOOL ret = Old_SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
+	if (ret && (uiAction == SPI_SETDESKWALLPAPER || uiAction == SPI_GETDESKWALLPAPER))
+		LOQ_bool("misc", "hhu", "Action", uiAction, "uiParam", uiParam, "pvParam", pvParam);
+	else
+		LOQ_bool("misc", "hh", "Action", uiAction, "uiParam", uiParam);
+
+	return ret;
+}

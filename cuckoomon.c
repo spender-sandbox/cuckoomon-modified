@@ -392,6 +392,8 @@ static hook_t g_hooks[] = {
 	HOOK(ole32, CLSIDFromProgID),
 	HOOK(kernel32, GlobalMemoryStatus),
 	HOOK(kernel32, GlobalMemoryStatusEx),
+	HOOK(user32, SystemParametersInfoA),
+	HOOK(user32, SystemParametersInfoW),
 
 	//
     // Network Hooks

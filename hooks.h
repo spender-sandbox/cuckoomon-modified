@@ -1510,6 +1510,20 @@ extern HOOKDEF(BOOL, WINAPI, GlobalMemoryStatusEx,
 	_Out_ LPMEMORYSTATUSEX lpBuffer
 );
 
+extern HOOKDEF(BOOL, WINAPI, SystemParametersInfoA,
+	_In_    UINT  uiAction,
+	_In_    UINT  uiParam,
+	_Inout_ PVOID pvParam,
+	_In_    UINT  fWinIni
+);
+
+extern HOOKDEF(BOOL, WINAPI, SystemParametersInfoW,
+	_In_    UINT  uiAction,
+	_In_    UINT  uiParam,
+	_Inout_ PVOID pvParam,
+	_In_    UINT  fWinIni
+);
+
 //
 // Network Hooks
 //
