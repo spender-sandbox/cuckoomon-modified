@@ -303,6 +303,8 @@ static hook_t g_hooks[] = {
     HOOK(ntdll, NtMapViewOfSection),
 	HOOK(kernel32, WaitForDebugEvent),
 	HOOK(ntdll, DbgUiWaitStateChange),
+	HOOK(advapi32, CreateProcessWithLogonW),
+	HOOK(advapi32, CreateProcessWithTokenW),
 
     // all variants of ShellExecute end up in ShellExecuteExW
     HOOK(shell32, ShellExecuteExW),

@@ -146,7 +146,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateUserProcess,
     ret = Old_NtCreateUserProcess(ProcessHandle, ThreadHandle,
         ProcessDesiredAccess, ThreadDesiredAccess,
         ProcessObjectAttributes, ThreadObjectAttributes,
-        ProcessFlags, ThreadFlags, ProcessParameters,
+        ProcessFlags, ThreadFlags | 1, ProcessParameters,
         CreateInfo, AttributeList);
     LOQ_ntstatus("process", "PPhhOOoo", "ProcessHandle", ProcessHandle,
         "ThreadHandle", ThreadHandle,
@@ -160,6 +160,8 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateUserProcess,
 		DWORD pid = pid_from_process_handle(*ProcessHandle);
 		DWORD tid = tid_from_thread_handle(*ThreadHandle);
 		pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
+		if (!(ThreadFlags & 1))
+			ResumeThread(*ThreadHandle);
         disable_sleep_skip();
     }
     return ret;
@@ -190,6 +192,76 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserProcess,
         disable_sleep_skip();
     }
     return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, CreateProcessWithLogonW,
+	_In_        LPCWSTR               lpUsername,
+	_In_opt_    LPCWSTR               lpDomain,
+	_In_        LPCWSTR               lpPassword,
+	_In_        DWORD                 dwLogonFlags,
+	_In_opt_    LPCWSTR               lpApplicationName,
+	_Inout_opt_ LPWSTR                lpCommandLine,
+	_In_        DWORD                 dwCreationFlags,
+	_In_opt_    LPVOID                lpEnvironment,
+	_In_opt_    LPCWSTR               lpCurrentDirectory,
+	_In_        LPSTARTUPINFOW        lpStartupInfo,
+	_Out_       LPPROCESS_INFORMATION lpProcessInfo
+) {
+	BOOL ret;
+	LPWSTR origcommandline = NULL;
+	
+	if (lpCommandLine)
+		origcommandline = wcsdup(lpCommandLine);
+
+	ret = Old_CreateProcessWithLogonW(lpUsername, lpDomain, lpPassword, dwLogonFlags, lpApplicationName, lpCommandLine, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInfo);
+
+	LOQ_bool("process", "uuuhuuhiipp", "Username", lpUsername, "Domain", lpDomain, "Password", lpPassword, "LogonFlags", dwLogonFlags, "ApplicationName", lpApplicationName, "CommandLine", origcommandline, "CreationFlags", dwCreationFlags,
+		"ProcessId", lpProcessInfo->dwProcessId, "ThreadId", lpProcessInfo->dwThreadId, "ProcessHandle", lpProcessInfo->hProcess, "ThreadHandle", lpProcessInfo->hThread);
+
+	if (origcommandline)
+		free(origcommandline);
+
+	if (ret) {
+		pipe("PROCESS:%d:%d,%d", is_suspended(lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId), lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId);
+		if (!(dwCreationFlags & CREATE_SUSPENDED))
+			ResumeThread(lpProcessInfo->hThread);
+		disable_sleep_skip();
+	}
+	return ret;
+}
+
+HOOKDEF(BOOL, WINAPI, CreateProcessWithTokenW,
+	_In_        HANDLE                hToken,
+	_In_        DWORD                 dwLogonFlags,
+	_In_opt_    LPCWSTR               lpApplicationName,
+	_Inout_opt_ LPWSTR                lpCommandLine,
+	_In_        DWORD                 dwCreationFlags,
+	_In_opt_    LPVOID                lpEnvironment,
+	_In_opt_    LPCWSTR               lpCurrentDirectory,
+	_In_        LPSTARTUPINFOW        lpStartupInfo,
+	_Out_       LPPROCESS_INFORMATION lpProcessInfo
+) {
+	BOOL ret;
+	LPWSTR origcommandline = NULL;
+
+	if (lpCommandLine)
+		origcommandline = wcsdup(lpCommandLine);
+
+	ret = Old_CreateProcessWithTokenW(hToken, dwLogonFlags, lpApplicationName, lpCommandLine, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInfo);
+
+	LOQ_bool("process", "huuhiipp", "Username", "LogonFlags", dwLogonFlags, "ApplicationName", lpApplicationName, "CommandLine", origcommandline, "CreationFlags", dwCreationFlags,
+		"ProcessId", lpProcessInfo->dwProcessId, "ThreadId", lpProcessInfo->dwThreadId, "ProcessHandle", lpProcessInfo->hProcess, "ThreadHandle", lpProcessInfo->hThread);
+
+	if (origcommandline)
+		free(origcommandline);
+
+	if (ret) {
+		pipe("PROCESS:%d:%d,%d", is_suspended(lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId), lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId);
+		if (!(dwCreationFlags & CREATE_SUSPENDED))
+			ResumeThread(lpProcessInfo->hThread);
+		disable_sleep_skip();
+	}
+	return ret;
 }
 
 HOOKDEF(NTSTATUS, WINAPI, NtOpenProcess,

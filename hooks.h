@@ -1069,6 +1069,32 @@ extern HOOKDEF(int, CDECL, system,
     const char *command
 );
 
+extern HOOKDEF(BOOL, WINAPI, CreateProcessWithLogonW,
+	_In_        LPCWSTR               lpUsername,
+	_In_opt_    LPCWSTR               lpDomain,
+	_In_        LPCWSTR               lpPassword,
+	_In_        DWORD                 dwLogonFlags,
+	_In_opt_    LPCWSTR               lpApplicationName,
+	_Inout_opt_ LPWSTR                lpCommandLine,
+	_In_        DWORD                 dwCreationFlags,
+	_In_opt_    LPVOID                lpEnvironment,
+	_In_opt_    LPCWSTR               lpCurrentDirectory,
+	_In_        LPSTARTUPINFOW        lpStartupInfo,
+	_Out_       LPPROCESS_INFORMATION lpProcessInfo
+);
+
+extern HOOKDEF(BOOL, WINAPI, CreateProcessWithTokenW,
+	_In_        HANDLE                hToken,
+	_In_        DWORD                 dwLogonFlags,
+	_In_opt_    LPCWSTR               lpApplicationName,
+	_Inout_opt_ LPWSTR                lpCommandLine,
+	_In_        DWORD                 dwCreationFlags,
+	_In_opt_    LPVOID                lpEnvironment,
+	_In_opt_    LPCWSTR               lpCurrentDirectory,
+	_In_        LPSTARTUPINFOW        lpStartupInfo,
+	_Out_       LPPROCESS_INFORMATION lpProcessInfo
+);
+
 //
 // Thread Hooks
 //
