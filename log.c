@@ -1032,12 +1032,13 @@ void log_environ()
 		sysvolguid = strdup("");
 
 	
-	loq(LOG_ID_ENVIRON, "__notification__", "__environ__", 1, 0, "ssisssssiisssph",
+	loq(LOG_ID_ENVIRON, "__notification__", "__environ__", 1, 0, "ssissssssiisssph",
 		"UserName", username,
 		"ComputerName", computername,
 		"InstallDate", installdate,
 		"WindowsPath", winpath,
 		"TempPath", tmppath,
+		"CommandLine", GetCommandLineA(),
 		"RegisteredOwner", registeredowner,
 		"RegisteredOrganization", registeredorg,
 		"ProductName", productname,
