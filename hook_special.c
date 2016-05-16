@@ -140,8 +140,13 @@ HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
 	memcpy(hook_info(), &saved_hookinfo, sizeof(saved_hookinfo));
 
     if(ret != FALSE) {
-		pipe("PROCESS:%d:%d,%d", (dwCreationFlags & CREATE_SUSPENDED) ? 1 : 0, lpProcessInformation->dwProcessId,
-            lpProcessInformation->dwThreadId);
+		BOOL dont_monitor = FALSE;
+		if (g_config.file_of_interest && g_config.suspend_logging && lpApplicationName && !wcsicmp(lpApplicationName, L"c:\\windows\\splwow64.exe"))
+			dont_monitor = TRUE;
+
+		if (!dont_monitor)
+			pipe("PROCESS:%d:%d,%d", (dwCreationFlags & CREATE_SUSPENDED) ? 1 : 0, lpProcessInformation->dwProcessId,
+			    lpProcessInformation->dwThreadId);
 
         // if the CREATE_SUSPENDED flag was not set, then we have to resume
         // the main thread ourself
