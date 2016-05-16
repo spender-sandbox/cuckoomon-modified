@@ -756,15 +756,19 @@ HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyA,
 	_In_      DWORD            PropertyBufferSize,
 	_Out_opt_ PDWORD           RequiredSize
 ) {
-	BOOL ret = Old_SetupDiGetDeviceRegistryPropertyA(DeviceInfoSet, DeviceInfoData, Property, PropertyRegDataType, PropertyBuffer, PropertyBufferSize, RequiredSize);
+	BOOL ret;
+	ENSURE_DWORD(PropertyRegDataType);
+	ENSURE_DWORD(RequiredSize);
+
+	ret = Old_SetupDiGetDeviceRegistryPropertyA(DeviceInfoSet, DeviceInfoData, Property, PropertyRegDataType, PropertyBuffer, PropertyBufferSize, RequiredSize);
 
 	if (PropertyBuffer)
-		LOQ_bool("misc", "ir", "Property", Property, "PropertyBuffer", PropertyRegDataType, PropertyBufferSize, PropertyBuffer);
+		LOQ_bool("misc", "ir", "Property", Property, "PropertyBuffer", *PropertyRegDataType, PropertyBufferSize, PropertyBuffer);
 
 	if (!g_config.no_stealth && ret && PropertyBuffer) {
-		replace_ci_string_in_buf(PropertyBuffer, PropertyBufferSize, "VBOX", "DELL_");
-		replace_ci_string_in_buf(PropertyBuffer, PropertyBufferSize, "QEMU", "DELL");
-		replace_ci_string_in_buf(PropertyBuffer, PropertyBufferSize, "VMWARE", "DELL__");
+		replace_ci_string_in_buf(PropertyBuffer, *RequiredSize, "VBOX", "DELL_");
+		replace_ci_string_in_buf(PropertyBuffer, *RequiredSize, "QEMU", "DELL");
+		replace_ci_string_in_buf(PropertyBuffer, *RequiredSize, "VMWARE", "DELL__");
 	}
 
 	return ret;
@@ -782,15 +786,17 @@ HOOKDEF(BOOL, WINAPI, SetupDiGetDeviceRegistryPropertyW,
 ) {
 	BOOL ret;
 	ENSURE_DWORD(PropertyRegDataType);
+	ENSURE_DWORD(RequiredSize);
+
 	ret = Old_SetupDiGetDeviceRegistryPropertyW(DeviceInfoSet, DeviceInfoData, Property, PropertyRegDataType, PropertyBuffer, PropertyBufferSize, RequiredSize);
 
 	if (PropertyBuffer)
-		LOQ_bool("misc", "iR", "Property", Property, "PropertyBuffer", PropertyRegDataType, PropertyBufferSize, PropertyBuffer);
+		LOQ_bool("misc", "iR", "Property", Property, "PropertyBuffer", *PropertyRegDataType, PropertyBufferSize, PropertyBuffer);
 
 	if (!g_config.no_stealth && ret && PropertyBuffer) {
-		replace_ci_wstring_in_buf((PWCHAR)PropertyBuffer, PropertyBufferSize, L"VBOX", L"DELL_");
-		replace_ci_wstring_in_buf((PWCHAR)PropertyBuffer, PropertyBufferSize, L"QEMU", L"DELL");
-		replace_ci_wstring_in_buf((PWCHAR)PropertyBuffer, PropertyBufferSize, L"VMWARE", L"DELL__");
+		replace_ci_wstring_in_buf((PWCHAR)PropertyBuffer, *RequiredSize / sizeof(WCHAR), L"VBOX", L"DELL_");
+		replace_ci_wstring_in_buf((PWCHAR)PropertyBuffer, *RequiredSize / sizeof(WCHAR), L"QEMU", L"DELL");
+		replace_ci_wstring_in_buf((PWCHAR)PropertyBuffer, *RequiredSize / sizeof(WCHAR), L"VMWARE", L"DELL__");
 	}
 
 	return ret;
