@@ -542,7 +542,7 @@ HOOKDEF(BOOL, WINAPI, HttpQueryInfoA,
 	_Inout_ LPDWORD   lpdwIndex
 ) {
 	BOOL ret = Old_HttpQueryInfoA(hRequest, dwInfoLevel, lpvBuffer, lpdwBufferLength, lpdwIndex);
-	if (dwInfoLevel == HTTP_QUERY_DATE)
+	if (dwInfoLevel == HTTP_QUERY_DATE || dwInfoLevel == HTTP_QUERY_EXPIRES || dwInfoLevel == HTTP_QUERY_REQUEST_METHOD || dwInfoLevel == HTTP_QUERY_CONTENT_TYPE)
 		LOQ_bool("network", "phS", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", ret ? *lpdwBufferLength : 0, lpvBuffer);
 	else
 		LOQ_bool("network", "phB", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", lpdwBufferLength, lpvBuffer);
@@ -557,7 +557,7 @@ HOOKDEF(BOOL, WINAPI, HttpQueryInfoW,
 	_Inout_ LPDWORD   lpdwIndex
 ) {
 	BOOL ret = Old_HttpQueryInfoW(hRequest, dwInfoLevel, lpvBuffer, lpdwBufferLength, lpdwIndex);
-	if (dwInfoLevel == HTTP_QUERY_DATE)
+	if (dwInfoLevel == HTTP_QUERY_DATE || dwInfoLevel == HTTP_QUERY_EXPIRES || dwInfoLevel == HTTP_QUERY_REQUEST_METHOD || dwInfoLevel == HTTP_QUERY_CONTENT_TYPE)
 		LOQ_bool("network", "phU", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", ret ? (*lpdwBufferLength / sizeof(WCHAR)) : 0, lpvBuffer);
 	else
 		LOQ_bool("network", "phB", "RequestHandle", hRequest, "InfoLevel", dwInfoLevel, "Buffer", lpdwBufferLength, lpvBuffer);
