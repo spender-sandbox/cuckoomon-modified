@@ -217,17 +217,17 @@ static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 static void __handle_duplicate(lookup_t *d, HANDLE old_handle, HANDLE new_handle)
 {
 	unsigned int size;
-	entry_t *r;
+	void *rdata;
 	
 	lasterror_t lasterror;
 
 	get_lasterrors(&lasterror);
 
-	r = lookup_get(d, (ULONG_PTR)old_handle, &size);
-	if (r) {
+	rdata = lookup_get(d, (ULONG_PTR)old_handle, &size);
+	if (rdata) {
 		void *data = lookup_add(d, (ULONG_PTR)new_handle, size);
 		if (data)
-			memcpy(data, r->data, size);
+			memcpy(data, rdata, size);
 	}
 
 	set_lasterrors(&lasterror);
