@@ -225,10 +225,9 @@ static void __handle_duplicate(lookup_t *d, HANDLE old_handle, HANDLE new_handle
 
 	r = lookup_get(d, (ULONG_PTR)old_handle, &size);
 	if (r) {
-		entry_t *n = lookup_add(d, (ULONG_PTR)new_handle, size);
-		if (n) {
-			memcpy(n->data, r->data, size);
-		}
+		void *data = lookup_add(d, (ULONG_PTR)new_handle, size);
+		if (data)
+			memcpy(data, r->data, size);
 	}
 
 	set_lasterrors(&lasterror);
