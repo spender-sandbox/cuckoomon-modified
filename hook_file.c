@@ -212,6 +212,34 @@ static void handle_new_file(HANDLE file_handle, const OBJECT_ATTRIBUTES *obj)
 	set_lasterrors(&lasterror);
 }
 
+// XXX: if we ever track entries which contain pointers themselves that use runtime allocation
+// this needs to be rewritten, sufficient for now for file_log_t and file_record_t
+static void __handle_duplicate(lookup_t *d, HANDLE old_handle, HANDLE new_handle)
+{
+	unsigned int size;
+	entry_t *r;
+	
+	lasterror_t lasterror;
+
+	get_lasterrors(&lasterror);
+
+	r = lookup_get(d, (ULONG_PTR)old_handle, &size);
+	if (r) {
+		entry_t *n = lookup_add(d, (ULONG_PTR)new_handle, size);
+		if (n) {
+			memcpy(n->data, r->data, size);
+		}
+	}
+
+	set_lasterrors(&lasterror);
+}
+
+void handle_duplicate(HANDLE old_handle, HANDLE new_handle)
+{
+	__handle_duplicate(&g_file_logs, old_handle, new_handle);
+	__handle_duplicate(&g_files, old_handle, new_handle);
+}
+
 void file_close(HANDLE file_handle)
 {
 	lasterror_t lasterror;

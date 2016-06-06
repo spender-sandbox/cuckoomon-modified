@@ -15,7 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include "lookup.h"
 
 void file_init();
 void file_close(HANDLE file_handle);
+void handle_duplicate(HANDLE old_handle, HANDLE new_handle);
 void remove_file_from_log_tracking(HANDLE fhandle);

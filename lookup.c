@@ -27,13 +27,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ENTER() EnterCriticalSection(&d->cs)
 #define LEAVE() LeaveCriticalSection(&d->cs)
 
-typedef struct _entry_t {
-    struct _entry_t *next;
-    ULONG_PTR id;
-    unsigned int size;
-    unsigned char data[0];
-} entry_t;
-
 void lookup_init(lookup_t *d)
 {
     d->root = NULL;

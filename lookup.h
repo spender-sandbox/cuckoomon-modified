@@ -1,3 +1,4 @@
+#pragma once
 /*
 Cuckoo Sandbox - Automated Malware Analysis
 Copyright (C) 2010-2014 Cuckoo Sandbox Developers
@@ -22,6 +23,13 @@ typedef struct _lookup_internal_t {
     CRITICAL_SECTION cs;
     void *root;
 } lookup_t;
+
+typedef struct _entry_t {
+	struct _entry_t *next;
+	ULONG_PTR id;
+	unsigned int size;
+	unsigned char data[0];
+} entry_t;
 
 void lookup_init(lookup_t *d);
 void *lookup_add(lookup_t *d, ULONG_PTR id, unsigned int size);

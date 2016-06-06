@@ -333,9 +333,20 @@ HOOKDEF(NTSTATUS, WINAPI, NtDuplicateObject,
 	NTSTATUS ret = Old_NtDuplicateObject(SourceProcessHandle, SourceHandle, TargetProcessHandle,
 		TargetHandle, DesiredAccess, HandleAttributes, Options);
 	if (TargetHandle)
-		LOQ_ntstatus("system", "pP", "SourceHandle", SourceHandle, "TargetHandle", TargetHandle);
+		LOQ_ntstatus("system", "pppPh", "SourceProcessHandle", SourceProcessHandle, "SourceHandle", SourceHandle, "TargetProcessHandle", TargetProcessHandle, "TargetHandle", TargetHandle, "Options", Options);
 	else
-		LOQ_ntstatus("system", "p", "SourceHandle", SourceHandle);
+		LOQ_ntstatus("system", "pph", "SourceProcessHandle", SourceProcessHandle, "SourceHandle", SourceHandle, "Options", Options);
+
+	if (NT_SUCCESS(ret)) {
+		if (TargetProcessHandle == NtCurrentProcess() && TargetHandle) {
+			handle_duplicate(SourceHandle, *TargetHandle);
+			handle_duplicate(SourceHandle, *TargetHandle);
+		}
+		if (SourceProcessHandle == NtCurrentProcess() && (Options & DUPLICATE_CLOSE_SOURCE)) {
+			remove_file_from_log_tracking(SourceHandle);
+			file_close(SourceHandle);
+		}
+	}
 	return ret;
 }
 
