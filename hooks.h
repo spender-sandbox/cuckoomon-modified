@@ -1550,9 +1550,54 @@ extern HOOKDEF(BOOL, WINAPI, SystemParametersInfoW,
 	_In_    UINT  fWinIni
 );
 
+extern HOOKDEF(HRESULT, WINAPI, PStoreCreateInstance,
+	_Out_ PVOID **ppProvider,
+	_In_  VOID  *pProviderID,
+	_In_  VOID  *pReserved,
+	_In_  DWORD dwFlags
+);
+
 //
 // Network Hooks
 //
+extern HOOKDEF(DWORD, WINAPI, InternetConfirmZoneCrossingA,
+	_In_ HWND hWnd,
+	_In_ LPTSTR szUrlPrev,
+	_In_ LPTSTR szUrlNew,
+	_In_ BOOL bPost
+);
+
+extern HOOKDEF(DWORD, WINAPI, InternetConfirmZoneCrossingW,
+	_In_ HWND hWnd,
+	_In_ LPTSTR szUrlPrev,
+	_In_ LPTSTR szUrlNew,
+	_In_ BOOL bPost
+);
+
+extern HOOKDEF(SECURITY_STATUS, WINAPI, SslEncryptPacket,
+	_In_    NCRYPT_PROV_HANDLE hSslProvider,
+	_Inout_ NCRYPT_KEY_HANDLE hKey,
+	_In_    PBYTE pbInput,
+	_In_    DWORD cbInput,
+	_Out_   PBYTE pbOutput,
+	_In_    DWORD cbOutput,
+	_Out_   DWORD *pcbResult,
+	_In_    ULONGLONG SequenceNumber,
+	_In_    DWORD dcContentType,
+	_In_    DWORD dwFlags
+);
+
+extern HOOKDEF(SECURITY_STATUS, WINAPI, SslDecryptPacket,
+	_In_    NCRYPT_PROV_HANDLE hSslProvider,
+	_Inout_ NCRYPT_KEY_HANDLE hKey,
+	_In_    PBYTE pbInput,
+	_In_    DWORD cbInput,
+	_Out_   PBYTE pbOutput,
+	_In_    DWORD cbOutput,
+	_Out_   DWORD *pcbResult,
+	_In_    ULONGLONG SequenceNumber,
+	_In_    DWORD dwFlags
+);
 
 extern HOOKDEF(BOOL, WINAPI, WinHttpSendRequest,
 	_In_      HINTERNET hRequest,

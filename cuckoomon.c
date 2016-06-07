@@ -396,11 +396,12 @@ static hook_t g_hooks[] = {
 	HOOK(kernel32, GlobalMemoryStatusEx),
 	HOOK(user32, SystemParametersInfoA),
 	HOOK(user32, SystemParametersInfoW),
+	HOOK(pstorec, PStoreCreateInstance),
 
 	//
     // Network Hooks
     //
-		
+
 	HOOK(netapi32, NetUserGetInfo),
 	HOOK(netapi32, NetGetJoinInformation),
 	HOOK(netapi32, NetUserGetLocalGroups),
@@ -431,6 +432,8 @@ static hook_t g_hooks[] = {
 	HOOK(wininet, InternetCrackUrlA),
 	HOOK(wininet, InternetCrackUrlW),
 	HOOK(wininet, InternetSetOptionA),
+	HOOK(wininet, InternetConfirmZoneCrossingA),
+	HOOK(wininet, InternetConfirmZoneCrossingW),
 
 	HOOK(winhttp, WinHttpOpen),
 	HOOK(winhttp, WinHttpGetIEProxyConfigForCurrentUser),
@@ -451,6 +454,8 @@ static hook_t g_hooks[] = {
 
 	HOOK(mpr, WNetUseConnectionW),
 	HOOK(cryptnet, CryptRetrieveObjectByUrlW),
+	HOOK(ncrypt, SslEncryptPacket),
+	HOOK(ncrypt, SslDecryptPacket),
 	HOOK(iphlpapi, GetAdaptersAddresses),
 	HOOK(iphlpapi, GetAdaptersInfo),
 	HOOK(urlmon, CoInternetSetFeatureEnabled),
