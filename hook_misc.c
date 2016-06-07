@@ -991,3 +991,14 @@ HOOKDEF(BOOL, WINAPI, SystemParametersInfoW,
 
 	return ret;
 }
+
+HOOKDEF(HRESULT, WINAPI, PStoreCreateInstance,
+	_Out_ PVOID **ppProvider,
+	_In_  VOID *pProviderID,
+	_In_  VOID *pReserved,
+	_In_  DWORD dwFlags
+) {
+	HRESULT ret = Old_PStoreCreateInstance(ppProvider, pProviderID, pReserved, dwFlags);
+	LOQ_hresult("misc", "");
+	return ret;
+}

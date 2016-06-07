@@ -28,6 +28,74 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 static int did_initial_request;
 
+HOOKDEF(DWORD, WINAPI, InternetConfirmZoneCrossingA,
+	_In_ HWND hWnd,
+	_In_ LPTSTR szUrlPrev,
+	_In_ LPTSTR szUrlNew,
+	_In_ BOOL bPost
+) {
+	DWORD ret = Old_InternetConfirmZoneCrossingA(hWnd, szUrlPrev, szUrlNew, bPost);
+	LOQ_zero("network", "ss", "UrlPrev", szUrlPrev, "UrlNew", szUrlNew);
+	return ret;
+}
+
+HOOKDEF(DWORD, WINAPI, InternetConfirmZoneCrossingW,
+	_In_ HWND hWnd,
+	_In_ LPTSTR szUrlPrev,
+	_In_ LPTSTR szUrlNew,
+	_In_ BOOL bPost
+) {
+	DWORD ret = Old_InternetConfirmZoneCrossingW(hWnd, szUrlPrev, szUrlNew, bPost);
+	LOQ_zero("network", "uu", "UrlPrev", szUrlPrev, "UrlNew", szUrlNew);
+	return ret;
+}
+
+HOOKDEF(SECURITY_STATUS, WINAPI, SslEncryptPacket,
+	_In_    NCRYPT_PROV_HANDLE hSslProvider,
+	_Inout_ NCRYPT_KEY_HANDLE hKey,
+	_In_    PBYTE pbInput,
+	_In_    DWORD cbInput,
+	_Out_   PBYTE pbOutput,
+	_In_    DWORD cbOutput,
+	_Out_   DWORD *pcbResult,
+	_In_    ULONGLONG SequenceNumber,
+	_In_    DWORD dwContentType,
+	_In_    DWORD dwFlags
+) {
+	SECURITY_STATUS ret = 0;
+	if (cbInput > 0)
+		LOQ_zero("network", "cli", "Buffer", cbInput, pbInput, "SequenceNumber", (long)SequenceNumber, "BufferSize", cbInput);
+
+	ret = Old_SslEncryptPacket(hSslProvider, hKey, pbInput, cbInput, pbOutput, cbOutput, pcbResult, SequenceNumber, dwContentType, dwFlags);
+	disable_tail_call_optimization();
+	return ret;
+}
+
+HOOKDEF(SECURITY_STATUS, WINAPI, SslDecryptPacket,
+	_In_    NCRYPT_PROV_HANDLE hSslProvider,
+	_Inout_ NCRYPT_KEY_HANDLE hKey,
+	_In_    PBYTE pbInput,
+	_In_    DWORD cbInput,
+	_Out_   PBYTE pbOutput,
+	_In_    DWORD cbOutput,
+	_Out_   DWORD *pcbResult,
+	_In_    ULONGLONG SequenceNumber,
+	_In_    DWORD dwFlags
+) {
+	SECURITY_STATUS ret = Old_SslDecryptPacket(hSslProvider, hKey, pbInput, cbInput, pbOutput, cbOutput, pcbResult, SequenceNumber, dwFlags);
+	if (pcbResult > 0)
+	{
+		/* Only use the large buffer logger for the first sequence to avoid logging large amounts of data that
+		   is not the initial response (for example file downloads) 
+		*/
+		if (SequenceNumber < 2)
+		    LOQ_zero("network", "ClI", "Buffer", pcbResult, pbOutput, "SequenceNumber", (long)SequenceNumber, "BufferSize", pcbResult);
+		else
+			LOQ_zero("network", "BlI", "Buffer", pcbResult, pbOutput, "SequenceNumber", (long)SequenceNumber, "BufferSize", pcbResult);
+	}
+	return ret;
+}
+
 HOOKDEF(HINTERNET, WINAPI, WinHttpOpen,
 	_In_opt_ LPCWSTR pwszUserAgent,
 	_In_ DWORD dwAccessType,
