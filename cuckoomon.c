@@ -150,6 +150,7 @@ static hook_t g_hooks[] = {
 	HOOK(kernel32, GetVolumeInformationByHandleW),
 
 	HOOK(shell32, SHGetFolderPathW),
+	HOOK(shell32, SHGetKnownFolderPath),
 	HOOK(shell32, SHGetFileInfoW),
 
 	HOOK(version, GetFileVersionInfoW),

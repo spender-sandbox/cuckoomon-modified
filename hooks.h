@@ -301,6 +301,13 @@ extern HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
 	_Out_ LPWSTR pszPath
 );
 
+extern HOOKDEF(HRESULT, WINAPI, SHGetKnownFolderPath,
+	_In_     GUID			  *rfid,
+	_In_     DWORD            dwFlags,
+	_In_opt_ HANDLE           hToken,
+	_Out_    PWSTR            *ppszPath
+);
+
 extern HOOKDEF(DWORD_PTR, WINAPI, SHGetFileInfoW,
 	_In_    LPCWSTR    pszPath,
 	DWORD      dwFileAttributes,

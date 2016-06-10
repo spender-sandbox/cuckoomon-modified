@@ -1211,6 +1211,26 @@ HOOKDEF(HRESULT, WINAPI, SHGetFolderPathW,
 	return ret;
 }
 
+HOOKDEF(HRESULT, WINAPI, SHGetKnownFolderPath,
+	_In_     GUID			  *rfid,
+	_In_     DWORD            dwFlags,
+	_In_opt_ HANDLE           hToken,
+	_Out_    PWSTR            *ppszPath
+) {
+	lasterror_t lasterrors;
+	IID id1;
+	char idbuf[40];
+	HRESULT ret = Old_SHGetKnownFolderPath(rfid, dwFlags, hToken, ppszPath);
+	
+	get_lasterrors(&lasterrors);
+	memcpy(&id1, rfid, sizeof(id1));
+	sprintf(idbuf, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id1.Data1, id1.Data2, id1.Data3,
+		id1.Data4[0], id1.Data4[1], id1.Data4[2], id1.Data4[3], id1.Data4[4], id1.Data4[5], id1.Data4[6], id1.Data4[7]);
+	set_lasterrors(&lasterrors);
+	LOQ_hresult("filesystem", "shU", "FolderID", idbuf, "Flags", dwFlags, "Path", ppszPath);
+	return ret;
+}
+
 HOOKDEF(DWORD_PTR, WINAPI, SHGetFileInfoW,
 	_In_    LPCWSTR    pszPath,
 	DWORD      dwFileAttributes,
