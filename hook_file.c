@@ -1227,7 +1227,7 @@ HOOKDEF(HRESULT, WINAPI, SHGetKnownFolderPath,
 	sprintf(idbuf, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id1.Data1, id1.Data2, id1.Data3,
 		id1.Data4[0], id1.Data4[1], id1.Data4[2], id1.Data4[3], id1.Data4[4], id1.Data4[5], id1.Data4[6], id1.Data4[7]);
 	set_lasterrors(&lasterrors);
-	LOQ_hresult("filesystem", "shU", "FolderID", idbuf, "Flags", dwFlags, "Path", ppszPath);
+	LOQ_hresult("filesystem", "shu", "FolderID", idbuf, "Flags", dwFlags, "Path", ppszPath ? *ppszPath : NULL);
 	return ret;
 }
 
