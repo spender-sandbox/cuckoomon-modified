@@ -83,6 +83,12 @@ typedef NTSTATUS(WINAPI *_LdrRegisterDllNotification)(
 	_Out_    PVOID                          *Cookie
 );
 
+typedef void (WINAPI *_CoTaskMemFree)(LPVOID pv);
+typedef HRESULT (WINAPI *_ProgIDFromCLSID)(
+	_In_  REFCLSID clsid,
+	_Out_ LPOLESTR *lplpszProgID
+);
+
 void resolve_runtime_apis(void);
 
 DWORD parent_process_id(); // By Napalm @ NetCore2K (rohitab.com)

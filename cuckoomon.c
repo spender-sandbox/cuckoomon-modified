@@ -85,13 +85,15 @@ static hook_t g_hooks[] = {
 	// has special handling
 
 	HOOK_SPECIAL(jscript, COleScript_ParseScriptText),
-	HOOK_SPECIAL(jscript, JsEval),
+	HOOK_NOTAIL(jscript, JsEval, 5),
 	HOOK_SPECIAL(jscript9, JsParseScript),
-	HOOK_SPECIAL(jscript9, JsRunScript),
+	HOOK_NOTAIL(jscript9, JsRunScript, 4),
 	HOOK_SPECIAL(mshtml, CDocument_write),
 
 	// COM object creation hook
 	HOOK_SPECIAL(ole32, CoCreateInstance),
+	HOOK_SPECIAL(ole32, CoCreateInstanceEx),
+	HOOK_SPECIAL(ole32, CoGetClassObject),
 
 	HOOK_NOTAIL(ntdll, RtlDispatchException, 2),
 	HOOK_NOTAIL(ntdll, NtRaiseException, 3),
@@ -398,6 +400,7 @@ static hook_t g_hooks[] = {
 	HOOK(user32, SystemParametersInfoA),
 	HOOK(user32, SystemParametersInfoW),
 	HOOK(pstorec, PStoreCreateInstance),
+	HOOK(advapi32, SaferIdentifyLevel),
 
 	//
     // Network Hooks

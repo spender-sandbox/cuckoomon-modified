@@ -989,6 +989,23 @@ extern HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 	__out	LPVOID *ppv
 );
 
+extern HOOKDEF(HRESULT, WINAPI, CoCreateInstanceEx,
+	__in    REFCLSID rclsid,
+	__in	LPUNKNOWN pUnkOuter,
+	__in	DWORD dwClsContext,
+	_In_    COSERVERINFO *pServerInfo,
+	_In_    DWORD        dwCount,
+	_Inout_ MULTI_QI     *pResults
+);
+
+extern HOOKDEF(HRESULT, WINAPI, CoGetClassObject,
+	_In_     REFCLSID     rclsid,
+	_In_     DWORD        dwClsContext,
+	_In_opt_ COSERVERINFO *pServerInfo,
+	_In_     REFIID       riid,
+	_Out_    LPVOID       *ppv
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtUnmapViewOfSection,
     _In_      HANDLE ProcessHandle,
     _In_opt_  PVOID BaseAddress
@@ -1220,6 +1237,13 @@ extern HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 //
 // Misc Hooks
 //
+
+extern HOOKDEF(BOOL, WINAPI, SaferIdentifyLevel,
+	_In_       DWORD                  dwNumProperties,
+	_In_opt_   PVOID				  pCodeProperties,
+	_Out_      PVOID				  pLevelHandle,
+	_Reserved_ LPVOID                 lpReserved
+);
 
 extern HOOKDEF(DWORD, WINAPI, RasValidateEntryNameW,
 	_In_ LPCWSTR lpszPhonebook,
@@ -2574,7 +2598,7 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtMapViewOfSection,
     __in     ULONG Win32Protect
 );
 
-extern HOOKDEF(int, WINAPI, JsEval,
+extern HOOKDEF_NOTAIL(WINAPI, JsEval,
 	PVOID Arg1,
 	PVOID Arg2,
 	PVOID Arg3,
@@ -2602,7 +2626,7 @@ extern HOOKDEF(PVOID, WINAPI, JsParseScript,
 	PVOID *result
 );
 
-extern HOOKDEF(PVOID, WINAPI, JsRunScript,
+extern HOOKDEF_NOTAIL(WINAPI, JsRunScript,
 	const wchar_t *script,
 	PVOID SourceContext,
 	const wchar_t *sourceUrl,

@@ -236,8 +236,11 @@ HOOKDEF_NOTAIL(WINAPI, NtRaiseHardError,
 	OUT PULONG 	Response
 ) {
 	DWORD ret = 0;
-	LOQ_zero("system", "h", "ErrorStatus", ErrorStatus);
-	pipe("SHUTDOWN:");
+	LOQ_zero("system", "hi", "ErrorStatus", ErrorStatus, "ResponseOptions", ValidResponseOptions);
+
+	if (ValidResponseOptions == OptionShutdownSystem)
+		pipe("SHUTDOWN:");
+
 	return ret;
 }
 
@@ -349,6 +352,19 @@ HOOKDEF(NTSTATUS, WINAPI, NtDuplicateObject,
 	}
 	return ret;
 }
+
+HOOKDEF(BOOL, WINAPI, SaferIdentifyLevel,
+	_In_       DWORD                  dwNumProperties,
+	_In_opt_   PVOID				  pCodeProperties,
+	_Out_      PVOID				  pLevelHandle,
+	_Reserved_ LPVOID                 lpReserved
+) {
+	BOOL ret;
+	ret = Old_SaferIdentifyLevel(dwNumProperties, pCodeProperties, pLevelHandle, lpReserved);
+	LOQ_bool("misc", "");
+	return ret;
+}
+
 
 HOOKDEF(NTSTATUS, WINAPI, NtMakeTemporaryObject,
 	__in     HANDLE ObjectHandle

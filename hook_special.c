@@ -188,24 +188,8 @@ HOOKDEF(BOOL, WINAPI, CreateProcessInternalW,
     return ret;
 }
 
-static GUID _CLSID_CUrlHistory =	  { 0x3C374A40L, 0xBAE4, 0x11CF, 0xBF, 0x7D, 0x00, 0xAA, 0x00, 0x69, 0x46, 0xEE };
-static GUID _CLSID_InternetExplorer = { 0x0002DF01L, 0x0000, 0x0000, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 };
-static GUID _CLSID_InternetSecurityManager = { 0x79EAC9EE, 0xBAF9, 0x11CE, 0x8C, 0x82, 0x00, 0xAA, 0x00, 0x4B, 0xA9, 0x0B };
-static GUID _CLSID_CTaskScheduler = { 0x148BD52A, 0xA2AB, 0x11CE, 0xB1, 0x1F, 0x00, 0xAA, 0x00, 0x53, 0x05, 0x03 };
-
-static char *known_object(IID *app, IID *iface)
-{
-	if (!memcmp(app, &_CLSID_CUrlHistory, sizeof(*app)))
-		return "CUrlHistory";
-	else if (!memcmp(app, &_CLSID_InternetExplorer, sizeof(*app)))
-		return "InternetExplorer";
-	else if (!memcmp(app, &_CLSID_InternetSecurityManager, sizeof(*app)))
-		return "InternetSecurityManager";
-	else if (!memcmp(app, &_CLSID_CTaskScheduler, sizeof(*app)))
-		return "CTaskScheduler";
-
-	return NULL;
-}
+static _CoTaskMemFree pCoTaskMemFree;
+static _ProgIDFromCLSID pProgIDFromCLSID;
 
 HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 	__in    REFCLSID rclsid,
@@ -218,16 +202,17 @@ HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 	IID id2;
 	char idbuf1[40];
 	char idbuf2[40];
-	char *known;
 	lasterror_t lasterror;
 	HRESULT ret;
 	hook_info_t saved_hookinfo;
-
-	memcpy(&saved_hookinfo, hook_info(), sizeof(saved_hookinfo));
-	ret = Old_CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
-	memcpy(hook_info(), &saved_hookinfo, sizeof(saved_hookinfo));
+	OLECHAR *resolv = NULL;
 
 	get_lasterrors(&lasterror);
+
+	if (!pCoTaskMemFree)
+		pCoTaskMemFree = (_CoTaskMemFree)GetProcAddress(GetModuleHandleA("ole32"), "CoTaskMemFree");
+	if (!pProgIDFromCLSID)
+		pProgIDFromCLSID = (_ProgIDFromCLSID)GetProcAddress(GetModuleHandleA("ole32"), "ProgIDFromCLSID");
 
 	memcpy(&id1, rclsid, sizeof(id1));
 	memcpy(&id2, riid, sizeof(id2));
@@ -250,15 +235,139 @@ HOOKDEF(HRESULT, WINAPI, CoCreateInstance,
 
 	set_lasterrors(&lasterror);
 
-	if ((known = known_object(&id1, &id2)))
-		LOQ_hresult("com", "shss", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "KnownObject", known);
-	else
-		LOQ_hresult("com", "shs", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2);
+	memcpy(&saved_hookinfo, hook_info(), sizeof(saved_hookinfo));
+	ret = Old_CoCreateInstance(rclsid, pUnkOuter, dwClsContext, riid, ppv);
+	memcpy(hook_info(), &saved_hookinfo, sizeof(saved_hookinfo));
+	
+	get_lasterrors(&lasterror);
+
+	pProgIDFromCLSID(&id1, &resolv);
+
+	LOQ_hresult("com", "shsu", "rclsid", idbuf1, "ClsContext", dwClsContext, "riid", idbuf2, "ProgID", resolv);
+
+	if (resolv)
+		pCoTaskMemFree(resolv);
+
+	set_lasterrors(&lasterror);
 
 	return ret;
 }
 
-HOOKDEF(int, WINAPI, JsEval,
+HOOKDEF(HRESULT, WINAPI, CoCreateInstanceEx,
+	__in    REFCLSID rclsid,
+	__in    LPUNKNOWN pUnkOuter,
+	__in    DWORD dwClsContext,
+	_In_    COSERVERINFO *pServerInfo,
+	_In_    DWORD        dwCount,
+	_Inout_ MULTI_QI     *pResults
+	) {
+	IID id1;
+	char idbuf1[40];
+	lasterror_t lasterror;
+	HRESULT ret;
+	hook_info_t saved_hookinfo;
+	OLECHAR *resolv = NULL;
+
+	get_lasterrors(&lasterror);
+
+	if (!pCoTaskMemFree)
+		pCoTaskMemFree = (_CoTaskMemFree)GetProcAddress(GetModuleHandleA("ole32"), "CoTaskMemFree");
+	if (!pProgIDFromCLSID)
+		pProgIDFromCLSID = (_ProgIDFromCLSID)GetProcAddress(GetModuleHandleA("ole32"), "ProgIDFromCLSID");
+
+	memcpy(&id1, rclsid, sizeof(id1));
+	sprintf(idbuf1, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id1.Data1, id1.Data2, id1.Data3,
+		id1.Data4[0], id1.Data4[1], id1.Data4[2], id1.Data4[3], id1.Data4[4], id1.Data4[5], id1.Data4[6], id1.Data4[7]);
+
+	if (!called_by_hook()) {
+		if (!strcmp(idbuf1, "4590F811-1D3A-11D0-891F-00AA004B2E24") || !strcmp(idbuf1, "4590F812-1D3A-11D0-891F-00AA004B2E24") ||
+			!strcmp(idbuf1, "172BDDF8-CEEA-11D1-8B05-00600806D9B6") || !strcmp(idbuf1, "CF4CC405-E2C5-4DDD-B3CE-5E7582D8C9FA")) {
+			pipe("WMI:");
+		}
+		if (!strcmp(idbuf1, "4991D34B-80A1-4291-83B6-3328366B9097") || !strcmp(idbuf1, "5CE34C0D-0DC9-4C1F-897C-100000000003"))
+			pipe("BITS:");
+		if (!strcmp(idbuf1, "0F87369F-A4E5-4CFC-BD3E-73E6154572DD") || !strcmp(idbuf1, "0F87369F-A4E5-4CFC-BD3E-5529CE8784B0"))
+			pipe("TASKSCHED:");
+		if (!strcmp(idbuf1, "000209FF-0000-0000-C000-000000000046") || !strcmp(idbuf1, "00024500-0000-0000-C000-000000000046") || !strcmp(idbuf1, "91493441-5A91-11CF-8700-00AA0060263B") ||
+			!strcmp(idbuf1, "000246FF-0000-0000-C000-000000000046"))
+			pipe("INTEROP:");
+	}
+	set_lasterrors(&lasterror);
+
+	memcpy(&saved_hookinfo, hook_info(), sizeof(saved_hookinfo));
+	ret = Old_CoCreateInstanceEx(rclsid, pUnkOuter, dwClsContext, pServerInfo, dwCount, pResults);
+	memcpy(hook_info(), &saved_hookinfo, sizeof(saved_hookinfo));
+
+
+	if (!called_by_hook()) {
+		get_lasterrors(&lasterror);
+		pProgIDFromCLSID(&id1, &resolv);
+
+		LOQ_hresult("com", "shuu", "rclsid", idbuf1, "ClsContext", dwClsContext, "ServerName", pServerInfo ? pServerInfo->pwszName : NULL, "ProgID", resolv);
+
+		if (resolv)
+			pCoTaskMemFree(resolv);
+		set_lasterrors(&lasterror);
+	}
+
+	return ret;
+}
+
+HOOKDEF(HRESULT, WINAPI, CoGetClassObject,
+	_In_     REFCLSID     rclsid,
+	_In_     DWORD        dwClsContext,
+	_In_opt_ COSERVERINFO *pServerInfo,
+	_In_     REFIID       riid,
+	_Out_    LPVOID       *ppv
+) {
+	HRESULT ret;
+	lasterror_t lasterror;
+	IID id1;
+	IID id2;
+	char idbuf1[40];
+	char idbuf2[40];
+	hook_info_t saved_hookinfo;
+	OLECHAR *resolv = NULL;
+	DWORD newctx = dwClsContext;
+
+	get_lasterrors(&lasterror);
+	
+	if (!pCoTaskMemFree)
+		pCoTaskMemFree = (_CoTaskMemFree)GetProcAddress(GetModuleHandleA("ole32"), "CoTaskMemFree");
+	if (!pProgIDFromCLSID)
+		pProgIDFromCLSID = (_ProgIDFromCLSID)GetProcAddress(GetModuleHandleA("ole32"), "ProgIDFromCLSID");
+
+	memcpy(&id1, rclsid, sizeof(id1));
+	memcpy(&id2, riid, sizeof(id2));
+	sprintf(idbuf1, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id1.Data1, id1.Data2, id1.Data3,
+		id1.Data4[0], id1.Data4[1], id1.Data4[2], id1.Data4[3], id1.Data4[4], id1.Data4[5], id1.Data4[6], id1.Data4[7]);
+	sprintf(idbuf2, "%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X", id2.Data1, id2.Data2, id2.Data3,
+		id2.Data4[0], id2.Data4[1], id2.Data4[2], id2.Data4[3], id2.Data4[4], id2.Data4[5], id2.Data4[6], id2.Data4[7]);
+
+	set_lasterrors(&lasterror);
+
+	if (newctx & (CLSCTX_INPROC_HANDLER | CLSCTX_INPROC_SERVER))
+		newctx &= (CLSCTX_INPROC_HANDLER | CLSCTX_INPROC_SERVER);
+
+	memcpy(&saved_hookinfo, hook_info(), sizeof(saved_hookinfo));
+	ret = Old_CoGetClassObject(rclsid, newctx, pServerInfo, riid, ppv);
+	memcpy(hook_info(), &saved_hookinfo, sizeof(saved_hookinfo));
+
+	get_lasterrors(&lasterror);
+
+	pProgIDFromCLSID(&id1, &resolv);
+
+	LOQ_hresult("com", "shsu", "rclsid", idbuf1, "ClsContext", newctx, "riid", idbuf2, "ProgID", resolv);
+
+	if (resolv)
+		pCoTaskMemFree(resolv);
+
+	set_lasterrors(&lasterror);
+
+	return ret;
+}
+
+HOOKDEF_NOTAIL(WINAPI, JsEval,
 	PVOID Arg1,
 	PVOID Arg2,
 	PVOID Arg3,
@@ -269,7 +378,7 @@ HOOKDEF(int, WINAPI, JsEval,
 	PWCHAR jsbuf;
 	PUCHAR p;
 #endif
-	int ret = Old_JsEval(Arg1, Arg2, Arg3, Index, scriptobj);
+	int ret = 0;
 
 	/* TODO: 64-bit support*/
 #ifdef _WIN64
@@ -315,16 +424,15 @@ HOOKDEF(PVOID, WINAPI, JsParseScript,
 	return ret;
 }
 
-HOOKDEF(PVOID, WINAPI, JsRunScript,
+HOOKDEF_NOTAIL(WINAPI, JsRunScript,
 	const wchar_t *script,
 	PVOID SourceContext,
 	const wchar_t *sourceUrl,
 	PVOID *result
 ) {
-	PVOID ret = Old_JsRunScript(script, SourceContext, sourceUrl, result);
+	int ret = 0;
 
 	LOQ_zero("browser", "uu", "Script", script, "Source", sourceUrl);
-
 	return ret;
 }
 
