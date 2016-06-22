@@ -57,13 +57,17 @@ static char logtbl_explained[256] = {0};
 
 #define LOG_ID_PROCESS 0
 #define LOG_ID_THREAD 1
-#define LOG_ID_ANOMALY 2
-#define LOG_ID_ANOMALY_EXTRA 3
-#define LOG_ID_ENVIRON 4
-// must be one larger than the largeest log ID
-#define LOG_ID_PREDEFINED_MAX 5
+#define LOG_ID_ANOMALY_GENERIC 2
+#define LOG_ID_ANOMALY_HOOK 3
+#define LOG_ID_ANOMALY_HOOKREM 4
+#define LOG_ID_ANOMALY_HOOKRES 5
+#define LOG_ID_ANOMALY_HOOKMOD 6
+#define LOG_ID_ANOMALY_PROCNAME 7
+#define LOG_ID_ENVIRON 8
+// must be one larger than the largest log ID
+#define LOG_ID_PREDEFINED_MAX 9
 
-volatile LONG g_log_index = 10;  // index must start after the special IDs (see defines)
+volatile LONG g_log_index = 20;  // index must start after the special IDs (see defines)
 
 //
 // Log API
@@ -1065,7 +1069,7 @@ void log_environ()
 void log_hook_anomaly(const char *subcategory, int success,
     const hook_t *h, const char *msg)
 {
-    loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", success, 0, "issps",
+    loq(LOG_ID_ANOMALY_HOOK, "__notification__", "__anomaly__", success, 0, "issps",
         "ThreadIdentifier", GetCurrentThreadId(),
         "Subcategory", subcategory,
         "FunctionName", h->funcname,
@@ -1075,7 +1079,7 @@ void log_hook_anomaly(const char *subcategory, int success,
 
 void log_anomaly(const char *subcategory, const char *msg)
 {
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "iss",
+	loq(LOG_ID_ANOMALY_GENERIC, "__notification__", "__anomaly__", 1, 0, "iss",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", subcategory,
 		"Message", msg);
@@ -1083,7 +1087,7 @@ void log_anomaly(const char *subcategory, const char *msg)
 
 void log_procname_anomaly(PUNICODE_STRING InitialName, PUNICODE_STRING InitialPath, PUNICODE_STRING CurrentName, PUNICODE_STRING CurrentPath)
 {
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "isoooo",
+	loq(LOG_ID_ANOMALY_PROCNAME, "__notification__", "__anomaly__", 1, 0, "isoooo",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "procname",
 		"OriginalProcessName", InitialName,
@@ -1108,7 +1112,7 @@ void log_hook_modification(const hook_t *h, const char *origbytes, const char *n
 		sprintf(p, "%02X ", (unsigned char)newbytes[i]);
 	}
 
-	loq(LOG_ID_ANOMALY_EXTRA, "__notification__", "__anomaly__", 1, 0, "isspsss",
+	loq(LOG_ID_ANOMALY_HOOKMOD, "__notification__", "__anomaly__", 1, 0, "isspsss",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
 		"FunctionName", h->funcname,
@@ -1120,7 +1124,7 @@ void log_hook_modification(const hook_t *h, const char *origbytes, const char *n
 
 void log_hook_removal(const hook_t *h)
 {
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "issps",
+	loq(LOG_ID_ANOMALY_HOOKREM, "__notification__", "__anomaly__", 1, 0, "issps",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
 		"FunctionName", h->funcname,
@@ -1130,7 +1134,7 @@ void log_hook_removal(const hook_t *h)
 
 void log_hook_restoration(const hook_t *h)
 {
-	loq(LOG_ID_ANOMALY, "__notification__", "__anomaly__", 1, 0, "issps",
+	loq(LOG_ID_ANOMALY_HOOKRES, "__notification__", "__anomaly__", 1, 0, "issps",
 		"ThreadIdentifier", GetCurrentThreadId(),
 		"Subcategory", "unhook",
 		"FunctionName", h->funcname,
