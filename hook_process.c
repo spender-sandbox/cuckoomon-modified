@@ -730,11 +730,6 @@ HOOKDEF(BOOL, WINAPI, WaitForDebugEvent,
 		break;
 	case LOAD_DLL_DEBUG_EVENT:
 		// we could continue ourselves here and skip notification to the malware of cuckoomon loading
-		if (lpDebugEvent->u.LoadDll.fUnicode)
-			LOQ_bool("process", "iiiu", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "DllPath", lpDebugEvent->u.LoadDll.lpImageName);
-		else
-			LOQ_bool("process", "iiis", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId, "DllPath", lpDebugEvent->u.LoadDll.lpImageName);
-		break;
 	default:
 		LOQ_bool("process", "iii", "EventCode", lpDebugEvent->dwDebugEventCode, "ProcessId", lpDebugEvent->dwProcessId, "ThreadId", lpDebugEvent->dwThreadId);
 	}
