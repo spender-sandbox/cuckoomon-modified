@@ -224,8 +224,8 @@ HOOKDEF(LONG, WINAPI, RegEnumValueA,
     }
     else {
         LOQ_zero("registry", "pisIIe", "Handle", hKey, "Index", dwIndex,
-            "ValueName", lpValueName, "Type", lpType, "DataLength", lpcbData,
-			"FullName", hKey, lpValueName);
+            "ValueName", ret == ERROR_SUCCESS ? lpValueName : "", "Type", lpType, "DataLength", lpcbData,
+			"FullName", hKey, ret == ERROR_SUCCESS ? lpValueName : "");
     }
     return ret;
 }
@@ -252,8 +252,8 @@ HOOKDEF(LONG, WINAPI, RegEnumValueW,
     }
     else {
         LOQ_zero("registry", "piuIIE", "Handle", hKey, "Index", dwIndex,
-            "ValueName", lpValueName, "Type", lpType, "DataLength", lpcbData,
-			"FullName", hKey, lpValueName);
+            "ValueName", ret == ERROR_SUCCESS ? lpValueName : L"", "Type", lpType, "DataLength", lpcbData,
+			"FullName", hKey, ret == ERROR_SUCCESS ? lpValueName : L"");
     }
     return ret;
 }
