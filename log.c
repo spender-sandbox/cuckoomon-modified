@@ -429,7 +429,13 @@ void loq(int index, const char *category, const char *name,
                 bson_append_string( b, "0", pname );
                 bson_append_string( b, "1", typestr );
                 bson_append_finish_array( b );
-            } else {
+			}
+			else if (key == 'x' || key == 'X') {
+				bson_append_start_array(b, g_istr);
+				bson_append_string(b, "0", pname);
+				bson_append_string(b, "1", "p");
+				bson_append_finish_array(b);
+			} else {
                 bson_append_string( b, g_istr, pname );
             }
 
@@ -479,6 +485,12 @@ void loq(int index, const char *category, const char *name,
 			}
 			else if (key == 'p' || key == 'P') {
 				(void)va_arg(args, void *);
+			}
+			else if (key == 'x') {
+				(void)va_arg(args, LARGE_INTEGER);
+			}
+			else if (key == 'X') {
+				(void)va_arg(args, PLARGE_INTEGER);
 			}
 			else if (key == 'o') {
                 (void) va_arg(args, UNICODE_STRING *);
@@ -652,6 +664,25 @@ void loq(int index, const char *category, const char *name,
 				;
 			}
 			log_ptr(theptr);
+		}
+		else if (key == 'x') {
+			LARGE_INTEGER value = va_arg(args, LARGE_INTEGER);
+			log_int64(value.QuadPart);
+		}
+		else if (key == 'X') {
+			PLARGE_INTEGER ptr = va_arg(args, PLARGE_INTEGER);
+			LARGE_INTEGER theval;
+
+			theval.QuadPart = 0;
+
+			__try {
+				if (ptr != NULL)
+					theval = *ptr;
+			}
+			__except (EXCEPTION_EXECUTE_HANDLER) {
+				;
+			}
+			log_int64(theval.QuadPart);
 		}
 		else if (key == 'e') {
 			HKEY reg = va_arg(args, HKEY);

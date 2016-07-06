@@ -1059,6 +1059,23 @@ extern HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
     _Out_   PSIZE_T lpNumberOfBytesWritten
 );
 
+
+extern HOOKDEF(NTSTATUS, WINAPI, NtWow64ReadVirtualMemory64,
+	__in HANDLE ProcessHandle,
+	__in_opt LARGE_INTEGER BaseAddress,
+	__out PVOID Buffer,
+	__in LARGE_INTEGER BufferSize,
+	__out_opt PLARGE_INTEGER NumberOfBytesRead
+);
+
+extern HOOKDEF(NTSTATUS, WINAPI, NtWow64WriteVirtualMemory64,
+	__in HANDLE ProcessHandle,
+	__in_opt LARGE_INTEGER BaseAddress,
+	__in PVOID Buffer,
+	__in LARGE_INTEGER BufferSize,
+	__out_opt PLARGE_INTEGER NumberOfBytesWritten
+);
+
 extern HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
     IN      HANDLE ProcessHandle,
     IN OUT  PVOID *BaseAddress,

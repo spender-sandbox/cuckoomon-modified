@@ -585,6 +585,55 @@ HOOKDEF(BOOL, WINAPI, WriteProcessMemory,
 	return ret;
 }
 
+HOOKDEF(NTSTATUS, WINAPI, NtWow64ReadVirtualMemory64,
+	__in HANDLE ProcessHandle,
+	__in_opt LARGE_INTEGER BaseAddress,
+	__out PVOID Buffer,
+	__in LARGE_INTEGER BufferSize,
+	__out_opt PLARGE_INTEGER NumberOfBytesRead
+) {
+	NTSTATUS ret;
+	DWORD pid;
+	ENSURE_LARGE_INTEGER(NumberOfBytesRead);
+
+	ret = Old_NtWow64ReadVirtualMemory64(ProcessHandle, BaseAddress, Buffer, BufferSize, NumberOfBytesRead);
+
+	pid = pid_from_process_handle(ProcessHandle);
+
+	LOQ_ntstatus("process", "pxB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+		"Buffer", NumberOfBytesRead->LowPart, Buffer);
+
+	return ret;
+}
+
+HOOKDEF(NTSTATUS, WINAPI, NtWow64WriteVirtualMemory64,
+	__in HANDLE ProcessHandle,
+	__in_opt LARGE_INTEGER BaseAddress,
+	__in PVOID Buffer,
+	__in LARGE_INTEGER BufferSize,
+	__out_opt PLARGE_INTEGER NumberOfBytesWritten
+) {
+	BOOL ret;
+	DWORD pid;
+	ENSURE_LARGE_INTEGER(NumberOfBytesWritten);
+
+	ret = Old_NtWow64WriteVirtualMemory64(ProcessHandle, BaseAddress, Buffer, BufferSize, NumberOfBytesWritten);
+
+	pid = pid_from_process_handle(ProcessHandle);
+
+	if (pid != GetCurrentProcessId()) {
+		LOQ_bool("process", "pxBhs", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+			"Buffer", NumberOfBytesWritten->LowPart, Buffer, "BufferLength", NumberOfBytesWritten->LowPart, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
+
+		if (ret) {
+			pipe("PROCESS:%d:%d", is_suspended(pid, 0), pid);
+			disable_sleep_skip();
+		}
+	}
+
+	return ret;
+}
+
 /* need to keep in mind we might end up being called in either of the two below functions while some
    critical DLL code is protected RW by some poorly-written malware that doesn't care about reliability with
    concurrent thread execution
