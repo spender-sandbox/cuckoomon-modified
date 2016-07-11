@@ -497,6 +497,7 @@ static hook_t g_hooks[] = {
 	HOOK_SPECIAL(winmm, timeGetTime),
 	HOOK(ntdll, NtSetTimer),
 	HOOK(ntdll, NtSetTimerEx),
+	HOOK(user32, MsgWaitForMultipleObjectsEx),
 
 	//
     // Socket Hooks

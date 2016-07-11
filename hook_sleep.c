@@ -37,6 +37,7 @@ static LARGE_INTEGER time_start;
 
 static int num_skipped = 0;
 static int num_small = 0;
+static int num_msg_small = 0;
 static int num_wait_skipped = 0;
 static int num_wait_small = 0;
 
@@ -226,6 +227,61 @@ docall:
 	return Old_NtDelayExecution(Alertable, &newint);
 skipcall:
 	set_lasterrors(&lasterror);
+	return ret;
+}
+
+HOOKDEF(DWORD, WINAPI, MsgWaitForMultipleObjectsEx,
+	_In_       DWORD  nCount,
+	_In_ const HANDLE *pHandles,
+	_In_       DWORD  dwMilliseconds,
+	_In_       DWORD  dwWakeMask,
+	_In_       DWORD  dwFlags
+) {
+	DWORD ret;
+
+	if (dwMilliseconds == INFINITE || nCount)
+		goto docall;
+
+	/* clamp sleeps between 30 seconds and 1 hour down to 10 seconds  as long as we didn't force off sleep skipping */
+	else if (dwMilliseconds >= 30000 && dwMilliseconds <= 3600000 && g_config.force_sleepskip != 0) {
+		time_skipped.QuadPart += (dwMilliseconds - 10000) * 10000;
+		LOQ_msgwait("system", "is", "Milliseconds", dwMilliseconds, "Status", "Skipped");
+		dwMilliseconds = 10000;
+		goto docall;
+	}
+	else if (g_config.force_sleepskip > 0) {
+		LOQ_ntstatus("system", "is", "Milliseconds", dwMilliseconds, "Status", "Skipped");
+		dwMilliseconds = 0;
+		goto docall;
+	}
+	else {
+		disable_sleep_skip();
+	}
+
+	if (dwMilliseconds <= 10) {
+		if (num_msg_small < 20) {
+			LOQ_ntstatus("system", "i", "Milliseconds", dwMilliseconds);
+			num_small++;
+		}
+		else if (num_msg_small == 20) {
+			LOQ_ntstatus("system", "s", "Status", "Small log limit reached");
+			num_msg_small++;
+		}
+		else if (num_msg_small > 20) {
+			// likely using a bunch of tiny sleeps to delay execution, so let's suddenly mimic high load and give our
+			// fake passage of time the impression of longer delays to return from sleep
+			time_skipped.QuadPart += (randint(500, 1000) * 10000);
+		}
+	}
+	else {
+		LOQ_ntstatus("system", "i", "Milliseconds", dwMilliseconds);
+	}
+
+docall:
+	ret = Old_MsgWaitForMultipleObjectsEx(nCount, pHandles, dwMilliseconds, dwWakeMask, dwFlags);
+
+	disable_tail_call_optimization();
+
 	return ret;
 }
 

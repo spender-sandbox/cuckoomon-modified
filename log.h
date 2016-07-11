@@ -121,6 +121,7 @@ do { \
 #define LOQ_nonnegone(cat, fmt, ...) _LOQ(ret != -1, cat, fmt, ##__VA_ARGS__)
 #define LOQ_sockerr(cat, fmt, ...) _LOQ(ret != SOCKET_ERROR, cat, fmt, ##__VA_ARGS__)
 #define LOQ_sock(cat, fmt, ...) _LOQ(ret != INVALID_SOCKET, cat, fmt, ##__VA_ARGS__)
+#define LOQ_msgwait(cat, fmt, ...) _LOQ(ret != WAIT_FAILED, cat, fmt, ##__VA_ARGS__)
 
 #define ENSURE_LARGE_INTEGER(param) \
     LARGE_INTEGER _##param; _##param.QuadPart = 0; if(param == NULL) param = &_##param

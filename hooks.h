@@ -1384,6 +1384,14 @@ extern HOOKDEF(DWORD, WINAPI, timeGetTime,
 	void
 );
 
+extern HOOKDEF(DWORD, WINAPI, MsgWaitForMultipleObjectsEx,
+	_In_       DWORD  nCount,
+	_In_ const HANDLE *pHandles,
+	_In_       DWORD  dwMilliseconds,
+	_In_       DWORD  dwWakeMask,
+	_In_       DWORD  dwFlags
+);
+
 extern HOOKDEF_NOTAIL(WINAPI, ExitWindowsEx,
     __in  UINT uFlags,
     __in  DWORD dwReason
