@@ -261,7 +261,7 @@ HOOKDEF(DWORD, WINAPI, MsgWaitForMultipleObjectsEx,
 	if (dwMilliseconds <= 10) {
 		if (num_msg_small < 20) {
 			LOQ_ntstatus("system", "i", "Milliseconds", dwMilliseconds);
-			num_small++;
+			num_msg_small++;
 		}
 		else if (num_msg_small == 20) {
 			LOQ_ntstatus("system", "s", "Status", "Small log limit reached");
