@@ -250,7 +250,7 @@ HOOKDEF(DWORD, WINAPI, MsgWaitForMultipleObjectsEx,
 		goto docall;
 	}
 	else if (g_config.force_sleepskip > 0) {
-		LOQ_ntstatus("system", "is", "Milliseconds", dwMilliseconds, "Status", "Skipped");
+		LOQ_msgwait("system", "is", "Milliseconds", dwMilliseconds, "Status", "Skipped");
 		dwMilliseconds = 0;
 		goto docall;
 	}
@@ -260,11 +260,11 @@ HOOKDEF(DWORD, WINAPI, MsgWaitForMultipleObjectsEx,
 
 	if (dwMilliseconds <= 10) {
 		if (num_msg_small < 20) {
-			LOQ_ntstatus("system", "i", "Milliseconds", dwMilliseconds);
+			LOQ_msgwait("system", "i", "Milliseconds", dwMilliseconds);
 			num_msg_small++;
 		}
 		else if (num_msg_small == 20) {
-			LOQ_ntstatus("system", "s", "Status", "Small log limit reached");
+			LOQ_msgwait("system", "s", "Status", "Small log limit reached");
 			num_msg_small++;
 		}
 		else if (num_msg_small > 20) {
@@ -274,7 +274,7 @@ HOOKDEF(DWORD, WINAPI, MsgWaitForMultipleObjectsEx,
 		}
 	}
 	else {
-		LOQ_ntstatus("system", "i", "Milliseconds", dwMilliseconds);
+		LOQ_msgwait("system", "i", "Milliseconds", dwMilliseconds);
 	}
 
 docall:
