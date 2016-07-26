@@ -237,7 +237,7 @@ HOOKDEF(DWORD, WINAPI, MsgWaitForMultipleObjectsEx,
 	_In_       DWORD  dwWakeMask,
 	_In_       DWORD  dwFlags
 ) {
-	DWORD ret;
+	DWORD ret = 0;
 
 	if (dwMilliseconds == INFINITE || nCount)
 		goto docall;
