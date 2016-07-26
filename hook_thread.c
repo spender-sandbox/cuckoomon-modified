@@ -158,7 +158,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
     IN      HANDLE ProcessHandle,
     IN      LPTHREAD_START_ROUTINE lpStartAddress,
     IN      PVOID lpParameter,
-    IN      UCHAR CreateFlags,
+    IN      DWORD CreateFlags,
     IN      LONG StackZeroBits,
     IN      LONG SizeOfStackCommit,
     IN      LONG SizeOfStackReserve,
@@ -184,7 +184,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
 			set_lasterrors(&lasterror);
 		}
 	}
-	LOQ_ntstatus("threading", "Ppphi", "ThreadHandle", hThread, "ProcessHandle", ProcessHandle,
+	LOQ_ntstatus("threading", "Ppph", "ThreadHandle", hThread, "ProcessHandle", ProcessHandle,
         "StartAddress", lpStartAddress, "CreateFlags", CreateFlags);
 
 	if (NT_SUCCESS(ret))
