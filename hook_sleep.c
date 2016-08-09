@@ -398,6 +398,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetTimerEx,
 		timerinfo->DueTime.QuadPart = -(10000 * 10000);
 		time_skipped.QuadPart += interval - (10000 * 10000);
 		LOQ_ntstatus("system", "is", "Milliseconds", milli, "Status", "Skipped");
+		modified_delay = TRUE;
 		goto docall;
 	}
 	else if (g_config.force_sleepskip > 0) {
