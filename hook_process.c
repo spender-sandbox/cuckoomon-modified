@@ -600,7 +600,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWow64ReadVirtualMemory64,
 
 	pid = pid_from_process_handle(ProcessHandle);
 
-	LOQ_ntstatus("process", "pxB", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+	LOQ_ntstatus("process", "pxb", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 		"Buffer", NumberOfBytesRead->LowPart, Buffer);
 
 	return ret;
@@ -622,7 +622,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtWow64WriteVirtualMemory64,
 	pid = pid_from_process_handle(ProcessHandle);
 
 	if (pid != GetCurrentProcessId()) {
-		LOQ_bool("process", "pxBhs", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
+		LOQ_bool("process", "pxbhs", "ProcessHandle", ProcessHandle, "BaseAddress", BaseAddress,
 			"Buffer", NumberOfBytesWritten->LowPart, Buffer, "BufferLength", NumberOfBytesWritten->LowPart, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
 
 		if (ret) {
