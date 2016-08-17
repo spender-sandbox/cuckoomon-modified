@@ -659,6 +659,9 @@ int hook_api(hook_t *h, int type)
 			}
 			addr = (unsigned char *)get_near_rel_target(&baseaddr[instroff]);
 		}
+		else if (!strcmp(h->funcname, "ConnectEx")) {
+			addr = (unsigned char *)get_connectex_addr(hmod);
+		}
 		else if (!wcscmp(h->library, L"kernel32") && !strcmp(h->funcname, "MoveFileWithProgressTransactedW")) {
 			unsigned char *tmpaddr = (unsigned char *)GetProcAddress(hmod, "MoveFileWithProgressW");
 			if (tmpaddr[22] == 0xe8 && tmpaddr[28] == 0xc2) {

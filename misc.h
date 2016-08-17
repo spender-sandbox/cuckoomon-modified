@@ -171,6 +171,7 @@ void num_to_string(char *buf, unsigned int buflen, unsigned int num);
 
 DWORD get_image_size(ULONG_PTR base);
 
+ULONG_PTR get_connectex_addr(HMODULE mod);
 ULONG_PTR get_jseval_addr(HMODULE mod);
 ULONG_PTR get_cdocument_write_addr(HMODULE mod);
 ULONG_PTR get_olescript_compile_addr(HMODULE mod);

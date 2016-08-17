@@ -1,6 +1,6 @@
 /*
 Cuckoo Sandbox - Automated Malware Analysis
-Copyright (C) 2010-2015 Cuckoo Sandbox Developers, Optiv, Inc. (brad.spengler@optiv.com)
+Copyright (C) 2010-2016 Cuckoo Sandbox Developers, Optiv, Inc. (brad.spengler@optiv.com), Brad Spengler
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1553,6 +1553,19 @@ static BOOL get_section_bounds(HMODULE mod, const char * sectionname, PUCHAR *st
 		return TRUE;
 	}
 	return FALSE;
+}
+
+ULONG_PTR get_connectex_addr(HMODULE mod)
+{
+	PUCHAR start, end;
+	PUCHAR p;
+
+	if (!get_section_bounds(mod, ".data", &start, &end))
+		return 0;
+	p = find_string_in_bounds(start, end, (PUCHAR)"\xb9\x07\xa2\x25\xf3\xdd\x60\x46\x8e\xe9\x76\xe5\x8c\x74\x06\x3e", 16);
+	if (p == NULL)
+		return 0;
+	return *(ULONG_PTR *)(p + 16);
 }
 
 ULONG_PTR get_jseval_addr(HMODULE mod)

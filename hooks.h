@@ -2374,6 +2374,38 @@ extern HOOKDEF(int, WSAAPI, WSAConnect,
 	__in   LPQOS lpGQOS
 );
 
+extern HOOKDEF(BOOL, PASCAL, WSAConnectByList,
+	_In_          SOCKET               s,
+	_In_          PSOCKET_ADDRESS_LIST SocketAddressList,
+	_Inout_       LPDWORD              LocalAddressLength,
+	_Out_         LPSOCKADDR           LocalAddress,
+	_Inout_       LPDWORD              RemoteAddressLength,
+	_Out_         LPSOCKADDR           RemoteAddress,
+	_In_          PVOID				   timeout,
+	_In_          LPWSAOVERLAPPED      Reserved
+);
+
+extern HOOKDEF(BOOL, PASCAL, WSAConnectByNameW,
+	_In_          SOCKET          s,
+	_In_          LPWSTR          nodename,
+	_In_          LPWSTR          servicename,
+	_Inout_       LPDWORD         LocalAddressLength,
+	_Out_         LPSOCKADDR      LocalAddress,
+	_Inout_       LPDWORD         RemoteAddressLength,
+	_Out_         LPSOCKADDR      RemoteAddress,
+	_In_		  PVOID			  timeout,
+	LPWSAOVERLAPPED Reserved
+);
+
+extern HOOKDEF(int, WSAAPI, WSASendMsg,
+	_In_  SOCKET                             s,
+	_In_  LPWSAMSG                           lpMsg,
+	_In_  DWORD                              dwFlags,
+	_Out_ LPDWORD                            lpNumberOfBytesSent,
+	_In_  LPWSAOVERLAPPED                    lpOverlapped,
+	_In_  LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+);
+
 extern HOOKDEF(BOOL, PASCAL, ConnectEx,
     _In_      SOCKET s,
     _In_      const struct sockaddr *name,

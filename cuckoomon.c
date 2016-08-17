@@ -523,10 +523,13 @@ static hook_t g_hooks[] = {
 
 	HOOK(ws2_32, WSAAccept),
 	HOOK(ws2_32, WSAConnect),
+	HOOK(ws2_32, WSAConnectByNameW),
+	HOOK(ws2_32, WSAConnectByList),
 	HOOK(ws2_32, WSARecv),
     HOOK(ws2_32, WSARecvFrom),
     HOOK(ws2_32, WSASend),
     HOOK(ws2_32, WSASendTo),
+	HOOK(ws2_32, WSASendMsg),
     HOOK(ws2_32, WSASocketA),
     HOOK(ws2_32, WSASocketW),
 

@@ -1,6 +1,6 @@
 /*
 Cuckoo Sandbox - Automated Malware Analysis
-Copyright (C) 2010-2015 Cuckoo Sandbox Developers, Optiv, Inc. (brad.spengler@optiv.com)
+Copyright (C) 2010-2016 Cuckoo Sandbox Developers, Optiv, Inc. (brad.spengler@optiv.com), Brad Spengler
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -509,5 +509,64 @@ HOOKDEF(int, WSAAPI, gethostname,
 	
 	LOQ_sockerr("network", "s", "HostName", ret != SOCKET_ERROR && namelen ? name : NULL);
 
+	return ret;
+}
+
+HOOKDEF(BOOL, PASCAL, WSAConnectByList,
+	_In_          SOCKET               s,
+	_In_          PSOCKET_ADDRESS_LIST SocketAddressList,
+	_Inout_       LPDWORD              LocalAddressLength,
+	_Out_         LPSOCKADDR           LocalAddress,
+	_Inout_       LPDWORD              RemoteAddressLength,
+	_Out_         LPSOCKADDR           RemoteAddress,
+	_In_          PVOID				   timeout,
+	_In_          LPWSAOVERLAPPED      Reserved
+) {
+	char ip[16] = { 0 };
+	int port = 0;
+	BOOL ret = Old_WSAConnectByList(s, SocketAddressList, LocalAddressLength, LocalAddress, RemoteAddressLength, RemoteAddress, timeout, Reserved);
+
+	if (SocketAddressList->iAddressCount > 0)
+		get_ip_port(SocketAddressList->Address[0].lpSockaddr, ip, &port);
+
+	LOQ_bool("network", "isi", "NumberOfAddresses", SocketAddressList->iAddressCount, "ip", ip, "port", port);
+	return ret;
+}
+
+HOOKDEF(BOOL, PASCAL, WSAConnectByNameW,
+	_In_          SOCKET          s,
+	_In_          LPWSTR          nodename,
+	_In_          LPWSTR          servicename,
+	_Inout_       LPDWORD         LocalAddressLength,
+	_Out_         LPSOCKADDR      LocalAddress,
+	_Inout_       LPDWORD         RemoteAddressLength,
+	_Out_         LPSOCKADDR      RemoteAddress,
+	_In_		  PVOID			  timeout,
+	LPWSAOVERLAPPED Reserved
+) {
+	BOOL ret = Old_WSAConnectByNameW(s, nodename, servicename, LocalAddressLength, LocalAddress, RemoteAddressLength, RemoteAddress, timeout, Reserved);
+	LOQ_bool("network", "uu", "NodeName", nodename, "ServiceName", servicename);
+	return ret;
+}
+
+HOOKDEF(int, WSAAPI, WSASendMsg,
+	_In_  SOCKET                             s,
+	_In_  LPWSAMSG                           lpMsg,
+	_In_  DWORD                              dwFlags,
+	_Out_ LPDWORD                            lpNumberOfBytesSent,
+	_In_  LPWSAOVERLAPPED                    lpOverlapped,
+	_In_  LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine
+) {
+	char ip[16] = { 0 };
+	int port = 0;
+	PVOID buf;
+	DWORD outlen = 0;
+
+	int ret = Old_WSASendMsg(s, lpMsg, dwFlags, lpNumberOfBytesSent, lpOverlapped, lpCompletionRoutine);
+	buf = alloc_combined_wsabuf(lpMsg->lpBuffers, lpMsg->dwBufferCount, &outlen);
+
+	get_ip_port(lpMsg->name, ip, &port);
+
+	LOQ_sockerr("network", "Bsi", "MsgBuffer", lpNumberOfBytesSent, buf, "ip", ip, "port", port);
 	return ret;
 }
