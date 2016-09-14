@@ -818,6 +818,29 @@ extern HOOKDEF(NTSTATUS, WINAPI, NtCreateNamedPipeFile,
     IN          PLARGE_INTEGER DefaultTimeOut
 );
 
+extern HOOKDEF(NTSTATUS, WINAPI, NtAddAtom,
+	IN	PWCHAR AtomName,
+	IN	ULONG	AtomNameLength,
+	OUT PRTL_ATOM Atom
+);
+
+extern HOOKDEF(NTSTATUS, WINAPI, NtDeleteAtom,
+	IN RTL_ATOM Atom
+);
+
+extern HOOKDEF(NTSTATUS, WINAPI, NtFindAtom,
+	IN	PWCHAR AtomName,
+	IN	ULONG AtomNameLength,
+	OUT PRTL_ATOM Atom OPTIONAL
+);
+
+extern HOOKDEF(NTSTATUS, WINAPI, NtAddAtomEx,
+	IN	PWCHAR AtomName,
+	IN	ULONG	AtomNameLength,
+	OUT PRTL_ATOM Atom,
+	IN	PVOID	Unknown
+);
+
 //
 // Process Hooks
 //
