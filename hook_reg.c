@@ -50,6 +50,7 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExA,
 			errors.NtstatusError = STATUS_OBJECT_NAME_NOT_FOUND;
 			set_lasterrors(&errors);
 		}
+      free(keybuf);
     }
 
     LOQ_zero("registry", "psPe", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult,
@@ -84,6 +85,7 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExW,
 			errors.NtstatusError = STATUS_OBJECT_NAME_NOT_FOUND;
 			set_lasterrors(&errors);
 		}
+      free(keybuf);
 	}
 
     LOQ_zero("registry", "puPE", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult,
