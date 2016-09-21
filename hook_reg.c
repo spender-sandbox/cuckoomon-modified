@@ -44,7 +44,8 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExA,
 			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__") ||
 			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP") ||
 			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT")) {
+			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT") ||
+			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Enum\\PCI\\VEN_80EE&DEV_CAFE&SUBSYS_00000000&REV_00\\3&267A616A&0&20")) {
 			lasterror_t errors;
 			ret = errors.Win32Error = ERROR_FILE_NOT_FOUND;
 			errors.NtstatusError = STATUS_OBJECT_NAME_NOT_FOUND;
@@ -79,7 +80,8 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExW,
 			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__") ||
 			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP") ||
 			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT")) {
+			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT") ||
+			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Enum\\PCI\\VEN_80EE&DEV_CAFE&SUBSYS_00000000&REV_00\\3&267A616A&0&20")) {
 			lasterror_t errors;
 			ret = errors.Win32Error = ERROR_FILE_NOT_FOUND;
 			errors.NtstatusError = STATUS_OBJECT_NAME_NOT_FOUND;
