@@ -265,8 +265,8 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyW,
 		};
 
 		for (i = 0; i < _countof(parent_keys); ++i) {
-			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[i])) {
-				wcscpy(lpName, replace_subkeys[i+1]);
+			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[i << 1])) {
+				wcscpy(lpName, replace_subkeys[(i << 1) + 1]);
 				break;
 			}
 		}
@@ -312,8 +312,8 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExA,
 		};
 
 		for (i = 0; i < _countof(parent_keys); ++i) {
-			if (!wcsicmp(keypath, parent_keys[i]) && !stricmp(lpName, replace_subkeys[i])) {
-				strcpy(lpName, replace_subkeys[i + 1]);
+			if (!wcsicmp(keypath, parent_keys[i]) && !stricmp(lpName, replace_subkeys[i << 1])) {
+				strcpy(lpName, replace_subkeys[(i << 1) + 1]);
 				break;
 			}
 		}
@@ -358,8 +358,8 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExW,
 		};
 
 		for (i = 0; i < _countof(parent_keys); ++i) {
-			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[i])) {
-				wcscpy(lpName, replace_subkeys[i + 1]);
+			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[i << 1])) {
+				wcscpy(lpName, replace_subkeys[(i << 1) + 1]);
 				break;
 			}
 		}
