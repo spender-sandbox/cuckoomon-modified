@@ -23,14 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "config.h"
 
-HOOKDEF(LONG, WINAPI, RegCloseKey,
-	__in    HKEY hKey
-	) {
-	LONG ret = Old_RegCloseKey(hKey);
-	LOQ_zero("registry", "p", "Handle", hKey);
-	return ret;
-}
-
 HOOKDEF(LONG, WINAPI, RegOpenKeyExA,
     __in        HKEY hKey,
     __in_opt    LPCTSTR lpSubKey,
@@ -62,8 +54,8 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExA,
 			if (!wcsicmp(keypath, hidden_keys[i])) {
 				lasterror_t errors;
 				// clean up state to avoid leaking information
-				if (ret == ERROR_SUCCESS && phkResult && Old_RegCloseKey) {
-					Old_RegCloseKey(*phkResult);
+				if (ret == ERROR_SUCCESS && phkResult) {
+					RegCloseKey(*phkResult);
 					*phkResult = saved_hkey;
 				}
 				ret = errors.Win32Error = ERROR_FILE_NOT_FOUND;
@@ -111,8 +103,8 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExW,
 			if (!wcsicmp(keypath, hidden_keys[i])) {
 				lasterror_t errors;
 				// clean up state to avoid leaking information
-				if (ret == ERROR_SUCCESS && phkResult && Old_RegCloseKey) {
-					Old_RegCloseKey(*phkResult);
+				if (ret == ERROR_SUCCESS && phkResult) {
+					RegCloseKey(*phkResult);
 					*phkResult = saved_hkey;
 				}
 				ret = errors.Win32Error = ERROR_FILE_NOT_FOUND;
@@ -627,6 +619,14 @@ HOOKDEF(LONG, WINAPI, RegQueryInfoKeyW,
         "MaxValueNameLength", lpcMaxValueNameLen,
         "MaxValueLength", lpcMaxValueLen);
     return ret;
+}
+
+HOOKDEF(LONG, WINAPI, RegCloseKey,
+	__in    HKEY hKey
+	) {
+	LONG ret = Old_RegCloseKey(hKey);
+	LOQ_zero("registry", "p", "Handle", hKey);
+	return ret;
 }
 
 HOOKDEF(LONG, WINAPI, RegNotifyChangeKeyValue,
