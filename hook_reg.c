@@ -23,6 +23,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "log.h"
 #include "config.h"
 
+HOOKDEF(LONG, WINAPI, RegCloseKey,
+	__in    HKEY hKey
+	) {
+	LONG ret = Old_RegCloseKey(hKey);
+	LOQ_zero("registry", "p", "Handle", hKey);
+	return ret;
+}
+
 HOOKDEF(LONG, WINAPI, RegOpenKeyExA,
     __in        HKEY hKey,
     __in_opt    LPCTSTR lpSubKey,
@@ -30,27 +38,41 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExA,
     __in        REGSAM samDesired,
     __out       PHKEY phkResult
 ) {
+	HKEY saved_hkey = phkResult ? *phkResult : INVALID_HANDLE_VALUE;
     LONG ret = Old_RegOpenKeyExA(hKey, lpSubKey, ulOptions, samDesired,
         phkResult);
 
     // fake the absence of some keys
-    if (!g_config.no_stealth && ret == ERROR_SUCCESS) {
-        unsigned int allocsize = sizeof(KEY_NAME_INFORMATION)+MAX_KEY_BUFLEN;
+    if (!g_config.no_stealth && (ret == ERROR_SUCCESS || ret == ERROR_ACCESS_DENIED)) {
+        unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
         PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
         wchar_t *keypath = get_full_key_pathA(hKey, lpSubKey, keybuf, allocsize);
+		int i;
 
-		if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT")) {
-			lasterror_t errors;
-			ret = errors.Win32Error = ERROR_FILE_NOT_FOUND;
-			errors.NtstatusError = STATUS_OBJECT_NAME_NOT_FOUND;
-			set_lasterrors(&errors);
+		wchar_t *hidden_keys[] = {
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT"
+		};
+
+		for (i = 0; i < _countof(hidden_keys); ++i) {
+			if (!wcsicmp(keypath, hidden_keys[i])) {
+				lasterror_t errors;
+				// clean up state to avoid leaking information
+				if (ret == ERROR_SUCCESS && phkResult && Old_RegCloseKey) {
+					Old_RegCloseKey(*phkResult);
+					*phkResult = saved_hkey;
+				}
+				ret = errors.Win32Error = ERROR_FILE_NOT_FOUND;
+				errors.NtstatusError = STATUS_OBJECT_NAME_NOT_FOUND;
+				set_lasterrors(&errors);
+				break;
+			}
 		}
-      free(keybuf);
+		free(keybuf);
     }
 
     LOQ_zero("registry", "psPe", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult,
@@ -65,27 +87,41 @@ HOOKDEF(LONG, WINAPI, RegOpenKeyExW,
     __in        REGSAM samDesired,
     __out       PHKEY phkResult
 ) {
+	HKEY saved_hkey = phkResult ? *phkResult : INVALID_HANDLE_VALUE;
     LONG ret = Old_RegOpenKeyExW(hKey, lpSubKey, ulOptions, samDesired,
         phkResult);
 
     // fake the absence of some keys
-    if (!g_config.no_stealth && ret == ERROR_SUCCESS) {
-        unsigned int allocsize = sizeof(KEY_NAME_INFORMATION)+MAX_KEY_BUFLEN;
+    if (!g_config.no_stealth && (ret == ERROR_SUCCESS || ret == ERROR_ACCESS_DENIED)) {
+        unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
         PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
         wchar_t *keypath = get_full_key_pathW(hKey, lpSubKey, keybuf, allocsize);
+		int i;
 
-		if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__") ||
-			!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT")) {
-			lasterror_t errors;
-			ret = errors.Win32Error = ERROR_FILE_NOT_FOUND;
-			errors.NtstatusError = STATUS_OBJECT_NAME_NOT_FOUND;
-			set_lasterrors(&errors);
+		wchar_t *hidden_keys[] = {
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT"
+		};
+
+		for (i = 0; i < _countof(hidden_keys); ++i) {
+			if (!wcsicmp(keypath, hidden_keys[i])) {
+				lasterror_t errors;
+				// clean up state to avoid leaking information
+				if (ret == ERROR_SUCCESS && phkResult && Old_RegCloseKey) {
+					Old_RegCloseKey(*phkResult);
+					*phkResult = saved_hkey;
+				}
+				ret = errors.Win32Error = ERROR_FILE_NOT_FOUND;
+				errors.NtstatusError = STATUS_OBJECT_NAME_NOT_FOUND;
+				set_lasterrors(&errors);
+				break;
+			}
 		}
-      free(keybuf);
+		free(keybuf);
 	}
 
     LOQ_zero("registry", "puPE", "Registry", hKey, "SubKey", lpSubKey, "Handle", phkResult,
@@ -109,6 +145,32 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExA,
 	ret = Old_RegCreateKeyExA(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
+
+	// fake the absence of some keys
+	if (!g_config.no_stealth && ret == ERROR_SUCCESS && *lpdwDisposition == REG_OPENED_EXISTING_KEY) {
+		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+		wchar_t *keypath = get_full_key_pathA(hKey, lpSubKey, keybuf, allocsize);
+		int i;
+
+		wchar_t *hidden_keys[] = {
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT"
+		};
+
+		for (i = 0; i < _countof(hidden_keys); ++i) {
+			if (!wcsicmp(keypath, hidden_keys[i])) {
+				*lpdwDisposition = REG_CREATED_NEW_KEY;
+				break;
+			}
+		}
+		free(keybuf);
+	}
+
     LOQ_zero("registry", "psshPeI", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
         "Access", samDesired, "Handle", phkResult, "FullName", hKey, lpSubKey,
 		"Disposition", lpdwDisposition);
@@ -131,7 +193,33 @@ HOOKDEF(LONG, WINAPI, RegCreateKeyExW,
 	ret = Old_RegCreateKeyExW(hKey, lpSubKey, Reserved, lpClass,
         dwOptions, samDesired, lpSecurityAttributes, phkResult,
         lpdwDisposition);
-    LOQ_zero("registry", "puuhPEI", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
+
+	// fake the absence of some keys
+	if (!g_config.no_stealth && ret == ERROR_SUCCESS && *lpdwDisposition == REG_OPENED_EXISTING_KEY) {
+		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+		wchar_t *keypath = get_full_key_pathW(hKey, lpSubKey, keybuf, allocsize);
+		int i;
+
+		wchar_t *hidden_keys[] = {
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT\\VBOX__\\VBOXBIOS",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT\\VBOX__\\VBOXFACP",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT\\VBOX__\\VBOXRSDT"
+		};
+
+		for (i = 0; i < _countof(hidden_keys); ++i) {
+			if (!wcsicmp(keypath, hidden_keys[i])) {
+				*lpdwDisposition = REG_CREATED_NEW_KEY;
+				break;
+			}
+		}
+		free(keybuf);
+	}
+	
+	LOQ_zero("registry", "puuhPEI", "Registry", hKey, "SubKey", lpSubKey, "Class", lpClass,
         "Access", samDesired, "Handle", phkResult, "FullName", hKey, lpSubKey,
 		"Disposition", lpdwDisposition);
 	return ret;
@@ -164,6 +252,35 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyW,
     __in   DWORD cchName
 ) {
 	LONG ret = Old_RegEnumKeyW(hKey, dwIndex, lpName, cchName);
+
+	// fake the absence of some keys
+	if (!g_config.no_stealth && ret == ERROR_SUCCESS) {
+		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+		wchar_t *keypath = get_full_key_pathW(hKey, NULL, keybuf, allocsize);
+		int i;
+
+		wchar_t *parent_keys[] = {
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT",
+		};
+
+		wchar_t *replace_subkeys[] = {
+			L"VBOX__", L"DELL__",
+			L"VBOX__", L"DELL__",
+			L"VBOX__", L"DELL__"
+		};
+
+		for (i = 0; i < _countof(parent_keys); ++i) {
+			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[i])) {
+				wcscpy(lpName, replace_subkeys[i+1]);
+				break;
+			}
+		}
+		free(keybuf);
+	}
+
     LOQ_zero("registry", "piuE", "Handle", hKey, "Index", dwIndex, "Name", ret ? L"" : lpName,
 		"FullName", hKey, ret ? L"" : lpName);
 
@@ -182,6 +299,35 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExA,
 ) {
 	LONG ret = Old_RegEnumKeyExA(hKey, dwIndex, lpName, lpcName, lpReserved,
         lpClass, lpcClass, lpftLastWriteTime);
+
+	// fake the absence of some keys
+	if (!g_config.no_stealth && ret == ERROR_SUCCESS) {
+		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+		wchar_t *keypath = get_full_key_pathA(hKey, NULL, keybuf, allocsize);
+		int i;
+
+		wchar_t *parent_keys[] = {
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT"
+		};
+
+		char *replace_subkeys[] = {
+			"VBOX__", "DELL__",
+			"VBOX__", "DELL__",
+			"VBOX__", "DELL__"
+		};
+
+		for (i = 0; i < _countof(parent_keys); ++i) {
+			if (!wcsicmp(keypath, parent_keys[i]) && !stricmp(lpName, replace_subkeys[i])) {
+				strcpy(lpName, replace_subkeys[i + 1]);
+				break;
+			}
+		}
+		free(keybuf);
+	}
+
     LOQ_zero("registry", "pisse", "Handle", hKey, "Index", dwIndex, "Name", ret ? "" : lpName,
 		"Class", ret ? "" : lpClass, "FullName", hKey, ret ? "" : lpName);
     return ret;
@@ -199,6 +345,35 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExW,
 ) {
 	LONG ret = Old_RegEnumKeyExW(hKey, dwIndex, lpName, lpcName, lpReserved,
         lpClass, lpcClass, lpftLastWriteTime);
+
+	// fake the absence of some keys
+	if (!g_config.no_stealth && ret == ERROR_SUCCESS) {
+		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
+		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
+		wchar_t *keypath = get_full_key_pathW(hKey, NULL, keybuf, allocsize);
+		int i;
+
+		wchar_t *parent_keys[] = {
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\FADT",
+			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\RSDT",
+		};
+
+		wchar_t *replace_subkeys[] = {
+			L"VBOX__", L"DELL__",
+			L"VBOX__", L"DELL__",
+			L"VBOX__", L"DELL__"
+		};
+
+		for (i = 0; i < _countof(parent_keys); ++i) {
+			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[i])) {
+				wcscpy(lpName, replace_subkeys[i + 1]);
+				break;
+			}
+		}
+		free(keybuf);
+	}
+
     LOQ_zero("registry", "piuuE", "Handle", hKey, "Index", dwIndex, "Name", ret ? L"" : lpName,
 		"Class", ret ? L"" : lpClass, "FullName", hKey, ret ? L"" : lpName);
     return ret;
@@ -451,14 +626,6 @@ HOOKDEF(LONG, WINAPI, RegQueryInfoKeyW,
         "MaxClassLength", lpcMaxClassLen, "ValueCount", lpcValues,
         "MaxValueNameLength", lpcMaxValueNameLen,
         "MaxValueLength", lpcMaxValueLen);
-    return ret;
-}
-
-HOOKDEF(LONG, WINAPI, RegCloseKey,
-    __in    HKEY hKey
-) {
-    LONG ret = Old_RegCloseKey(hKey);
-    LOQ_zero("registry", "p", "Handle", hKey);
     return ret;
 }
 
