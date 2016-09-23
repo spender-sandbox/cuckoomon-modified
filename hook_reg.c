@@ -250,7 +250,7 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyW,
 		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
 		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
 		wchar_t *keypath = get_full_key_pathW(hKey, NULL, keybuf, allocsize);
-		int i;
+		int i, j;
 
 		wchar_t *parent_keys[] = {
 			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT",
@@ -264,9 +264,9 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyW,
 			L"VBOX__", L"DELL__"
 		};
 
-		for (i = 0; i < _countof(parent_keys); ++i) {
-			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[i << 1])) {
-				wcscpy(lpName, replace_subkeys[(i << 1) + 1]);
+		for (i = 0, j = 0; i < _countof(parent_keys); i += 1, j += 2) {
+			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[j])) {
+				wcscpy(lpName, replace_subkeys[j + 1]);
 				break;
 			}
 		}
@@ -297,7 +297,7 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExA,
 		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
 		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
 		wchar_t *keypath = get_full_key_pathA(hKey, NULL, keybuf, allocsize);
-		int i;
+		int i, j;
 
 		wchar_t *parent_keys[] = {
 			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT",
@@ -311,9 +311,9 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExA,
 			"VBOX__", "DELL__"
 		};
 
-		for (i = 0; i < _countof(parent_keys); ++i) {
-			if (!wcsicmp(keypath, parent_keys[i]) && !stricmp(lpName, replace_subkeys[i << 1])) {
-				strcpy(lpName, replace_subkeys[(i << 1) + 1]);
+		for (i = 0, j = 0; i < _countof(parent_keys); i += 1, j += 2) {
+			if (!wcsicmp(keypath, parent_keys[i]) && !stricmp(lpName, replace_subkeys[j])) {
+				strcpy(lpName, replace_subkeys[j + 1]);
 				break;
 			}
 		}
@@ -343,7 +343,7 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExW,
 		unsigned int allocsize = sizeof(KEY_NAME_INFORMATION) + MAX_KEY_BUFLEN;
 		PKEY_NAME_INFORMATION keybuf = malloc(allocsize);
 		wchar_t *keypath = get_full_key_pathW(hKey, NULL, keybuf, allocsize);
-		int i;
+		int i, j;
 
 		wchar_t *parent_keys[] = {
 			L"HKEY_LOCAL_MACHINE\\HARDWARE\\ACPI\\DSDT",
@@ -357,9 +357,9 @@ HOOKDEF(LONG, WINAPI, RegEnumKeyExW,
 			L"VBOX__", L"DELL__"
 		};
 
-		for (i = 0; i < _countof(parent_keys); ++i) {
-			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[i << 1])) {
-				wcscpy(lpName, replace_subkeys[(i << 1) + 1]);
+		for (i = 0, j = 0; i < _countof(parent_keys); i += 1, j += 2) {
+			if (!wcsicmp(keypath, parent_keys[i]) && !wcsicmp(lpName, replace_subkeys[j])) {
+				wcscpy(lpName, replace_subkeys[j + 1]);
 				break;
 			}
 		}
