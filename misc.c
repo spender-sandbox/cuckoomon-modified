@@ -328,6 +328,12 @@ void perform_ascii_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLength
 		replace_string_in_buf(Data, DataLength, "Xeon(R) ", "Core(TM)");
 	}
 
+	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\BIOS\\SystemManufacturer") ||
+		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\BIOS\\SystemProductName")) {
+		replace_string_in_buf(Data, DataLength, "VMware", "Lenovo");
+		replace_string_in_buf(Data, DataLength, "Virtual Platform", "X230 ThinkPad PC");
+	}
+
 	// fake the manufacturer name
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Control\\SystemInformation\\SystemManufacturer"))
 		replace_string_in_buf(Data, DataLength, "QEMU", "DELL");
