@@ -387,9 +387,11 @@ HOOKDEF_NOTAIL(WINAPI, JsEval,
 #else
 
 	p = (PUCHAR)scriptobj[4 * Index - 2];
-	jsbuf = *(PWCHAR *)(p + 8);
-	if (jsbuf)
-		LOQ_ntstatus("browser", "u", "Javascript", jsbuf);
+	if (p) {
+		jsbuf = *(PWCHAR *)(p + 8);
+		if (jsbuf)
+			LOQ_ntstatus("browser", "u", "Javascript", jsbuf);
+	}
 
 	return ret;
 #endif
