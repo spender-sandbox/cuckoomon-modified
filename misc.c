@@ -392,13 +392,13 @@ void perform_unicode_registry_fakery(PWCHAR keypath, LPVOID Data, ULONG DataLeng
 	if (!wcsnicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor", 63) &&
 		!wcsicmp(keypath + wcslen(keypath) - wcslen(L"ProcessorNameString"), L"ProcessorNameString")) {
 		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"QEMU Virtual CPU version 2.0.0", L"Intel(R) Core(TM) i7 CPU @3GHz");
-		replace_wstring_in_buf(Data, DataLength, L"Xeon(R) ", L"Core(TM)");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"Xeon(R) ", L"Core(TM)");
 	}
 
 	if (!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\BIOS\\SystemManufacturer") ||
 		!wcsicmp(keypath, L"HKEY_LOCAL_MACHINE\\HARDWARE\\DESCRIPTION\\System\\BIOS\\SystemProductName")) {
-		replace_wstring_in_buf(Data, DataLength, L"VMware", L"Lenovo");
-		replace_wstring_in_buf(Data, DataLength, L"Virtual Platform", L"X230 ThinkPad PC");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"VMware", L"Lenovo");
+		replace_wstring_in_buf(Data, DataLength / sizeof(wchar_t), L"Virtual Platform", L"X230 ThinkPad PC");
 	}
 
 	// fake the manufacturer name
