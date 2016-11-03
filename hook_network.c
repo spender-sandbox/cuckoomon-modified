@@ -255,13 +255,28 @@ HOOKDEF(HRESULT, WINAPI, URLDownloadToFileW,
     DWORD dwReserved,
     LPVOID lpfnCB
 ) {
-    HRESULT ret = Old_URLDownloadToFileW(pCaller, szURL, szFileName,
-        dwReserved, lpfnCB);
-	LOQ_hresult("network", "uFs", "URL", szURL, "FileName", szFileName, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
-    if(ret == S_OK) {
-        pipe("FILE_NEW:%S", -1, szFileName);
-    }
+    HRESULT ret = Old_URLDownloadToFileW(pCaller, szURL, szFileName, dwReserved, lpfnCB);
+    LOQ_hresult("network", "uFs", "URL", szURL, "FileName", szFileName, "StackPivoted", is_stack_pivoted() ? "yes" : "no");
+    if(ret == S_OK)
+      pipe("FILE_NEW:%Z", szFileName);
+
     return ret;
+}
+
+HOOKDEF(HRESULT, WINAPI, URLDownloadToCacheFileW,
+  _In_ LPUNKNOWN lpUnkcalled,
+  _In_ LPCWSTR szURL,
+  _Out_ LPWSTR szFilename,
+  _In_ DWORD cchFilename,
+  _Reserved_ DWORD dwReserved,
+  _In_opt_ VOID *pBSC
+) {
+  HRESULT ret = Old_URLDownloadToCacheFileW(lpUnkcalled, szURL, szFilename, cchFilename, dwReserved, pBSC);
+  LOQ_hresult("network", "uFs", "URL", szURL, "Filename", ret == S_OK ? szFilename : L"", "StackPivoted", is_stack_pivoted() ? "yes" : "no");
+  if (ret == S_OK)
+    pipe("FILE_NEW:%Z", szFilename);
+
+  return ret;
 }
 
 HOOKDEF(BOOL, WINAPI, InternetGetConnectedState,
