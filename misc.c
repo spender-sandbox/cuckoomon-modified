@@ -135,6 +135,25 @@ int is_stack_pivoted(void)
 	return 1;
 }
 
+PCHAR memmem(PCHAR haystack, ULONG hlen, PCHAR needle, ULONG nlen)
+{
+  if (nlen > hlen)
+    return NULL;
+
+  ULONG i;
+  for (i = 0; i < hlen - nlen + 1; i++) {
+    if (!memcmp(haystack + i, needle, nlen))
+      return haystack + i;
+  }
+
+  return NULL;
+}
+
+BOOL is_bytes_in_buf(PCHAR buf, ULONG len, PCHAR memstr, ULONG memlen, ULONG maxsearchbytes)
+{
+    return memmem(buf, min(maxsearchbytes, len), memstr, memlen) ? TRUE : FALSE;
+}
+
 void replace_string_in_buf(PCHAR buf, ULONG len, PCHAR findstr, PCHAR repstr)
 {
 	unsigned int findlen = (unsigned int)strlen(findstr);
