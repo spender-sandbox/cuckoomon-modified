@@ -663,7 +663,7 @@ HOOKDEF(BOOL, WINAPI, InternetReadFile,
     _Out_  LPDWORD lpdwNumberOfBytesRead
 ) {
     BOOL ret = Old_InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, lpdwNumberOfBytesRead);
-    if (is_bytes_in_buffer(lpBuffer, *lpdwNumberOfBytesRead, "\x00\x50\x4f\x4c\x49\x4d\x4f\x52\x46\x00", 10, 256))
+    if (is_bytes_in_buf(lpBuffer, *lpdwNumberOfBytesRead, "\x00\x50\x4f\x4c\x49\x4d\x4f\x52\x46\x00", 10, 256))
       LOQ_bool("network", "pC", "InternetHandle", hFile, "Buffer", lpdwNumberOfBytesRead, lpBuffer);
     else
       LOQ_bool("network", "pB", "InternetHandle", hFile, "Buffer", lpdwNumberOfBytesRead, lpBuffer);
