@@ -857,13 +857,13 @@ out:
 
 wchar_t *ensure_absolute_unicode_path(wchar_t *out, const wchar_t *in)
 {
-	wchar_t *tmpout;
-	wchar_t *nonexistent;
+	wchar_t *tmpout = NULL;
+	wchar_t *nonexistent = NULL;
 	unsigned int lenchars;
 	unsigned int nonexistentidx;
-	wchar_t *pathcomponent;
+	wchar_t *pathcomponent = NULL;
 	unsigned int pathcomponentlen;
-	const wchar_t *inadj;
+	const wchar_t *inadj = NULL;
 	unsigned int inlen;
 	int is_globalroot = 0;
 
