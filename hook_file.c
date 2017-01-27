@@ -1194,7 +1194,7 @@ HOOKDEF(BOOL, WINAPI, GetVolumeInformationByHandleW,
 	if (ret && lpVolumeSerialNumber && g_config.serial_number)
 		*lpVolumeSerialNumber = g_config.serial_number;
 
-	LOQ_bool("filesystem", "uH", "VolumeName", lpVolumeNameBuffer, "VolumeSerial", lpVolumeSerialNumber);
+	LOQ_bool("filesystem", "puH", "Handle", hFile, "VolumeName", lpVolumeNameBuffer, "VolumeSerial", lpVolumeSerialNumber);
 
 	return ret;
 }
