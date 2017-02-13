@@ -743,11 +743,8 @@ HOOKDEF_NOTAIL(WINAPI, MoveFileWithProgressW,
 	BOOL ret = TRUE;
 
 	if (lpProgressRoutine) {
-		wchar_t *path = malloc(32768 * sizeof(wchar_t));
-		ensure_absolute_unicode_path(path, lpExistingFileName);
-		LOQ_bool("filesystem", "uFh", "ExistingFileName", path,
+		LOQ_bool("filesystem", "FFh", "ExistingFileName", lpExistingFileName,
 			"NewFileName", lpNewFileName, "Flags", dwFlags);
-		free(path);
 		return 0;
 	}
 	return 1;
@@ -795,11 +792,8 @@ HOOKDEF_NOTAIL(WINAPI, MoveFileWithProgressTransactedW,
 	BOOL ret = TRUE;
 
 	if (lpProgressRoutine) {
-		wchar_t *path = malloc(32768 * sizeof(wchar_t));
-		ensure_absolute_unicode_path(path, lpExistingFileName);
-		LOQ_bool("filesystem", "uFh", "ExistingFileName", path,
+		LOQ_bool("filesystem", "FFh", "ExistingFileName", lpExistingFileName,
 			"NewFileName", lpNewFileName, "Flags", dwFlags);
-		free(path);
 		return 0;
 	}
 	return 1;
@@ -1014,7 +1008,31 @@ HOOKDEF(BOOL, WINAPI, CopyFileW,
 	return ret;
 }
 
-HOOKDEF(BOOL, WINAPI, CopyFileExW,
+HOOKDEF_NOTAIL(WINAPI, CopyFileExW,
+	_In_      LPWSTR lpExistingFileName,
+	_In_      LPWSTR lpNewFileName,
+	_In_opt_  LPPROGRESS_ROUTINE lpProgressRoutine,
+	_In_opt_  LPVOID lpData,
+	_In_opt_  LPBOOL pbCancel,
+	_In_      DWORD dwCopyFlags
+) {
+	BOOL ret = TRUE;
+	BOOL file_existed = FALSE;
+
+	if (GetFileAttributesW(lpNewFileName) != INVALID_FILE_ATTRIBUTES)
+		file_existed = TRUE;
+
+	if (lpProgressRoutine) {
+		LOQ_bool("filesystem", "FFis", "ExistingFileName", lpExistingFileName,
+			"NewFileName", lpNewFileName, "CopyFlags", dwCopyFlags, "ExistedBefore", file_existed ? "yes" : "no");
+		return 0;
+	}
+
+	return 1;
+}
+
+
+HOOKDEF_ALT(BOOL, WINAPI, CopyFileExW,
     _In_      LPWSTR lpExistingFileName,
     _In_      LPWSTR lpNewFileName,
     _In_opt_  LPPROGRESS_ROUTINE lpProgressRoutine,
@@ -1030,7 +1048,7 @@ HOOKDEF(BOOL, WINAPI, CopyFileExW,
 	ret = Old_CopyFileExW(lpExistingFileName, lpNewFileName,
         lpProgressRoutine, lpData, pbCancel, dwCopyFlags);
 	LOQ_bool("filesystem", "FFis", "ExistingFileName", lpExistingFileName,
-        "NewFileName", lpNewFileName, "CopyFlags", dwCopyFlags, file_existed ? "yes" : "no");
+        "NewFileName", lpNewFileName, "CopyFlags", dwCopyFlags, "ExistedBefore", file_existed ? "yes" : "no");
 
 	if (ret)
 		new_file_path_unicode(lpNewFileName);

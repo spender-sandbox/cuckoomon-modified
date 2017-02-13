@@ -137,7 +137,7 @@ static hook_t g_hooks[] = {
     // Covered by NtCreateFile() but still grab this information
     HOOK(kernel32, CopyFileA),
     HOOK(kernel32, CopyFileW),
-    HOOK(kernel32, CopyFileExW),
+    HOOK_NOTAIL_ALT(kernel32, CopyFileExW, 6),
 
     // Covered by NtSetInformationFile() but still grab this information
     HOOK(kernel32, DeleteFileA),
