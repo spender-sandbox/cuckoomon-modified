@@ -629,7 +629,7 @@ VOID CALLBACK DllLoadNotification(
 	_In_opt_ PVOID                       Context)
 {
 	PWCHAR dllname;
-	COPY_UNICODE_STRING(library, NotificationData->Loaded.BaseDllName);
+	COPY_UNICODE_STRING(library, NotificationData->Loaded.FullDllName);
 
 	if (g_config.debug) {
 		int ret = 0;
