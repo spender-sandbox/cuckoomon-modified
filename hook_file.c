@@ -404,7 +404,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtReadFile,
 		if (read_count < 50)
 			LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
 				"HandleName", fname, "Buffer", InitialBufferLength, InitialBuffer, "Length", AccumulatedLength);
-		else if (read_count == 50)
+		else
 			LOQ_ntstatus("filesystem", "pFbls", "FileHandle", FileHandle,
 				"HandleName", fname, "Buffer", InitialBufferLength, InitialBuffer, "Length", AccumulatedLength, "Status", "Maximum logged reads reached for this file");
 
@@ -445,11 +445,9 @@ HOOKDEF(NTSTATUS, WINAPI, NtWriteFile,
 			LOQ_ntstatus("filesystem", "pFbl", "FileHandle", FileHandle,
 				"HandleName", fname, "Buffer", length, Buffer, "Length", length);
 		}
-		else if (write_count == 50) {
+		else 
 			LOQ_ntstatus("filesystem", "pFbls", "FileHandle", FileHandle,
 				"HandleName", fname, "Buffer", length, Buffer, "Length", length, "Status", "Maximum logged writes reached for this file");
-
-		}
 
 		free(fname);
 	}
