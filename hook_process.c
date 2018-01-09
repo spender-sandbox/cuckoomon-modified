@@ -656,7 +656,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
         NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
 
 	/* Don't log an uninteresting case */
-	if (OldAccessProtection && *OldAccessProtection == NewAccessProtection)
+	if (NT_SUCCESS(ret) && OldAccessProtection && *OldAccessProtection == NewAccessProtection)
 		return ret;
 
 	memset(&meminfo, 0, sizeof(meminfo));
@@ -703,7 +703,7 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
         lpflOldProtect);
 
 	/* Don't log an uninteresting case */
-	if (lpflOldProtect && *lpflOldProtect == flNewProtect)
+	if (ret && lpflOldProtect && *lpflOldProtect == flNewProtect)
 		return ret;
 
 	memset(&meminfo, 0, sizeof(meminfo));
