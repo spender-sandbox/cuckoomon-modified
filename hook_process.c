@@ -209,47 +209,31 @@ HOOKDEF(BOOL, WINAPI, CreateProcessWithLogonW,
 ) {
 	BOOL ret;
 	LPWSTR origcommandline = NULL;
-	
+	ENSURE_STRUCT(lpProcessInfo, PROCESS_INFORMATION);
+
 	if (lpCommandLine)
 		origcommandline = wcsdup(lpCommandLine);
 
 	ret = Old_CreateProcessWithLogonW(lpUsername, lpDomain, lpPassword, dwLogonFlags, lpApplicationName, lpCommandLine, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInfo);
 
-	if (lpProcessInfo) {
-		LOQ_bool("process", "uuuhuuhiipp",
-			"Username", lpUsername,
-			"Domain", lpDomain,
-			"Password", lpPassword,
-			"LogonFlags", dwLogonFlags,
-			"ApplicationName", lpApplicationName,
-			"CommandLine", origcommandline,
-			"CreationFlags", dwCreationFlags,
-			"ProcessId", lpProcessInfo->dwProcessId,
-			"ThreadId", lpProcessInfo->dwThreadId,
-			"ProcessHandle", lpProcessInfo->hProcess,
-			"ThreadHandle", lpProcessInfo->hThread
-		);
-	}
-	else {
-		LOQ_bool("process", "uuuhuuhiipp",
-			"Username", lpUsername,
-			"Domain", lpDomain,
-			"Password", lpPassword,
-			"LogonFlags", dwLogonFlags,
-			"ApplicationName", lpApplicationName,
-			"CommandLine", origcommandline,
-			"CreationFlags", dwCreationFlags,
-			"ProcessId", NULL,
-			"ThreadId", NULL,
-			"ProcessHandle", NULL,
-			"ThreadHandle", NULL
-		);
-	}
+	LOQ_bool("process", "uuuhuuhiipp",
+		"Username", lpUsername,
+		"Domain", lpDomain,
+		"Password", lpPassword,
+		"LogonFlags", dwLogonFlags,
+		"ApplicationName", lpApplicationName,
+		"CommandLine", origcommandline,
+		"CreationFlags", dwCreationFlags,
+		"ProcessId", lpProcessInfo->dwProcessId,
+		"ThreadId", lpProcessInfo->dwThreadId,
+		"ProcessHandle", lpProcessInfo->hProcess,
+		"ThreadHandle", lpProcessInfo->hThread
+	);
 
 	if (origcommandline)
 		free(origcommandline);
 
-	if (ret && lpProcessInfo) {
+	if (ret) {
 		pipe("PROCESS:%d:%d,%d", is_suspended(lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId), lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId);
 		if (!(dwCreationFlags & CREATE_SUSPENDED))
 			ResumeThread(lpProcessInfo->hThread);
