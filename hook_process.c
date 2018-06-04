@@ -215,13 +215,41 @@ HOOKDEF(BOOL, WINAPI, CreateProcessWithLogonW,
 
 	ret = Old_CreateProcessWithLogonW(lpUsername, lpDomain, lpPassword, dwLogonFlags, lpApplicationName, lpCommandLine, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInfo);
 
-	LOQ_bool("process", "uuuhuuhiipp", "Username", lpUsername, "Domain", lpDomain, "Password", lpPassword, "LogonFlags", dwLogonFlags, "ApplicationName", lpApplicationName, "CommandLine", origcommandline, "CreationFlags", dwCreationFlags,
-		"ProcessId", lpProcessInfo->dwProcessId, "ThreadId", lpProcessInfo->dwThreadId, "ProcessHandle", lpProcessInfo->hProcess, "ThreadHandle", lpProcessInfo->hThread);
+	if (lpProcessInfo) {
+		LOQ_bool("process", "uuuhuuhiipp",
+			"Username", lpUsername,
+			"Domain", lpDomain,
+			"Password", lpPassword,
+			"LogonFlags", dwLogonFlags,
+			"ApplicationName", lpApplicationName,
+			"CommandLine", origcommandline,
+			"CreationFlags", dwCreationFlags,
+			"ProcessId", lpProcessInfo->dwProcessId,
+			"ThreadId", lpProcessInfo->dwThreadId,
+			"ProcessHandle", lpProcessInfo->hProcess,
+			"ThreadHandle", lpProcessInfo->hThread
+		);
+	}
+	else {
+		LOQ_bool("process", "uuuhuuhiipp",
+			"Username", lpUsername,
+			"Domain", lpDomain,
+			"Password", lpPassword,
+			"LogonFlags", dwLogonFlags,
+			"ApplicationName", lpApplicationName,
+			"CommandLine", origcommandline,
+			"CreationFlags", dwCreationFlags,
+			"ProcessId", NULL,
+			"ThreadId", NULL,
+			"ProcessHandle", NULL,
+			"ThreadHandle", NULL
+		);
+	}
 
 	if (origcommandline)
 		free(origcommandline);
 
-	if (ret) {
+	if (ret && lpProcessInfo) {
 		pipe("PROCESS:%d:%d,%d", is_suspended(lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId), lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId);
 		if (!(dwCreationFlags & CREATE_SUSPENDED))
 			ResumeThread(lpProcessInfo->hThread);
@@ -249,13 +277,35 @@ HOOKDEF(BOOL, WINAPI, CreateProcessWithTokenW,
 
 	ret = Old_CreateProcessWithTokenW(hToken, dwLogonFlags, lpApplicationName, lpCommandLine, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInfo);
 
-	LOQ_bool("process", "huuhiipp", "LogonFlags", dwLogonFlags, "ApplicationName", lpApplicationName, "CommandLine", origcommandline, "CreationFlags", dwCreationFlags,
-		"ProcessId", lpProcessInfo->dwProcessId, "ThreadId", lpProcessInfo->dwThreadId, "ProcessHandle", lpProcessInfo->hProcess, "ThreadHandle", lpProcessInfo->hThread);
+	if (lpProcessInfo) {
+		LOQ_bool("process", "huuhiipp",
+			"LogonFlags", dwLogonFlags,
+			"ApplicationName", lpApplicationName,
+			"CommandLine", origcommandline,
+			"CreationFlags", dwCreationFlags,
+			"ProcessId", lpProcessInfo->dwProcessId,
+			"ThreadId", lpProcessInfo->dwThreadId,
+			"ProcessHandle", lpProcessInfo->hProcess,
+			"ThreadHandle", lpProcessInfo->hThread
+		);
+	}
+	else {
+		LOQ_bool("process", "huuhiipp",
+			"LogonFlags", dwLogonFlags,
+			"ApplicationName", lpApplicationName,
+			"CommandLine", origcommandline,
+			"CreationFlags", dwCreationFlags,
+			"ProcessId", NULL,
+			"ThreadId", NULL,
+			"ProcessHandle", NULL,
+			"ThreadHandle", NULL
+		);
+	}
 
 	if (origcommandline)
 		free(origcommandline);
 
-	if (ret) {
+	if (ret && lpProcessInfo) {
 		pipe("PROCESS:%d:%d,%d", is_suspended(lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId), lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId);
 		if (!(dwCreationFlags & CREATE_SUSPENDED))
 			ResumeThread(lpProcessInfo->hThread);
