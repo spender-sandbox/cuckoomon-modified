@@ -209,14 +209,26 @@ HOOKDEF(BOOL, WINAPI, CreateProcessWithLogonW,
 ) {
 	BOOL ret;
 	LPWSTR origcommandline = NULL;
-	
+	ENSURE_STRUCT(lpProcessInfo, PROCESS_INFORMATION);
+
 	if (lpCommandLine)
 		origcommandline = wcsdup(lpCommandLine);
 
 	ret = Old_CreateProcessWithLogonW(lpUsername, lpDomain, lpPassword, dwLogonFlags, lpApplicationName, lpCommandLine, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInfo);
 
-	LOQ_bool("process", "uuuhuuhiipp", "Username", lpUsername, "Domain", lpDomain, "Password", lpPassword, "LogonFlags", dwLogonFlags, "ApplicationName", lpApplicationName, "CommandLine", origcommandline, "CreationFlags", dwCreationFlags,
-		"ProcessId", lpProcessInfo->dwProcessId, "ThreadId", lpProcessInfo->dwThreadId, "ProcessHandle", lpProcessInfo->hProcess, "ThreadHandle", lpProcessInfo->hThread);
+	LOQ_bool("process", "uuuhuuhiipp",
+		"Username", lpUsername,
+		"Domain", lpDomain,
+		"Password", lpPassword,
+		"LogonFlags", dwLogonFlags,
+		"ApplicationName", lpApplicationName,
+		"CommandLine", origcommandline,
+		"CreationFlags", dwCreationFlags,
+		"ProcessId", lpProcessInfo->dwProcessId,
+		"ThreadId", lpProcessInfo->dwThreadId,
+		"ProcessHandle", lpProcessInfo->hProcess,
+		"ThreadHandle", lpProcessInfo->hThread
+	);
 
 	if (origcommandline)
 		free(origcommandline);
@@ -249,13 +261,35 @@ HOOKDEF(BOOL, WINAPI, CreateProcessWithTokenW,
 
 	ret = Old_CreateProcessWithTokenW(hToken, dwLogonFlags, lpApplicationName, lpCommandLine, dwCreationFlags | CREATE_SUSPENDED, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInfo);
 
-	LOQ_bool("process", "huuhiipp", "LogonFlags", dwLogonFlags, "ApplicationName", lpApplicationName, "CommandLine", origcommandline, "CreationFlags", dwCreationFlags,
-		"ProcessId", lpProcessInfo->dwProcessId, "ThreadId", lpProcessInfo->dwThreadId, "ProcessHandle", lpProcessInfo->hProcess, "ThreadHandle", lpProcessInfo->hThread);
+	if (lpProcessInfo) {
+		LOQ_bool("process", "huuhiipp",
+			"LogonFlags", dwLogonFlags,
+			"ApplicationName", lpApplicationName,
+			"CommandLine", origcommandline,
+			"CreationFlags", dwCreationFlags,
+			"ProcessId", lpProcessInfo->dwProcessId,
+			"ThreadId", lpProcessInfo->dwThreadId,
+			"ProcessHandle", lpProcessInfo->hProcess,
+			"ThreadHandle", lpProcessInfo->hThread
+		);
+	}
+	else {
+		LOQ_bool("process", "huuhiipp",
+			"LogonFlags", dwLogonFlags,
+			"ApplicationName", lpApplicationName,
+			"CommandLine", origcommandline,
+			"CreationFlags", dwCreationFlags,
+			"ProcessId", NULL,
+			"ThreadId", NULL,
+			"ProcessHandle", NULL,
+			"ThreadHandle", NULL
+		);
+	}
 
 	if (origcommandline)
 		free(origcommandline);
 
-	if (ret) {
+	if (ret && lpProcessInfo) {
 		pipe("PROCESS:%d:%d,%d", is_suspended(lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId), lpProcessInfo->dwProcessId, lpProcessInfo->dwThreadId);
 		if (!(dwCreationFlags & CREATE_SUSPENDED))
 			ResumeThread(lpProcessInfo->hThread);
@@ -656,7 +690,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtProtectVirtualMemory,
         NumberOfBytesToProtect, NewAccessProtection, OldAccessProtection);
 
 	/* Don't log an uninteresting case */
-	if (OldAccessProtection && *OldAccessProtection == NewAccessProtection)
+	if (NT_SUCCESS(ret) && OldAccessProtection && *OldAccessProtection == NewAccessProtection)
 		return ret;
 
 	memset(&meminfo, 0, sizeof(meminfo));
@@ -703,7 +737,7 @@ HOOKDEF(BOOL, WINAPI, VirtualProtectEx,
         lpflOldProtect);
 
 	/* Don't log an uninteresting case */
-	if (lpflOldProtect && *lpflOldProtect == flNewProtect)
+	if (ret && lpflOldProtect && *lpflOldProtect == flNewProtect)
 		return ret;
 
 	memset(&meminfo, 0, sizeof(meminfo));

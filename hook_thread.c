@@ -165,7 +165,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
     OUT     PVOID lpBytesBuffer
 ) {
 	DWORD pid = pid_from_process_handle(ProcessHandle);
-	
+
 	NTSTATUS ret = Old_NtCreateThreadEx(hThread, DesiredAccess,
         ObjectAttributes, ProcessHandle, lpStartAddress, lpParameter,
         CreateFlags | 1, StackZeroBits, SizeOfStackCommit, SizeOfStackReserve,
@@ -189,7 +189,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtCreateThreadEx,
 
 	if (NT_SUCCESS(ret))
 		disable_sleep_skip();
-	
+
 	return ret;
 }
 
@@ -246,7 +246,7 @@ HOOKDEF(NTSTATUS, WINAPI, NtSetContextThread,
 	pipe("PROCESS:%d:%d,%d", is_suspended(pid, tid), pid, tid);
 
 	ret = Old_NtSetContextThread(ThreadHandle, Context);
-	if (Context->ContextFlags & CONTEXT_CONTROL)
+	if (Context != NULL && Context->ContextFlags & CONTEXT_CONTROL)
 #ifdef _WIN64
 		LOQ_ntstatus("threading", "pp", "ThreadHandle", ThreadHandle, "InstructionPointer", Context->Rip);
 #else
@@ -406,10 +406,11 @@ HOOKDEF(NTSTATUS, WINAPI, RtlCreateUserThread,
 ) {
 	DWORD pid;
 	NTSTATUS ret;
+	ENSURE_HANDLE(ThreadHandle);
 	ENSURE_CLIENT_ID(ClientId);
 
 	pid = pid_from_process_handle(ProcessHandle);
-	
+
 	ret = Old_RtlCreateUserThread(ProcessHandle, SecurityDescriptor,
         TRUE, StackZeroBits, StackReserved, StackCommit,
         StartAddress, StartParameter, ThreadHandle, ClientId);
